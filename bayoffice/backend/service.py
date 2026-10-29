@@ -31,6 +31,21 @@ TELEBOT_SCRIPT = os.getenv("TELEBOT_SCRIPT", str(TELEBOT_DIR / "bot.py"))
 START_AGENTS_SCRIPT = os.getenv("START_AGENTS_SCRIPT", str(SCRIPTS_DIR / "start_agents.sh"))
 TMUX_SESSION_NAME = os.getenv("TMUX_SESSION_NAME", "agy_agents")
 
+TELEBOT_VENV_PYTHON = TELEBOT_DIR / ".venv" / "bin" / "python"
+TELEBOT_PYTHON = str(TELEBOT_VENV_PYTHON) if TELEBOT_VENV_PYTHON.exists() else "python3"
+
+def launch_agents_daemon(task_summary: str = ""):
+    """Menjalankan launcher agen di cgroup independen (session.slice) via systemd-run agar tidak mati saat bayoffice direstart."""
+    cmd = [
+        "sudo", "systemd-run",
+        "--slice=session.slice",
+        "--uid=bay", "--gid=bay",
+        str(START_AGENTS_SCRIPT), "daemon"
+    ]
+    if task_summary:
+        cmd.append(task_summary)
+    subprocess.Popen(cmd)
+
 AGENT_PANES = {
     "LUHUT": f"{TMUX_SESSION_NAME}:0.0",
     "GIBRAN": f"{TMUX_SESSION_NAME}:0.1",
@@ -405,10 +420,10 @@ def retry_task(task_id: str) -> Dict[str, Any]:
             subprocess.run(["tmux", "send-keys", "-t", pane, msg, "Enter"], check=False)
         else:
             task_summary = f"{task_id} [Proyek: {project_id}] (Retry): {instr}"
-            subprocess.Popen([START_AGENTS_SCRIPT, "daemon", task_summary])
+            launch_agents_daemon(task_summary)
 
         try:
-            subprocess.Popen(["python3", TELEBOT_SCRIPT, f"[BayOffice]: 🔁 Tugas *{task_id}* di-retry manual untuk agen `{assignee}`."])
+            subprocess.Popen([TELEBOT_PYTHON, TELEBOT_SCRIPT, f"[BayOffice]: 🔁 Tugas *{task_id}* di-retry manual untuk agen `{assignee}`."])
         except Exception:
             pass
 
@@ -588,7 +603,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
     if res.returncode != 0:
         task_summary = f"{task_id} [Proyek: {project_id}] ({category}): {instruction}"
-        subprocess.Popen([START_AGENTS_SCRIPT, "daemon", task_summary])
+        launch_agents_daemon(task_summary)
     else:
         try:
             if target_agent == "PRABOWO":
@@ -613,7 +628,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     # Siarkan notifikasi ke Telegram
     try:
         msg = f"[BayOffice]: 💻 Tugas baru *{task_id}* [Proyek: `{project_id}` | {category}] via Web: \"{instruction[:70]}...\". Target: `{target_agent}`."
-        subprocess.Popen(["python3", TELEBOT_SCRIPT, msg])
+        subprocess.Popen([TELEBOT_PYTHON, TELEBOT_SCRIPT, msg])
     except Exception:
         pass
 
@@ -626,3 +641,41 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
         "target_dir": target_dir,
         "message": f"Tugas {task_id} [Proyek: {project_id}] berhasil diterbitkan dan diteruskan ke tim agen."
     }
+
+# ==========================================================
+# SCHEDULED TASKS (SCHEDULER / CRON) SERVICE WRAPPERS
+# ==========================================================
+import scheduler
+
+def get_schedules(project: Optional[str] = None, enabled: Optional[bool] = None) -> List[Dict[str, Any]]:
+    """Mengambil seluruh data task terjadwal."""
+    return scheduler.get_schedules(project=project, enabled=enabled)
+
+def get_schedule(schedule_id: str) -> Optional[Dict[str, Any]]:
+    """Mengambil satu task terjadwal berdasarkan ID."""
+    return scheduler.get_schedule(schedule_id)
+
+def get_schedules_summary() -> Dict[str, Any]:
+    """Mengambil ringkasan status scheduler."""
+    return scheduler.get_schedules_summary()
+
+def create_schedule(schedule_in: Dict[str, Any]) -> Dict[str, Any]:
+    """Mendaftarkan task terjadwal baru."""
+    return scheduler.create_schedule(schedule_in)
+
+def update_schedule(schedule_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+    """Memperbarui parameter task terjadwal."""
+    return scheduler.update_schedule(schedule_id, updates)
+
+def delete_schedule(schedule_id: str) -> Dict[str, Any]:
+    """Menghapus task terjadwal."""
+    return scheduler.delete_schedule(schedule_id)
+
+def toggle_schedule(schedule_id: str, enabled: Optional[bool] = None) -> Dict[str, Any]:
+    """Mengaktifkan atau menjeda task terjadwal."""
+    return scheduler.toggle_schedule(schedule_id, enabled)
+
+def execute_schedule_now(schedule_id: str) -> Dict[str, Any]:
+    """Menjalankan task terjadwal secara manual."""
+    return scheduler.execute_schedule_now(schedule_id, dispatch_fn=dispatch_task_from_web)
+

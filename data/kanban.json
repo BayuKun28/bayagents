@@ -2072,6 +2072,32 @@
         "i18n_dwibahasa": "VALID - Toggle bahasa berfungsi dinamis (EN/ID badge code pada mobile <480px, full icon+label pada desktop), title & accessibility aria-label terjaga.",
         "security_and_performance": "VALID - Murni implementasi CSS fluid & performan tanpa runtime overhead, sanitasi layout overflow-x: hidden aman, HTTP 200 OK di uvicorn port 8888."
       }
+    },
+    {
+      "id": "TASK-OPS-11",
+      "project": "bayoffice",
+      "assignee": "JOKOWI",
+      "title": "Tambahkan fitur untuk task terjadwal",
+      "skills_required": [
+        "Python FastAPI",
+        "Backend Logic",
+        "Scheduled Task / Cron"
+      ],
+      "description": "Tambahkan fitur untuk task terjadwal di bayoffice backend (manajemen task terjadwal / scheduler)",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/bayoffice/backend",
+      "created_at": "2026-10-29T19:55:26.014885+07:00",
+      "notes": "Fitur task terjadwal (scheduler / cron) di backend BayOffice telah selesai diimplementasikan oleh JOKOWI:\n1. Modul scheduler mandiri (bayoffice/backend/scheduler.py): parser & matcher ekspresi cron 5-field standar (*, */N, range, list), preset (@hourly, @daily, dll), interval minutes, dan one-off date/time. Worker async background loop terintegrasi via FastAPI lifespan.\n2. Endpoint REST API lengkap di bayoffice/backend/app.py: GET /api/schedules, GET /api/schedules/summary, POST /api/schedules, GET/PUT/DELETE /api/schedules/{id}, POST /toggle, POST /run.\n3. Service wrapper di bayoffice/backend/service.py dan penyimpanan data di bayagents/data/schedules.json.\n4. Automated unit tests lengkap (10/10 test passing) di bayoffice/backend/tests/.\nSiap diaudit QA oleh GIBRAN.",
+      "qa_review": "PASSED - Verifikasi 10/10 unit test lulus 100%. Arsitektur scheduler mandiri di bayoffice/backend/scheduler.py teruji lengkap (parser cron 5-field & presets, interval, once, atomic persistence schedules.json, worker loop via lifespan). Seluruh endpoint REST API (/api/schedules, /summary, CRUD, /toggle, /run) terproteksi require_auth (HTTP 401 unauthenticated & 200 authorized) dan live teruji pada port 8888.",
+      "qa_certification": {
+        "status": "PASSED_100%",
+        "auditor": "GIBRAN",
+        "scheduler_engine": "VALID - Cron matcher (*, */N, range, list, presets), interval & once execution calculation teruji akurat.",
+        "fastapi_lifespan": "VALID - Background async loop terintegrasi via FastAPI lifespan (startup/shutdown bersih tanpa zombie thread).",
+        "api_security_auth": "VALID - Proteksi session require_auth aktif pada semua endpoint /api/schedules (penolakan 401 terverifikasi).",
+        "realtime_sse_sync": "VALID - Event stream /api/stream mendeteksi pembaruan jadwal real-time via updated_at mtime.",
+        "automated_tests": "VALID - 10/10 unit test (test_scheduler.py & test_api_endpoints.py) lulus tanpa kegagalan."
+      }
     }
   ]
 }

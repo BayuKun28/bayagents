@@ -2,6 +2,7 @@ import os
 import json
 import asyncio
 from typing import Optional
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 # Muat environment dari root bayagents/.env atau fallback ke bayoffice/.env
@@ -19,6 +20,7 @@ from pydantic import BaseModel
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 import service
+import scheduler
 
 SECRET_KEY = os.getenv("BAYOFFICE_SECRET_KEY", os.getenv("SECRET_KEY", "bayoffice_secure_key_2026"))
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "bay")
@@ -28,7 +30,14 @@ SESSION_MAX_AGE = 86400 * 7  # 7 hari
 
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
-app = FastAPI(title="BayOffice API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Siklus hidup aplikasi: Memulai dan menghentikan worker scheduler."""
+    await scheduler.start_scheduler_loop()
+    yield
+    await scheduler.stop_scheduler_loop()
+
+app = FastAPI(title="BayOffice API", version="1.0.0", lifespan=lifespan)
 
 # No-Cache Middleware agar browser dan Cloudflare tidak menahan file JS/CSS lama
 @app.middleware("http")
@@ -90,6 +99,33 @@ class TaskCreateRequest(BaseModel):
 class TaskStatusUpdateRequest(BaseModel):
     status: str
     notes: Optional[str] = None
+
+class ScheduleCreateRequest(BaseModel):
+    title: str
+    instruction: str
+    project: Optional[str] = "bayoffice"
+    category: Optional[str] = "auto"
+    engine: Optional[str] = "agy"
+    schedule_type: str = "cron"  # "cron", "interval", "once"
+    cron_expression: Optional[str] = None
+    interval_minutes: Optional[int] = None
+    run_at: Optional[str] = None
+    enabled: Optional[bool] = True
+
+class ScheduleUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    instruction: Optional[str] = None
+    project: Optional[str] = None
+    category: Optional[str] = None
+    engine: Optional[str] = None
+    schedule_type: Optional[str] = None
+    cron_expression: Optional[str] = None
+    interval_minutes: Optional[int] = None
+    run_at: Optional[str] = None
+    enabled: Optional[bool] = None
+
+class ScheduleToggleRequest(BaseModel):
+    enabled: Optional[bool] = None
 
 # ==========================================================
 # PAGE ROUTES
@@ -243,6 +279,87 @@ async def api_export_kanban(format: str = "json", user: str = Depends(require_au
         )
 
 # ==========================================================
+# SCHEDULED TASKS (SCHEDULER / CRON) API ENDPOINTS
+# ==========================================================
+@app.get("/api/schedules")
+async def api_get_schedules(project: Optional[str] = None, enabled: Optional[bool] = None, user: str = Depends(require_auth)):
+    """Mengambil daftar seluruh task terjadwal beserta ringkasan status."""
+    items = service.get_schedules(project=project, enabled=enabled)
+    summary = service.get_schedules_summary()
+    return {
+        "success": True,
+        "schedules": items,
+        "summary": summary
+    }
+
+@app.get("/api/schedules/summary")
+async def api_get_schedules_summary(user: str = Depends(require_auth)):
+    """Mengambil ringkasan status scheduler dan task terjadwal berikutnya."""
+    return {
+        "success": True,
+        "summary": service.get_schedules_summary()
+    }
+
+@app.post("/api/schedules")
+async def api_create_schedule(data: ScheduleCreateRequest, user: str = Depends(require_auth)):
+    """Mendaftarkan task terjadwal baru."""
+    result = service.create_schedule(data.model_dump())
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal membuat task terjadwal"))
+    return result
+
+@app.get("/api/schedules/{schedule_id}")
+async def api_get_schedule_detail(schedule_id: str, user: str = Depends(require_auth)):
+    """Mengambil detail satu task terjadwal."""
+    item = service.get_schedule(schedule_id)
+    if not item:
+        raise HTTPException(status_code=404, detail=f"Task terjadwal {schedule_id} tidak ditemukan")
+    return {"success": True, "schedule": item}
+
+@app.put("/api/schedules/{schedule_id}")
+async def api_update_schedule_put(schedule_id: str, data: ScheduleUpdateRequest, user: str = Depends(require_auth)):
+    """Memperbarui task terjadwal."""
+    payload = {k: v for k, v in data.model_dump().items() if v is not None}
+    result = service.update_schedule(schedule_id, payload)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal memperbarui task terjadwal"))
+    return result
+
+@app.patch("/api/schedules/{schedule_id}")
+async def api_update_schedule_patch(schedule_id: str, data: ScheduleUpdateRequest, user: str = Depends(require_auth)):
+    """Memperbarui sebagian atribut task terjadwal."""
+    payload = {k: v for k, v in data.model_dump().items() if v is not None}
+    result = service.update_schedule(schedule_id, payload)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal memperbarui task terjadwal"))
+    return result
+
+@app.delete("/api/schedules/{schedule_id}")
+async def api_delete_schedule(schedule_id: str, user: str = Depends(require_auth)):
+    """Menghapus task terjadwal."""
+    result = service.delete_schedule(schedule_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Gagal menghapus task terjadwal"))
+    return result
+
+@app.post("/api/schedules/{schedule_id}/toggle")
+async def api_toggle_schedule(schedule_id: str, data: Optional[ScheduleToggleRequest] = None, user: str = Depends(require_auth)):
+    """Mengaktifkan atau menjeda task terjadwal."""
+    enabled_val = data.enabled if data else None
+    result = service.toggle_schedule(schedule_id, enabled=enabled_val)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal mengubah status aktif task terjadwal"))
+    return result
+
+@app.post("/api/schedules/{schedule_id}/run")
+async def api_run_schedule_now(schedule_id: str, user: str = Depends(require_auth)):
+    """Menjalankan task terjadwal secara manual saat ini juga."""
+    result = service.execute_schedule_now(schedule_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal mengeksekusi task terjadwal"))
+    return result
+
+# ==========================================================
 # SERVER-SENT EVENTS (SSE) STREAM
 # ==========================================================
 @app.get("/api/stream")
@@ -254,6 +371,7 @@ async def api_stream(request: Request):
 
     async def event_generator():
         last_mtime = 0
+        last_sched_mtime = 0
         last_tmux_state = None
         ping_counter = 0
 
@@ -266,16 +384,21 @@ async def api_stream(request: Request):
             sys_metrics = service.get_expanded_system_metrics()
             current_tmux = sys_metrics["tmux_active"]
 
-            if current_mtime != last_mtime or current_tmux != last_tmux_state or ping_counter >= 10:
+            sched_summary = service.get_schedules_summary()
+            current_sched_mtime = sched_summary.get("updated_at", "")
+
+            if current_mtime != last_mtime or current_tmux != last_tmux_state or current_sched_mtime != last_sched_mtime or ping_counter >= 10:
                 last_mtime = current_mtime
                 last_tmux_state = current_tmux
+                last_sched_mtime = current_sched_mtime
                 ping_counter = 0
 
                 payload = {
                     "type": "sync",
                     "kanban": current_k,
                     "agents": service.get_agents_status(),
-                    "system": sys_metrics
+                    "system": sys_metrics,
+                    "schedules": sched_summary
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
             else:
