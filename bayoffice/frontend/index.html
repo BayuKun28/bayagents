@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BayOffice — Virtual Workspace AI Agents</title>
+  <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261027_08">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261029_01">
 </head>
 <body style="padding-bottom: 60px;">
 
@@ -24,7 +24,7 @@
             <span class="brand-badge-version">v2.2</span>
           </div>
           <p class="topbar-subtitle">
-            <span class="homelab-dot"></span> Multi-Agent Workspace • Port 8888
+            <span class="homelab-dot"></span> <span data-i18n="app.subtitle">Multi-Agent Workspace • Port 8888</span>
           </p>
         </div>
       </div>
@@ -34,19 +34,19 @@
         <div class="telemetry-deck">
           <span id="tmuxBadge" class="neo-badge badge-todo telemetry-badge">
             <span class="status-dot dot-sleep"></span>
-            <span class="desk-txt">MEMUAT STATUS...</span>
-            <span class="mob-txt">MEMUAT</span>
+            <span class="desk-txt" data-i18n="telemetry.loading">LOADING STATUS...</span>
+            <span class="mob-txt" data-i18n="telemetry.loading_short">LOADING</span>
           </span>
           <div class="telemetry-divider"></div>
           <div class="telemetry-chip">
             <i data-lucide="hard-drive" class="lucide-sm chip-icon-ram"></i>
-            <span class="chip-label">RAM:</span>
+            <span class="chip-label" data-i18n="telemetry.ram">RAM:</span>
             <span id="ramMetric" class="chip-val chip-val-ram">-</span>
           </div>
           <div class="telemetry-divider"></div>
           <div class="telemetry-chip">
             <i data-lucide="cpu" class="lucide-sm chip-icon-cpu"></i>
-            <span class="chip-label">CPU:</span>
+            <span class="chip-label" data-i18n="telemetry.cpu">CPU:</span>
             <span id="cpuMetric" class="chip-val chip-val-cpu">-</span>
           </div>
         </div>
@@ -54,17 +54,23 @@
 
       <!-- 3. Action Controls (Kanan di Desktop, Kanan Atas di Mobile) -->
       <div class="topbar-actions">
-        <button id="darkModeToggle" class="neo-btn neo-btn-secondary topbar-btn btn-theme" title="Ganti Mode Gelap/Terang">
+        <!-- Language Toggle Button (EN / ID) -->
+        <button id="langToggle" class="neo-btn neo-btn-secondary topbar-btn btn-lang" data-i18n-title="actions.lang_toggle" title="Switch Language (EN / ID)" aria-label="Switch Language">
+          <i data-lucide="languages" class="lucide-sm"></i>
+          <span id="langLabel">EN</span>
+        </button>
+
+        <button id="darkModeToggle" class="neo-btn neo-btn-secondary topbar-btn btn-theme" data-i18n-title="actions.theme_dark" title="Switch to Dark Mode">
           <span id="darkModeIcon" style="display: flex; align-items: center;"><i data-lucide="moon"></i></span>
         </button>
-        <button id="openTaskBtn" class="neo-btn neo-btn-primary topbar-btn btn-task" title="Beri Tugas Baru">
+        <button id="openTaskBtn" class="neo-btn neo-btn-primary topbar-btn btn-task" data-i18n-title="actions.new_task" title="New Task">
           <i data-lucide="plus-circle" class="lucide-sm"></i>
-          <span class="btn-label-desktop">Beri Tugas Baru</span>
-          <span class="btn-label-mobile">Tugas</span>
+          <span class="btn-label-desktop" data-i18n="actions.new_task">New Task</span>
+          <span class="btn-label-mobile" data-i18n="actions.new_task_short">Task</span>
         </button>
-        <button id="logoutBtn" class="neo-btn neo-btn-secondary topbar-btn btn-logout" title="Keluar dari Sesi">
+        <button id="logoutBtn" class="neo-btn neo-btn-secondary topbar-btn btn-logout" data-i18n-title="actions.logout_title" title="Log out of session">
           <i data-lucide="log-out" class="lucide-sm"></i>
-          <span class="btn-label-desktop">Keluar</span>
+          <span class="btn-label-desktop" data-i18n="actions.logout">Logout</span>
         </button>
       </div>
 
@@ -79,18 +85,18 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <i data-lucide="monitor" class="lucide-sm"></i>
-          <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;">
-            Kantor Virtual 2D
+          <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;" data-i18n="canvas.title">
+            2D Virtual Office
           </h2>
-          <span class="neo-badge badge-done" style="font-size: 0.7rem;">Live View</span>
+          <span class="neo-badge badge-done" style="font-size: 0.7rem;" data-i18n="canvas.live_view">Live View</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;">
-            4 Ruangan: Executive Suite • Engineering Bay • Game Room • Kantin Bar
+          <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;" data-i18n="canvas.rooms_subtitle">
+            4 Rooms: Executive Suite • Engineering Bay • Game Room • Cafeteria Bar
           </span>
           <button id="fullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 5px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
             <i data-lucide="maximize-2" class="lucide-sm"></i>
-            <span>Fullscreen</span>
+            <span data-i18n="canvas.fullscreen">Fullscreen</span>
           </button>
         </div>
       </div>
@@ -100,7 +106,7 @@
         <div class="fullscreen-controls" id="canvasOverlayControls" style="display: none;">
           <button id="exitFullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; gap: 6px;">
             <i data-lucide="minimize-2" class="lucide-sm"></i>
-            <span>Keluar Fullscreen</span>
+            <span data-i18n="canvas.exit_fullscreen">Exit Fullscreen</span>
           </button>
         </div>
         <canvas id="officeCanvas"></canvas>
@@ -118,24 +124,24 @@
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <i data-lucide="kanban" class="lucide-sm"></i>
-          <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;">
-            Papan Kanban Tugas
+          <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;" data-i18n="kanban.title">
+            Task Kanban Board
           </h2>
-          <span class="neo-badge badge-todo" style="font-size: 0.7rem;">kanban.json</span>
+          <span class="neo-badge badge-todo" style="font-size: 0.7rem;" data-i18n="kanban.source_badge">kanban.json</span>
         </div>
 
         <!-- Filter & Search Controls -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <!-- Project Filter Selector -->
           <select id="projectFilterSelect" class="neo-box-sm" style="padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer;">
-            <option value="ALL">Semua Proyek</option>
+            <option value="ALL" data-i18n="kanban.all_projects">All Projects</option>
             <option value="infobay">infobay</option>
             <option value="bayoffice">bayoffice</option>
           </select>
 
           <!-- Agent Filter Buttons -->
           <div style="display: flex; gap: 6px;">
-            <button class="neo-btn filter-btn neo-btn-primary" data-assignee="ALL" style="padding: 5px 10px; font-size: 0.75rem;">Semua</button>
+            <button class="neo-btn filter-btn neo-btn-primary" data-assignee="ALL" style="padding: 5px 10px; font-size: 0.75rem;" data-i18n="kanban.all_assignees">All</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="LUHUT" style="padding: 5px 10px; font-size: 0.75rem;">LUHUT</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="JOKOWI" style="padding: 5px 10px; font-size: 0.75rem;">JOKOWI</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="PRABOWO" style="padding: 5px 10px; font-size: 0.75rem;">PRABOWO</button>
@@ -144,7 +150,7 @@
 
           <!-- Search Input -->
           <div style="position: relative; display: flex; align-items: center;">
-            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Cari tugas..." style="padding: 7px 12px; font-size: 0.85rem; font-family: inherit; width: 180px; outline: none;">
+            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Search tasks..." data-i18n-placeholder="kanban.search_placeholder" style="padding: 7px 12px; font-size: 0.85rem; font-family: inherit; width: 180px; outline: none;">
           </div>
         </div>
       </div>
@@ -152,8 +158,8 @@
       <!-- Kanban Columns Container -->
       <div id="kanbanContainer">
         <!-- Rendered dynamically by kanban.js -->
-        <div style="text-align: center; padding: 40px; color: #94A3B8; font-weight: 700;">
-          Memuat data papan kanban...
+        <div style="text-align: center; padding: 40px; color: #94A3B8; font-weight: 700;" data-i18n="kanban.loading">
+          Loading kanban board data...
         </div>
       </div>
     </section>
@@ -166,7 +172,7 @@
       <div class="modal-header-yellow" style="padding: 20px 24px; border-bottom: 3px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--yellow);">
         <div style="display: flex; align-items: center; gap: 8px;">
           <i data-lucide="send" class="lucide-lg" style="color: #1A1A1A;"></i>
-          <h3 style="font-weight: 800; font-size: 1.15rem; color: #1A1A1A;">Beri Tugas Baru ke Tim Agen</h3>
+          <h3 style="font-weight: 800; font-size: 1.15rem; color: #1A1A1A;" data-i18n="modal_task.header">Dispatch New Task to Agent Team</h3>
         </div>
         <button id="closeTaskBtn" style="background: none; border: none; font-size: 1.4rem; font-weight: 800; cursor: pointer; line-height: 1; color: #1A1A1A;">✕</button>
       </div>
@@ -176,63 +182,63 @@
 
         <form id="taskForm">
           <div style="margin-bottom: 16px;">
-            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskInstruction">
-              Instruksi Tugas
+            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskInstruction" data-i18n="modal_task.instruction_label">
+              Task Instructions
             </label>
-            <textarea id="taskInstruction" rows="4" required class="neo-box-sm" placeholder="Contoh: Tambahkan tombol filter kategori di halaman portofolio..." style="width: 100%; padding: 12px; font-family: inherit; font-size: 0.95rem; resize: vertical; outline: none;"></textarea>
+            <textarea id="taskInstruction" rows="4" required class="neo-box-sm" placeholder="Example: Add category filter buttons on portfolio page..." data-i18n-placeholder="modal_task.instruction_placeholder" style="width: 100%; padding: 12px; font-family: inherit; font-size: 0.95rem; resize: vertical; outline: none;"></textarea>
           </div>
 
           <div style="margin-bottom: 16px;">
-            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskProject">
-              Target Proyek
+            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskProject" data-i18n="modal_task.project_label">
+              Target Project
             </label>
             <select id="taskProject" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-family: inherit; font-size: 0.95rem; outline: none; background: var(--bg-card);">
-              <option value="auto">Otomatis Deteksi Proyek</option>
+              <option value="auto" data-i18n="modal_task.project_auto">Auto Detect Project</option>
               <option value="infobay">Infobay (Portfolio & Admin)</option>
               <option value="bayoffice">BayOffice (Virtual Office)</option>
-              <option value="__custom__">Proyek Baru / Folder Kustom...</option>
+              <option value="__custom__" data-i18n="modal_task.project_custom">New Project / Custom Folder...</option>
             </select>
             <div id="customProjectContainer" style="display: none; margin-top: 8px;">
-              <input type="text" id="customProjectInput" class="neo-box-sm" placeholder="Ketik nama folder proyek baru (misal: baydev, crm, chatbot)..." style="width: 100%; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none;">
-              <small style="font-size: 0.72rem; color: #64748B;">Proyek ini akan otomatis didaftarkan ke <code>projects.json</code> di <code>/home/bay/&lt;nama&gt;</code></small>
+              <input type="text" id="customProjectInput" class="neo-box-sm" placeholder="Type new project folder name (e.g., baydev, crm, chatbot)..." data-i18n-placeholder="modal_task.project_custom_placeholder" style="width: 100%; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none;">
+              <small style="font-size: 0.72rem; color: #64748B;" data-i18n-html="modal_task.project_custom_hint">This project will be automatically registered in <code>projects.json</code> at <code>/home/bay/&lt;name&gt;</code></small>
             </div>
           </div>
 
           <div style="margin-bottom: 20px;">
-            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskCategory">
-              Target Kategori / Pelaksana
+            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskCategory" data-i18n="modal_task.category_label">
+              Category / Target Assignee
             </label>
             <select id="taskCategory" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-family: inherit; font-size: 0.95rem; outline: none; background: var(--bg-card);">
-              <option value="auto">Otomatis Deteksi Kata Kunci</option>
-              <option value="frontend">Frontend Engineer (PRABOWO)</option>
-              <option value="backend">Backend Engineer (JOKOWI)</option>
-              <option value="fullstack">Fullstack (LUHUT Orchestrator)</option>
-              <option value="ops">DevOps & System (LUHUT)</option>
+              <option value="auto" data-i18n="modal_task.cat_auto">Auto Detect Keywords</option>
+              <option value="frontend" data-i18n="modal_task.cat_frontend">Frontend Engineer (PRABOWO)</option>
+              <option value="backend" data-i18n="modal_task.cat_backend">Backend Engineer (JOKOWI)</option>
+              <option value="fullstack" data-i18n="modal_task.cat_fullstack">Fullstack (LUHUT Orchestrator)</option>
+              <option value="ops" data-i18n="modal_task.cat_ops">DevOps & System (LUHUT)</option>
             </select>
           </div>
 
           <div style="margin-bottom: 20px;">
-            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskEngine">
-              Otak Agen / Engine AI
+            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;" for="taskEngine" data-i18n="modal_task.engine_label">
+              Agent Brain / AI Engine
             </label>
             <select id="taskEngine" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-family: inherit; font-size: 0.95rem; outline: none; background: var(--bg-card); cursor: pointer;">
-              <option value="agy">🧠 Antigravity (agy) — Sesi Tmux Tim 4 Agen (Default)</option>
-              <option value="9router">⚡ 9Router (gemini-free-smart) — Server 146 (Hemat Kuota & Cepat)</option>
+              <option value="agy" data-i18n="modal_task.engine_agy_option">🧠 Antigravity (agy) — 4-Agent Team Tmux Session (Default)</option>
+              <option value="9router" data-i18n="modal_task.engine_9router_option">⚡ 9Router (gemini-free-smart) — Server 146 (Fast & Quota-Saver)</option>
             </select>
             <div id="engineNotice" class="neo-box-sm" style="margin-top: 8px; padding: 10px 12px; font-size: 0.78rem; line-height: 1.4; background: var(--bg-base); display: flex; align-items: center; gap: 8px;">
               <i data-lucide="cpu" class="lucide-sm" style="flex-shrink: 0; color: #2563EB;"></i>
-              <span id="engineDesc"><b>Antigravity:</b> Sesi Tmux interaktif Google Antigravity (Luhut, Jokowi, Prabowo, Gibran).</span>
+              <span id="engineDesc" data-i18n-html="modal_task.engine_agy_desc"><b>Antigravity:</b> Interactive Tmux session with Google Antigravity (Luhut, Jokowi, Prabowo, Gibran).</span>
             </div>
           </div>
 
           <div class="neo-box-sm info-box-fasttrack" style="padding: 12px; margin-bottom: 22px; font-size: 0.8rem; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px;">
             <i data-lucide="info" class="lucide-sm" style="flex-shrink: 0; margin-top: 2px;"></i>
-            <span><b>Alur Fast-Track:</b> Tugas akan langsung dicatat ke <code>kanban.json</code>, membangunkan sesi tmux agen jika sedang tidur, dan menyiarkan notifikasi ke Telegram.</span>
+            <span data-i18n-html="modal_task.fasttrack_notice"><b>Fast-Track Flow:</b> Tasks will be immediately recorded in <code>kanban.json</code>, waking up agent tmux sessions if sleeping, and broadcasting notifications to Telegram.</span>
           </div>
 
           <button id="submitTaskBtn" type="submit" class="neo-btn neo-btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
             <i data-lucide="send" class="lucide-sm"></i>
-            <span>Kirim ke Tim Agen</span>
+            <span data-i18n="modal_task.submit_btn">Send to Agent Team</span>
           </button>
         </form>
       </div>
@@ -253,7 +259,7 @@
           </div>
           <h3 id="detailTaskTitle" style="font-size: 1.2rem; font-weight: 800; line-height: 1.35; margin: 0;">Judul Tugas</h3>
         </div>
-        <button id="closeDetailModalBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.85rem;" title="Tutup">
+        <button id="closeDetailModalBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.85rem;" data-i18n-title="modal_detail.close_title" title="Close">
           <i data-lucide="x" class="lucide-sm"></i>
         </button>
       </div>
@@ -261,19 +267,19 @@
       <!-- Assignee & Direktori Kerja -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
         <div class="neo-box-sm" style="padding: 10px 12px;">
-          <span style="font-size: 0.72rem; color: #64748B; font-weight: 700; display: block; text-transform: uppercase;">Pelaksana (Assignee)</span>
+          <span style="font-size: 0.72rem; color: #64748B; font-weight: 700; display: block; text-transform: uppercase;" data-i18n="modal_detail.assignee_label">Assignee</span>
           <div id="detailTaskAssignee" style="font-weight: 800; font-size: 0.95rem; margin-top: 2px;">AGENT</div>
         </div>
         <div class="neo-box-sm" style="padding: 10px 12px;">
-          <span style="font-size: 0.72rem; color: #64748B; font-weight: 700; display: block; text-transform: uppercase;">Direktori Kerja</span>
+          <span style="font-size: 0.72rem; color: #64748B; font-weight: 700; display: block; text-transform: uppercase;" data-i18n="modal_detail.workdir_label">Working Directory</span>
           <div id="detailTaskDir" style="font-family: var(--font-mono); font-size: 0.82rem; margin-top: 2px; word-break: break-all;">~/infobay</div>
         </div>
       </div>
 
       <!-- Deskripsi & Instruksi -->
       <div style="margin-bottom: 16px;">
-        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;">
-          Deskripsi & Instruksi
+        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;" data-i18n="modal_detail.desc_label">
+          Description & Instructions
         </label>
         <div id="detailTaskDesc" class="neo-box-sm" style="padding: 12px; font-size: 0.88rem; line-height: 1.5; white-space: pre-wrap;">
           -
@@ -282,8 +288,8 @@
 
       <!-- Keahlian Dibutuhkan -->
       <div id="detailSkillsContainer" style="margin-bottom: 16px;">
-        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;">
-          Keahlian Dibutuhkan
+        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;" data-i18n="modal_detail.skills_label">
+          Skills Required
         </label>
         <div id="detailTaskSkills" style="display: flex; flex-wrap: wrap; gap: 6px;">
           <!-- Dynamic skill badges -->
@@ -292,8 +298,8 @@
 
       <!-- Catatan Pengerjaan -->
       <div id="detailNotesContainer" style="margin-bottom: 16px;">
-        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;">
-          Catatan Implementasi
+        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;" data-i18n="modal_detail.notes_label">
+          Implementation Notes
         </label>
         <div id="detailTaskNotes" class="neo-box-sm" style="padding: 12px; font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap;">
           -
@@ -302,8 +308,8 @@
 
       <!-- Audit & Review QA -->
       <div id="detailQAContainer" style="margin-bottom: 16px;">
-        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;">
-          Audit & Review QA (GIBRAN)
+        <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 6px;" data-i18n="modal_detail.qa_label">
+          QA Audit & Review (GIBRAN)
         </label>
         <div id="detailTaskQA" class="neo-box-sm" style="padding: 12px; font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap; background: #F0FDF4; border-color: #86EFAC;">
           -
@@ -312,16 +318,17 @@
 
       <!-- Timestamps Footer -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 0.75rem; color: #64748B;">
-        <span id="detailCreatedAt">Dibuat: -</span>
-        <span id="detailCompletedAt">Selesai: -</span>
+        <span id="detailCreatedAt">Created: -</span>
+        <span id="detailCompletedAt">Completed: -</span>
       </div>
     </div>
   </div>
 
   <!-- SCRIPTS -->
   <script src="/static/js/lucide.min.js"></script>
-  <script src="/static/js/office-canvas.js?v=20261027_08"></script>
-  <script src="/static/js/kanban.js?v=20261027_08"></script>
-  <script src="/static/js/app.js?v=20261027_08"></script>
+  <script src="/static/js/i18n.js?v=20261029_01"></script>
+  <script src="/static/js/office-canvas.js?v=20261029_01"></script>
+  <script src="/static/js/kanban.js?v=20261029_01"></script>
+  <script src="/static/js/app.js?v=20261029_01"></script>
 </body>
 </html>

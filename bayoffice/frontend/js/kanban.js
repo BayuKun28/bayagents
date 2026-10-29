@@ -128,12 +128,15 @@ class KanbanBoard {
         colTasks.reverse();
       }
 
+      const colKey = col.key === 'To-Do' ? 'todo' : col.key === 'In-Progress' ? 'progress' : col.key === 'QA-Review' ? 'qa' : 'done';
+      const colTitle = window.I18n ? window.I18n.t(`kanban.col_${colKey}`) : col.label;
+
       html += `
         <div class="neo-box kanban-col-box" style="padding: 16px; display: flex; flex-direction: column; max-height: 680px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px dashed var(--border-color);">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="display: flex; align-items: center;">${col.icon}</span>
-              <span style="font-weight: 800; font-size: 0.95rem; text-transform: uppercase;">${col.label}</span>
+              <span style="font-weight: 800; font-size: 0.95rem; text-transform: uppercase;">${colTitle}</span>
             </div>
             <span class="neo-badge ${col.badgeClass}" style="font-size: 0.8rem;">${colTasks.length}</span>
           </div>
@@ -142,20 +145,24 @@ class KanbanBoard {
       `;
 
       if (colTasks.length === 0) {
+        const emptyLabel = window.I18n ? window.I18n.t('kanban.no_tasks') : 'No tasks';
         html += `
           <div style="text-align: center; padding: 32px 16px; color: #94A3B8; font-size: 0.85rem; font-weight: 600;">
-            Tidak ada tugas
+            ${emptyLabel}
           </div>
         `;
       } else {
+        const isId = (window.I18n && window.I18n.getLanguage() === 'id');
+        const cardTitleHint = window.I18n ? window.I18n.t('kanban.card_click_hint') : 'Click to view full details';
         colTasks.forEach(task => {
           const assigneeClass = this.getAssigneeBadgeClass(task.assignee);
           const notesText = task.notes ? `<div class="kanban-task-notes" style="margin-top: 8px; font-size: 0.78rem; padding: 6px 8px; border-radius: 4px; border-left: 3px solid var(--border-color); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${this.escapeHtml(task.notes)}</div>` : '';
           const timeText = task.started_at || task.created_at || task.completed_at || '';
-          const displayTime = timeText ? new Date(timeText).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+          const displayTime = timeText ? new Date(timeText).toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+          const timeSuffix = isId && displayTime ? ' WIB' : '';
 
           html += `
-            <div class="neo-box-sm kanban-task-card" data-task-id="${this.escapeHtml(task.id)}" style="padding: 12px; cursor: pointer;" title="Klik untuk melihat detail lengkap">
+            <div class="neo-box-sm kanban-task-card" data-task-id="${this.escapeHtml(task.id)}" style="padding: 12px; cursor: pointer;" title="${cardTitleHint}">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <div style="display: flex; gap: 4px; align-items: center;">
                   <span class="neo-badge badge-task-id" style="font-size: 0.7rem;">${task.id || 'TASK'}</span>
@@ -174,7 +181,7 @@ class KanbanBoard {
                 </span>
                 <span style="display: flex; align-items: center; gap: 4px;">
                   <i data-lucide="clock" class="lucide-sm"></i>
-                  ${displayTime ? displayTime + ' WIB' : ''}
+                  ${displayTime ? displayTime + timeSuffix : ''}
                 </span>
               </div>
             </div>

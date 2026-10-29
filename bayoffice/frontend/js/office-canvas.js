@@ -284,7 +284,8 @@ class OfficeCanvas {
     ctx.strokeRect(x, y, w, h);
 
     // 4. Papan Label Ruangan (Zero Emoji)
-    this.drawRoomLabel(ctx, x + 12, y + 18, 'EXECUTIVE SUITE - LUHUT (ORCHESTRATOR)', '#FCA5A5', isDark);
+    const execLabel = (window.I18n && window.I18n.t) ? window.I18n.t('canvas.room_executive') : 'EXECUTIVE SUITE - LUHUT (ORCHESTRATOR)';
+    this.drawRoomLabel(ctx, x + 12, y + 18, execLabel, '#FCA5A5', isDark);
 
     // 5. Dinding Belakang: Jendela Panorama Kota Metropolitan & Lemari Credenza
     // Jendela Skyline Kaca Panorama
@@ -378,7 +379,8 @@ class OfficeCanvas {
     ctx.strokeRect(x, y, w, h);
 
     // 4. Papan Label Ruangan (Zero Emoji)
-    this.drawRoomLabel(ctx, x + 12, y + 18, 'ENGINEERING BAY - WORKSTATIONS', '#93C5FD', isDark);
+    const engLabel = (window.I18n && window.I18n.t) ? window.I18n.t('canvas.room_engineering') : 'ENGINEERING BAY - WORKSTATIONS';
+    this.drawRoomLabel(ctx, x + 12, y + 18, engLabel, '#93C5FD', isDark);
 
     // 5. Dinding Belakang: Rak Server Datacenter, Jam Dinding, Whiteboard, Jendela Skyline
     // Rak Server Datacenter 42U
@@ -489,7 +491,8 @@ class OfficeCanvas {
     ctx.strokeRect(x, y, w, h);
 
     // 4. Papan Label Ruangan (Zero Emoji)
-    this.drawRoomLabel(ctx, x + 12, y + 18, 'GAME ROOM & ARCADE LOUNGE', '#D8B4FE', isDark);
+    const gameLabel = (window.I18n && window.I18n.t) ? window.I18n.t('canvas.room_game') : 'GAME ROOM & ARCADE LOUNGE';
+    this.drawRoomLabel(ctx, x + 12, y + 18, gameLabel, '#D8B4FE', isDark);
 
     // 5. Layar TV Gaming 65" OLED Bezelless di Dinding
     if (this.images.tvGaming && this.images.tvGaming.complete) {
@@ -585,7 +588,8 @@ class OfficeCanvas {
     ctx.strokeRect(x, y, w, h);
 
     // 4. Papan Label Ruangan (Zero Emoji)
-    this.drawRoomLabel(ctx, x + 12, y + 18, 'KANTIN & COFFEE BAR', '#FCD34D', isDark);
+    const cafeLabel = (window.I18n && window.I18n.t) ? window.I18n.t('canvas.room_cafeteria') : 'CAFETERIA & COFFEE BAR';
+    this.drawRoomLabel(ctx, x + 12, y + 18, cafeLabel, '#FCD34D', isDark);
 
     // 5. Dinding Belakang: Chalkboard Menu, Jam Dinding, Dispenser, Kulkas, Vending Machine
     // Chalkboard Menu Kafe

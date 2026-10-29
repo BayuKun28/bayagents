@@ -1,12 +1,21 @@
 /**
  * BayOffice - Main Application Controller
- * Design Standards: Zero Emoji, Anti AI Slop, Lucide SVG Icons
+ * Design Standards: Zero Emoji, Anti AI Slop, Lucide SVG Icons, Full i18n
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 0. Inisialisasi I18n
+  if (window.I18n) {
+    window.I18n.init();
+  }
+
   // 1. Inisialisasi Canvas & Kanban
   const canvas = new OfficeCanvas('officeCanvas');
   const kanban = new KanbanBoard('kanbanContainer');
+
+  // Cache data terakhir untuk re-render saat bahasa berubah
+  window.latestAgentsData = null;
+  window.latestSystemData = null;
 
   // 2. DOM Elements
   const tmuxBadge = document.getElementById('tmuxBadge');
@@ -21,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const taskAlert = document.getElementById('taskAlert');
   const searchInput = document.getElementById('searchInput');
   const logoutBtn = document.getElementById('logoutBtn');
+  const langToggle = document.getElementById('langToggle');
   const filterBtns = document.querySelectorAll('.filter-btn');
   const projectFilterSelect = document.getElementById('projectFilterSelect');
   const taskProjectSelect = document.getElementById('taskProject');
@@ -61,6 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const payload = JSON.parse(event.data);
         if (payload.type === 'sync') {
+          window.latestAgentsData = payload.agents;
+          window.latestSystemData = payload.system;
+
           // Update Canvas
           canvas.updateAgents(payload.agents);
 
@@ -91,10 +104,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tmux Status (Zero Emoji) with Desktop & Mobile Dual Text
     if (sys.tmux_active) {
       tmuxBadge.className = 'neo-badge badge-done telemetry-badge';
-      tmuxBadge.innerHTML = '<span class="status-dot dot-active"></span><span class="desk-txt">AGENTS ACTIVE</span><span class="mob-txt">ACTIVE</span>';
+      const activeDesk = window.I18n ? window.I18n.t('telemetry.active') : 'AGENTS ACTIVE';
+      const activeMob = window.I18n ? window.I18n.t('telemetry.active_short') : 'ACTIVE';
+      tmuxBadge.innerHTML = `<span class="status-dot dot-active"></span><span class="desk-txt">${activeDesk}</span><span class="mob-txt">${activeMob}</span>`;
     } else {
       tmuxBadge.className = 'neo-badge badge-todo telemetry-badge';
-      tmuxBadge.innerHTML = '<span class="status-dot dot-sleep"></span><span class="desk-txt">AUTO-SLEEP (HEMAT RAM)</span><span class="mob-txt">SLEEP</span>';
+      const sleepDesk = window.I18n ? window.I18n.t('telemetry.sleep') : 'AUTO-SLEEP (RAM SAVER)';
+      const sleepMob = window.I18n ? window.I18n.t('telemetry.sleep_short') : 'SLEEP';
+      tmuxBadge.innerHTML = `<span class="status-dot dot-sleep"></span><span class="desk-txt">${sleepDesk}</span><span class="mob-txt">${sleepMob}</span>`;
     }
 
     // RAM Dual Text (Desktop: 1.1 GiB / 3.2 GiB (35%) | Mobile: 1.1 GiB (35%))
@@ -112,17 +129,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let html = '';
     const agentList = ['LUHUT', 'JOKOWI', 'PRABOWO', 'GIBRAN'];
 
+    const txtStandby = window.I18n ? window.I18n.t('agents.state_standby') : 'STANDBY';
+    const txtSleep = window.I18n ? window.I18n.t('agents.state_sleep') : 'SLEEP';
+    const txtWorking = window.I18n ? window.I18n.t('agents.state_working') : 'WORKING';
+    const txtReviewing = window.I18n ? window.I18n.t('agents.state_reviewing') : 'REVIEWING';
+    const defaultBubble = window.I18n ? window.I18n.t('agents.default_bubble') : 'Ready for duty.';
+
     agentList.forEach(name => {
       const a = agents[name] || {};
       const state = a.state || 'idle';
       
-      let stateBadge = '<span class="neo-badge badge-todo" style="font-size:0.68rem;">STANDBY</span>';
+      let stateBadge = `<span class="neo-badge badge-todo" style="font-size:0.68rem;">${txtStandby}</span>`;
       if (state === 'sleeping') {
-        stateBadge = '<span class="neo-badge" style="background:#E2E8F0; color:#64748B; font-size:0.68rem;">SLEEP</span>';
+        stateBadge = `<span class="neo-badge" style="background:#E2E8F0; color:#64748B; font-size:0.68rem;">${txtSleep}</span>`;
       } else if (state === 'working') {
-        stateBadge = '<span class="neo-badge badge-progress" style="font-size:0.68rem;">WORKING</span>';
+        stateBadge = `<span class="neo-badge badge-progress" style="font-size:0.68rem;">${txtWorking}</span>`;
       } else if (state === 'reviewing') {
-        stateBadge = '<span class="neo-badge badge-qa" style="font-size:0.68rem;">REVIEWING</span>';
+        stateBadge = `<span class="neo-badge badge-qa" style="font-size:0.68rem;">${txtReviewing}</span>`;
       }
 
       html += `
@@ -140,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${stateBadge}
           </div>
           <div class="agent-bubble-box" style="font-size: 0.78rem; padding: 6px 10px; border-radius: 6px; min-height: 40px; display: flex; align-items: center; line-height: 1.35; border: 1px solid var(--border-color);">
-            <i>${a.bubble_text || 'Siap bertugas.'}</i>
+            <i>${a.bubble_text || defaultBubble}</i>
           </div>
         </div>
       `;
@@ -168,10 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       const projects = data.projects || {};
 
+      const allProjectsText = window.I18n ? window.I18n.t('kanban.all_projects') : 'All Projects';
+      const autoDetectText = window.I18n ? window.I18n.t('modal_task.project_auto') : 'Auto Detect Project';
+      const customProjectText = window.I18n ? window.I18n.t('modal_task.project_custom') : 'New Project / Custom Folder...';
+
       // 1. Update Kanban Filter Select
       if (projectFilterSelect) {
         const cur = projectFilterSelect.value;
-        let optHtml = '<option value="ALL">Semua Proyek</option>';
+        let optHtml = `<option value="ALL">${allProjectsText}</option>`;
         for (const [pId, pData] of Object.entries(projects)) {
           optHtml += `<option value="${pId}">${pData.name || pId}</option>`;
         }
@@ -182,11 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // 2. Update Modal Project Select
       if (taskProjectSelect) {
         let cur = taskProjectSelect.value;
-        let modalHtml = '<option value="auto">Otomatis Deteksi Proyek</option>';
+        let modalHtml = `<option value="auto">${autoDetectText}</option>`;
         for (const [pId, pData] of Object.entries(projects)) {
           modalHtml += `<option value="${pId}">${pData.name || pId}</option>`;
         }
-        modalHtml += '<option value="__custom__">Proyek Baru / Folder Kustom...</option>';
+        modalHtml += `<option value="__custom__">${customProjectText}</option>`;
         taskProjectSelect.innerHTML = modalHtml;
         if (cur && cur !== '__custom__') taskProjectSelect.value = cur;
       }
@@ -246,7 +273,10 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       taskAlert.style.display = 'none';
       submitTaskBtn.disabled = true;
-      submitTaskBtn.innerHTML = '<span>Menerbitkan Tugas...</span>';
+
+      const txtSubmitting = window.I18n ? window.I18n.t('modal_task.submitting') : 'Dispatching Task...';
+      const txtSubmitBtn = window.I18n ? window.I18n.t('modal_task.submit_btn') : 'Send to Agent Team';
+      submitTaskBtn.innerHTML = `<span>${txtSubmitting}</span>`;
 
       const instruction = document.getElementById('taskInstruction').value.trim();
       const category = document.getElementById('taskCategory').value;
@@ -261,9 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
           taskAlert.style.color = '#991B1B';
           taskAlert.style.padding = '10px 14px';
           taskAlert.style.display = 'block';
-          taskAlert.textContent = 'Harap masukkan nama folder/proyek baru.';
+          taskAlert.textContent = window.I18n ? window.I18n.t('modal_task.custom_project_empty') : 'Please enter a new folder/project name.';
           submitTaskBtn.disabled = false;
-          submitTaskBtn.innerHTML = '<span>Kirim ke Tim Agen</span>';
+          submitTaskBtn.innerHTML = `<span>${txtSubmitBtn}</span>`;
           return;
         }
         project = customVal;
@@ -283,7 +313,16 @@ document.addEventListener('DOMContentLoaded', () => {
           taskAlert.style.color = '#166534';
           taskAlert.style.padding = '10px 14px';
           taskAlert.style.display = 'block';
-          taskAlert.innerHTML = `<b>${data.task_id}</b> [${data.project || 'Proyek'}] berhasil diteruskan ke <b>${data.target_agent}</b>.`;
+
+          if (window.I18n) {
+            taskAlert.innerHTML = window.I18n.t('modal_task.success_msg', {
+              task_id: data.task_id,
+              project: data.project || 'Project',
+              target_agent: data.target_agent
+            });
+          } else {
+            taskAlert.innerHTML = `<b>${data.task_id}</b> [${data.project || 'Project'}] successfully dispatched to <b>${data.target_agent}</b>.`;
+          }
 
           document.getElementById('taskInstruction').value = '';
           if (customProjectInput) customProjectInput.value = '';
@@ -292,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             taskModal.classList.remove('active');
             submitTaskBtn.disabled = false;
-            submitTaskBtn.innerHTML = '<span>Kirim ke Tim Agen</span>';
+            submitTaskBtn.innerHTML = `<span>${txtSubmitBtn}</span>`;
           }, 1400);
         } else {
           taskAlert.className = 'neo-box-sm';
@@ -300,15 +339,15 @@ document.addEventListener('DOMContentLoaded', () => {
           taskAlert.style.color = '#991B1B';
           taskAlert.style.padding = '10px 14px';
           taskAlert.style.display = 'block';
-          taskAlert.textContent = data.detail || data.error || 'Gagal menerbitkan tugas.';
+          taskAlert.textContent = data.detail || data.error || (window.I18n ? window.I18n.t('modal_task.failed_msg') : 'Failed to dispatch task.');
           submitTaskBtn.disabled = false;
-          submitTaskBtn.innerHTML = '<span>Kirim ke Tim Agen</span>';
+          submitTaskBtn.innerHTML = `<span>${txtSubmitBtn}</span>`;
         }
       } catch (err) {
         taskAlert.style.display = 'block';
-        taskAlert.textContent = 'Gagal menghubungi server.';
+        taskAlert.textContent = window.I18n ? window.I18n.t('modal_task.failed_msg') : 'Failed to connect to server.';
         submitTaskBtn.disabled = false;
-        submitTaskBtn.innerHTML = '<span>Kirim ke Tim Agen</span>';
+        submitTaskBtn.innerHTML = `<span>${txtSubmitBtn}</span>`;
       }
     });
   }
@@ -330,10 +369,11 @@ document.addEventListener('DOMContentLoaded', () => {
     detailTaskStatus.className = `neo-badge ${statusClass}`;
     detailTaskStatus.textContent = status.toUpperCase();
 
+    // Sesuai aturan: user input & detail tugas TIDAK DIUBAH (tetap teks asli)
     detailTaskTitle.textContent = task.title || 'Untitled Task';
     detailTaskAssignee.textContent = (task.assignee || 'AGENT').toUpperCase();
     detailTaskDir.textContent = task.target_dir ? task.target_dir.replace('/home/bay', '~') : '~/infobay';
-    detailTaskDesc.textContent = task.description || 'Tidak ada deskripsi.';
+    detailTaskDesc.textContent = task.description || (window.I18n ? window.I18n.t('modal_detail.no_desc') : 'No description provided.');
 
     // Skills
     if (Array.isArray(task.skills_required) && task.skills_required.length > 0) {
@@ -375,9 +415,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Timestamps
-    const formatTime = (ts) => ts ? new Date(ts).toLocaleString('id-ID') : '-';
-    detailCreatedAt.textContent = `Dibuat: ${formatTime(task.created_at || task.started_at)}`;
-    detailCompletedAt.textContent = `Selesai: ${formatTime(task.completed_at)}`;
+    const isId = (window.I18n && window.I18n.getLanguage() === 'id');
+    const locale = isId ? 'id-ID' : 'en-US';
+    const formatTime = (ts) => ts ? new Date(ts).toLocaleString(locale) : '-';
+
+    if (window.I18n) {
+      detailCreatedAt.textContent = window.I18n.t('modal_detail.created_at', { time: formatTime(task.created_at || task.started_at) });
+      detailCompletedAt.textContent = window.I18n.t('modal_detail.completed_at', { time: formatTime(task.completed_at) });
+    } else {
+      detailCreatedAt.textContent = `Created: ${formatTime(task.created_at || task.started_at)}`;
+      detailCompletedAt.textContent = `Completed: ${formatTime(task.completed_at)}`;
+    }
 
     taskDetailModal.classList.add('active');
     if (window.lucide) window.lucide.createIcons();
@@ -405,7 +453,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 8. Logout Action
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
-      if (confirm('Yakin ingin logout dari BayOffice?')) {
+      const confirmMsg = window.I18n ? window.I18n.t('actions.logout_confirm') : 'Are you sure you want to log out from BayOffice?';
+      if (confirm(confirmMsg)) {
         await fetch('/api/auth/logout', { method: 'POST' });
         window.location.href = '/login';
       }
@@ -420,11 +469,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (theme === 'dark') {
       document.body.classList.add('dark-mode');
       if (darkModeIcon) darkModeIcon.innerHTML = '<i data-lucide="sun"></i>';
-      if (darkModeToggle) darkModeToggle.title = 'Beralih ke Mode Terang';
+      if (darkModeToggle) {
+        darkModeToggle.title = window.I18n ? window.I18n.t('actions.theme_light') : 'Switch to Light Mode';
+      }
     } else {
       document.body.classList.remove('dark-mode');
       if (darkModeIcon) darkModeIcon.innerHTML = '<i data-lucide="moon"></i>';
-      if (darkModeToggle) darkModeToggle.title = 'Beralih ke Mode Gelap';
+      if (darkModeToggle) {
+        darkModeToggle.title = window.I18n ? window.I18n.t('actions.theme_dark') : 'Switch to Dark Mode';
+      }
     }
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
@@ -444,7 +497,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 10. Fullscreen Canvas Handler (Mobile Landscape Lock)
+  // 10. Language Toggle Handler (EN / ID)
+  if (langToggle && window.I18n) {
+    langToggle.addEventListener('click', () => {
+      window.I18n.toggleLanguage();
+    });
+  }
+
+  window.addEventListener('bayoffice_language_changed', () => {
+    // Re-render kanban
+    kanban.render();
+    // Re-load projects options in selects
+    loadProjects();
+    // Re-render agent cards
+    if (window.latestAgentsData) {
+      updateAgentCards(window.latestAgentsData);
+    }
+    // Update header metrics
+    if (window.latestSystemData) {
+      updateMetrics(window.latestSystemData);
+    }
+    // Update theme toggle tooltip
+    const isDark = document.body.classList.contains('dark-mode');
+    applyTheme(isDark ? 'dark' : 'light');
+    // Update engine description
+    if (taskEngineSelect && engineDesc) {
+      engineDesc.innerHTML = taskEngineSelect.value === '9router'
+        ? (window.I18n ? window.I18n.t('modal_task.engine_9router_desc') : '')
+        : (window.I18n ? window.I18n.t('modal_task.engine_agy_desc') : '');
+    }
+    // Re-create icons
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  });
+
+  // 11. Fullscreen Canvas Handler (Mobile Landscape Lock)
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const canvasContainer = document.getElementById('canvasContainer');
   const canvasOverlayControls = document.getElementById('canvasOverlayControls');
@@ -455,7 +543,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (canvasContainer && canvasContainer.requestFullscreen) {
         try {
           await canvasContainer.requestFullscreen();
-          // Kunci orientasi ke landscape jika dibuka di perangkat HP/mobile
           if (screen.orientation && typeof screen.orientation.lock === 'function') {
             try {
               await screen.orientation.lock('landscape');
@@ -495,9 +582,11 @@ document.addEventListener('DOMContentLoaded', () => {
       try { screen.orientation.unlock(); } catch (e) {}
     }
     if (fullscreenBtn) {
+      const exitTxt = window.I18n ? window.I18n.t('canvas.exit_fullscreen') : 'Exit Fullscreen';
+      const fsTxt = window.I18n ? window.I18n.t('canvas.fullscreen') : 'Fullscreen';
       fullscreenBtn.innerHTML = isFs 
-        ? '<i data-lucide="minimize-2" class="lucide-sm"></i> <span>Exit Fullscreen</span>' 
-        : '<i data-lucide="maximize-2" class="lucide-sm"></i> <span>Fullscreen</span>';
+        ? `<i data-lucide="minimize-2" class="lucide-sm"></i> <span>${exitTxt}</span>` 
+        : `<i data-lucide="maximize-2" class="lucide-sm"></i> <span>${fsTxt}</span>`;
     }
     if (canvasOverlayControls) {
       canvasOverlayControls.style.display = isFs ? 'flex' : 'none';
@@ -507,15 +596,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 11. Task Engine Selector Listener
+  // 12. Task Engine Selector Listener
   const taskEngineSelect = document.getElementById('taskEngine');
   const engineDesc = document.getElementById('engineDesc');
   if (taskEngineSelect && engineDesc) {
     taskEngineSelect.addEventListener('change', () => {
       if (taskEngineSelect.value === '9router') {
-        engineDesc.innerHTML = '<b>9Router:</b> Virtual Squad (Luhut, Jokowi, Prabowo, Gibran) ditenagai proxy 9Router di server 146 (Zero kuota agy, respon cepat).';
+        engineDesc.innerHTML = window.I18n ? window.I18n.t('modal_task.engine_9router_desc') : '<b>9Router:</b> Virtual Squad...';
       } else {
-        engineDesc.innerHTML = '<b>Antigravity:</b> Sesi Tmux interaktif Google Antigravity (Luhut, Jokowi, Prabowo, Gibran).';
+        engineDesc.innerHTML = window.I18n ? window.I18n.t('modal_task.engine_agy_desc') : '<b>Antigravity:</b> Sesi Tmux...';
       }
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
