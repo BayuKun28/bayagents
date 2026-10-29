@@ -324,7 +324,10 @@ def create_schedule(schedule_in: Dict[str, Any]) -> Dict[str, Any]:
             return {"success": False, "error": "run_at wajib diisi untuk tipe 'once'"}
         try:
             dt = datetime.fromisoformat(run_at.replace("Z", "+00:00"))
-            if dt <= _get_local_now():
+            now_local = _get_local_now()
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=now_local.tzinfo)
+            if dt <= now_local:
                 return {"success": False, "error": "run_at harus berupa waktu di masa depan"}
         except Exception as e:
             return {"success": False, "error": f"Format run_at tidak valid (gunakan ISO 8601): {e}"}

@@ -884,6 +884,8 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   .btn-theme,
   .btn-lang,
   .btn-task,
+  .btn-logs,
+  .btn-schedules,
   .btn-logout {
     padding: 5px 7px;
   }
@@ -912,6 +914,8 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   }
 
   .btn-theme,
+  .btn-logs,
+  .btn-schedules,
   .btn-logout {
     min-width: 30px;
     padding: 5px 6px;
@@ -966,6 +970,8 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   .btn-theme,
   .btn-lang,
   .btn-task,
+  .btn-logs,
+  .btn-schedules,
   .btn-logout {
     padding: 4px 5px;
     min-width: 26px;
@@ -1291,4 +1297,64 @@ body.dark-mode #statActiveTasks {
 body.dark-mode #statDoneTasks {
   background: #062E1E !important;
   color: #86EFAC !important;
+}
+
+/* Schedule Task Items & Presets */
+.schedule-card {
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.schedule-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+}
+
+.schedule-card.paused {
+  opacity: 0.75;
+  border-style: dashed;
+}
+
+.sched-preset-btn {
+  background: #F1F5F9;
+  border: 1px solid var(--border-color);
+  color: #334155;
+  cursor: pointer;
+  border-radius: 4px;
+  box-shadow: 1px 1px 0px var(--shadow-color);
+  font-family: inherit;
+  transition: all 0.1s ease;
+}
+
+.sched-preset-btn:hover {
+  background: var(--yellow);
+  color: #1A1A1A;
+}
+
+body.dark-mode .sched-preset-btn {
+  background: #1E293B;
+  color: #94A3B8;
+  border-color: #333F50;
+}
+
+body.dark-mode .sched-preset-btn:hover {
+  background: #38BDF8;
+  color: #0F172A;
+}
+
+body.dark-mode #statActiveSchedules {
+  background: #062E1E !important;
+  color: #86EFAC !important;
+}
+
+body.dark-mode #statNextRunSched {
+  background: #172554 !important;
+  color: #93C5FD !important;
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261029_03">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261029_04">
 </head>
 <body style="padding-bottom: 60px;">
 
@@ -63,6 +63,12 @@
         <button id="openLogsBtn" class="neo-btn neo-btn-secondary topbar-btn btn-logs" data-i18n-title="actions.logs_title" title="Live Agent Terminal Logs">
           <i data-lucide="terminal" class="lucide-sm"></i>
           <span class="btn-label-desktop" data-i18n="actions.logs">Logs</span>
+        </button>
+
+        <!-- Scheduled Tasks & Automation Modal Trigger -->
+        <button id="openSchedulesBtn" class="neo-btn neo-btn-secondary topbar-btn btn-schedules" data-i18n-title="actions.schedules_title" title="Scheduled Tasks & Automation">
+          <i data-lucide="clock" class="lucide-sm"></i>
+          <span class="btn-label-desktop" data-i18n="actions.schedules">Schedules</span>
         </button>
 
         <!-- Language Toggle Button (EN / ID) -->
@@ -185,6 +191,10 @@
 
           <!-- Insights & Export Buttons -->
           <div style="display: flex; gap: 6px; align-items: center;">
+            <button id="kanbanSchedulesBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.schedules_title" title="Manage Scheduled Tasks & Automation">
+              <i data-lucide="clock" class="lucide-sm"></i>
+              <span data-i18n="kanban.schedules_btn">Schedules</span>
+            </button>
             <button id="openAnalyticsBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.insights_title" title="View Sprint Metrics & Analytics">
               <i data-lucide="bar-chart-2" class="lucide-sm"></i>
               <span data-i18n="kanban.insights_btn">Insights</span>
@@ -626,12 +636,151 @@
     </div>
   </div>
 
+  <!-- SCHEDULED TASKS & AUTOMATION MODAL -->
+  <div id="schedulesModal" class="modal-overlay">
+    <div class="neo-box modal-content" style="max-width: 840px; width: 95%; max-height: 90vh; padding: 22px; display: flex; flex-direction: column;">
+      
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i data-lucide="clock" class="lucide-lg" style="color: #2563EB;"></i>
+          <div>
+            <h3 style="font-weight: 800; font-size: 1.15rem; margin: 0;" data-i18n="schedules.modal_title">Scheduled Tasks & Automation</h3>
+            <p style="font-size: 0.75rem; color: #64748B; margin: 0;" data-i18n="schedules.modal_subtitle">Cron schedules, recurring intervals, and automated background jobs</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="schedulerWorkerBadge" class="neo-badge badge-done" style="font-size: 0.7rem;" data-i18n="schedules.worker_active">SCHEDULER RUNNING</span>
+          <button id="closeSchedulesModalBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.85rem;" data-i18n-title="modal_detail.close_title" title="Close">
+            <i data-lucide="x" class="lucide-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Metric Summary Grid Cards -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+        <div class="neo-box-sm" style="padding: 10px; text-align: center;">
+          <span style="font-size: 0.7rem; color: #64748B; font-weight: 700; text-transform: uppercase;" data-i18n="schedules.total">Total Schedules</span>
+          <div id="statTotalSchedules" style="font-size: 1.35rem; font-weight: 800; margin-top: 2px;">0</div>
+        </div>
+        <div class="neo-box-sm" style="padding: 10px; text-align: center; background: #DCFCE7;">
+          <span style="font-size: 0.7rem; color: #166534; font-weight: 700; text-transform: uppercase;" data-i18n="schedules.active">Active Jobs</span>
+          <div id="statActiveSchedules" style="font-size: 1.35rem; font-weight: 800; color: #166534; margin-top: 2px;">0</div>
+        </div>
+        <div class="neo-box-sm" style="padding: 10px; text-align: center; background: #EFF6FF;">
+          <span style="font-size: 0.7rem; color: #1E40AF; font-weight: 700; text-transform: uppercase;" data-i18n="schedules.next_run">Next Run</span>
+          <div id="statNextRunSched" style="font-size: 0.95rem; font-weight: 800; color: #1E40AF; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+        </div>
+      </div>
+
+      <!-- Action Bar: Add New Schedule Trigger & Refresh -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px;">
+        <button id="toggleNewScheduleBtn" class="neo-btn neo-btn-primary" style="padding: 7px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="plus-circle" class="lucide-sm"></i>
+          <span id="toggleNewScheduleText" data-i18n="schedules.new_schedule_btn">+ New Schedule</span>
+        </button>
+        <button id="refreshSchedulesBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="refresh-cw" class="lucide-sm"></i>
+          <span class="btn-label-desktop">Refresh</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Form: Create New Schedule -->
+      <div id="newScheduleFormContainer" class="neo-box-sm" style="display: none; padding: 16px; margin-bottom: 16px; background: var(--bg-main);">
+        <h4 style="font-weight: 800; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;" data-i18n="schedules.form_title">
+          <i data-lucide="calendar-plus" class="lucide-sm"></i>
+          <span>Create Scheduled Task</span>
+        </h4>
+        <form id="newScheduleForm" style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;" data-i18n="schedules.title_label">Schedule Title</label>
+            <input type="text" id="schedTitle" required class="neo-box-sm" placeholder="e.g. Daily PostgreSQL Backup & Health Audit" data-i18n-placeholder="schedules.title_placeholder" style="width: 100%; padding: 8px 12px; font-size: 0.88rem; outline: none; font-family: inherit;">
+          </div>
+          <div>
+            <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;" data-i18n="schedules.instruction_label">Prompt / Instruction for Agents</label>
+            <textarea id="schedInstruction" rows="3" required class="neo-box-sm" placeholder="e.g. Run database backup script and verify PostgreSQL integrity..." data-i18n-placeholder="schedules.instruction_placeholder" style="width: 100%; padding: 8px 12px; font-size: 0.88rem; resize: vertical; outline: none; font-family: inherit;"></textarea>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+            <div>
+              <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;" data-i18n="schedules.project_label">Target Project</label>
+              <select id="schedProject" class="neo-box-sm" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; outline: none; font-family: inherit;">
+                <option value="bayoffice">BayOffice Virtual Workspace</option>
+                <option value="infobay">Infobay Portfolio & Admin</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;" data-i18n="schedules.category_label">Agent Category</label>
+              <select id="schedCategory" class="neo-box-sm" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; outline: none; font-family: inherit;">
+                <option value="ops">DevOps & System (LUHUT)</option>
+                <option value="backend">Backend Engineer (JOKOWI)</option>
+                <option value="frontend">Frontend Engineer (PRABOWO)</option>
+                <option value="fullstack">Fullstack Squad (LUHUT)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;" data-i18n="schedules.engine_label">Execution Engine</label>
+              <select id="schedEngine" class="neo-box-sm" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; outline: none; font-family: inherit;">
+                <option value="agy">Antigravity (agy)</option>
+                <option value="9router">9Router (Free Proxy)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Schedule Type Selector -->
+          <div style="border-top: 1px dashed var(--border-color); padding-top: 10px;">
+            <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 6px;" data-i18n="schedules.type_label">Schedule Type</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+              <button type="button" class="neo-btn sched-type-btn neo-btn-primary" data-type="cron" style="padding: 5px 12px; font-size: 0.78rem;">Cron Expression</button>
+              <button type="button" class="neo-btn sched-type-btn neo-btn-secondary" data-type="interval" style="padding: 5px 12px; font-size: 0.78rem;">Interval (Minutes)</button>
+              <button type="button" class="neo-btn sched-type-btn neo-btn-secondary" data-type="once" style="padding: 5px 12px; font-size: 0.78rem;">One-off (Specific Time)</button>
+            </div>
+
+            <!-- Dynamic Sub-forms based on Type -->
+            <div id="cronTypeField">
+              <label style="display: block; font-weight: 700; font-size: 0.8rem; margin-bottom: 4px;" data-i18n="schedules.cron_expr_label">Cron Expression (minute hour dom month dow)</label>
+              <input type="text" id="schedCronExpr" value="0 2 * * *" class="neo-box-sm" placeholder="0 2 * * *" data-i18n-placeholder="schedules.cron_expr_placeholder" style="width: 100%; padding: 8px 12px; font-size: 0.88rem; outline: none; font-family: monospace;">
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                <span style="font-size: 0.72rem; color: #64748B; font-weight: 700;" data-i18n="schedules.cron_presets">Presets:</span>
+                <button type="button" class="neo-btn sched-preset-btn" data-cron="0 2 * * *" style="padding: 2px 7px; font-size: 0.7rem;">@daily (02:00)</button>
+                <button type="button" class="neo-btn sched-preset-btn" data-cron="0 * * * *" style="padding: 2px 7px; font-size: 0.7rem;">@hourly</button>
+                <button type="button" class="neo-btn sched-preset-btn" data-cron="*/15 * * * *" style="padding: 2px 7px; font-size: 0.7rem;">Every 15m</button>
+                <button type="button" class="neo-btn sched-preset-btn" data-cron="0 0 * * 1" style="padding: 2px 7px; font-size: 0.7rem;">@weekly (Mon)</button>
+              </div>
+            </div>
+
+            <div id="intervalTypeField" style="display: none;">
+              <label style="display: block; font-weight: 700; font-size: 0.8rem; margin-bottom: 4px;" data-i18n="schedules.interval_label">Repeat Every (Minutes)</label>
+              <input type="number" id="schedIntervalMin" min="1" max="10080" value="60" class="neo-box-sm" placeholder="60" style="width: 100%; padding: 8px 12px; font-size: 0.88rem; outline: none; font-family: inherit;">
+            </div>
+
+            <div id="onceTypeField" style="display: none;">
+              <label style="display: block; font-weight: 700; font-size: 0.8rem; margin-bottom: 4px;" data-i18n="schedules.run_at_label">Execute At (Date & Time)</label>
+              <input type="datetime-local" id="schedRunAt" class="neo-box-sm" style="width: 100%; padding: 8px 12px; font-size: 0.88rem; outline: none; font-family: inherit;">
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
+            <button type="button" id="cancelNewScheduleBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 14px; font-size: 0.82rem;" data-i18n="schedules.cancel_btn">Cancel</button>
+            <button type="submit" id="submitScheduleBtn" class="neo-btn neo-btn-primary" style="padding: 7px 16px; font-size: 0.82rem;" data-i18n="schedules.submit_btn">Save Scheduled Task</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Schedule Cards List Container (Scrollable) -->
+      <div id="schedulesListContainer" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; max-height: 440px; padding-right: 4px;">
+        <div style="text-align: center; padding: 30px; color: #94A3B8; font-weight: 700;">Loading scheduled tasks...</div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- SCRIPTS -->
   <script src="/static/js/lucide.min.js"></script>
-  <script src="/static/js/i18n.js?v=20261029_03"></script>
-  <script src="/static/js/sound-fx.js?v=20261029_03"></script>
-  <script src="/static/js/office-canvas.js?v=20261029_03"></script>
-  <script src="/static/js/kanban.js?v=20261029_03"></script>
-  <script src="/static/js/app.js?v=20261029_03"></script>
+  <script src="/static/js/i18n.js?v=20261029_04"></script>
+  <script src="/static/js/sound-fx.js?v=20261029_04"></script>
+  <script src="/static/js/office-canvas.js?v=20261029_04"></script>
+  <script src="/static/js/kanban.js?v=20261029_04"></script>
+  <script src="/static/js/app.js?v=20261029_04"></script>
 </body>
 </html>
