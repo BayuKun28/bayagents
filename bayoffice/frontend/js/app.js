@@ -181,6 +181,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const schedulesListContainer = document.getElementById('schedulesListContainer');
   let currentScheduleType = 'cron';
 
+  // Implementation Plans (HABIBIE) Modal DOM
+  const openPlansBtn = document.getElementById('openPlansBtn');
+  const kanbanPlansBtn = document.getElementById('kanbanPlansBtn');
+  const plansModal = document.getElementById('plansModal');
+  const closePlansModalBtn = document.getElementById('closePlansModalBtn');
+  const statPlansSummaryBadge = document.getElementById('statPlansSummaryBadge');
+  const toggleNewPlanBtn = document.getElementById('toggleNewPlanBtn');
+  const toggleNewPlanText = document.getElementById('toggleNewPlanText');
+  const refreshPlansBtn = document.getElementById('refreshPlansBtn');
+  const newPlanFormContainer = document.getElementById('newPlanFormContainer');
+  const newPlanForm = document.getElementById('newPlanForm');
+  const planIdeaInput = document.getElementById('planIdeaInput');
+  const planProjectSelect = document.getElementById('planProjectSelect');
+  const planEngineSelect = document.getElementById('planEngineSelect');
+  const cancelNewPlanBtn = document.getElementById('cancelNewPlanBtn');
+  const submitPlanBtn = document.getElementById('submitPlanBtn');
+  const submitPlanBtnText = document.getElementById('submitPlanBtnText');
+  const plansListContainer = document.getElementById('plansListContainer');
+  const planViewerHeader = document.getElementById('planViewerHeader');
+  const viewerPlanId = document.getElementById('viewerPlanId');
+  const viewerPlanProject = document.getElementById('viewerPlanProject');
+  const viewerPlanStatus = document.getElementById('viewerPlanStatus');
+  const viewerPlanTitle = document.getElementById('viewerPlanTitle');
+  const planViewerContent = document.getElementById('planViewerContent');
+  const dispatchPlanBtn = document.getElementById('dispatchPlanBtn');
+  const copyPlanBtn = document.getElementById('copyPlanBtn');
+  const deletePlanBtn = document.getElementById('deletePlanBtn');
+  let loadedPlans = [];
+  let currentSelectedPlan = null;
+
   // Render icons initially
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
@@ -1735,6 +1765,506 @@ document.addEventListener('DOMContentLoaded', () => {
   if (schedulesModal) {
     schedulesModal.addEventListener('click', (e) => {
       if (e.target === schedulesModal) closeSchedulesModal();
+    });
+  }
+
+  // ==========================================================
+  // 19. Implementation Plans (HABIBIE) Manager & Markdown Reader
+  // ==========================================================
+
+  function renderMarkdownToHtml(md) {
+    if (!md) return '';
+    let text = String(md);
+
+    // 1. Remove YAML frontmatter if present (e.g. --- ... ---)
+    text = text.replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]*/, '');
+
+    // 2. Escape HTML
+    text = escapeHtml(text);
+
+    // 3. Process Code blocks (```lang\n...```)
+    const codeBlocks = [];
+    text = text.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g, (match, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push(`<pre><code class="language-${lang}">${code.trim()}</code></pre>`);
+      return `@@CODE_BLOCK_${idx}@@`;
+    });
+
+    // 4. Process Inline code (`...`)
+    text = text.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    // 5. Process Headings
+    text = text.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+    text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+    // 6. Horizontal Rules (--- or ***)
+    text = text.replace(/^(?:---|\*\*\*|___)\s*$/gim, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:14px 0;">');
+
+    // 7. Blockquotes (> ...)
+    text = text.replace(/^>\s?(.*$)/gim, '<blockquote style="border-left:3px solid #8B5CF6; padding-left:10px; margin:8px 0; color:#64748B; font-style:italic;">$1</blockquote>');
+
+    // 8. Bold and Italic
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // 9. Task checkboxes
+    text = text.replace(/\[ \]/g, '<span style="font-family:monospace; margin-right:4px;">☐</span>');
+    text = text.replace(/\[x\]/gi, '<span style="font-family:monospace; margin-right:4px; color:#10B981;">☑</span>');
+
+    // 10. Process Lists (unordered and ordered)
+    const lines = text.split('\n');
+    let inUl = false;
+    let inOl = false;
+    const processedLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      const ulMatch = line.match(/^\s*[-*]\s+(.*)$/);
+      const olMatch = line.match(/^\s*\d+\.\s+(.*)$/);
+
+      if (ulMatch) {
+        if (inOl) { processedLines.push('</ol>'); inOl = false; }
+        if (!inUl) { processedLines.push('<ul>'); inUl = true; }
+        processedLines.push(`<li>${ulMatch[1]}</li>`);
+      } else if (olMatch) {
+        if (inUl) { processedLines.push('</ul>'); inUl = false; }
+        if (!inOl) { processedLines.push('<ol>'); inOl = true; }
+        processedLines.push(`<li>${olMatch[1]}</li>`);
+      } else {
+        if (inUl) { processedLines.push('</ul>'); inUl = false; }
+        if (inOl) { processedLines.push('</ol>'); inOl = false; }
+        processedLines.push(line);
+      }
+    }
+    if (inUl) processedLines.push('</ul>');
+    if (inOl) processedLines.push('</ol>');
+    text = processedLines.join('\n');
+
+    // 11. Paragraphs: convert double line breaks to br
+    text = text.replace(/\n\n+/g, '<br><br>');
+    text = text.replace(/\n/g, '<br>');
+
+    // Clean up excessive br around tags
+    text = text.replace(/(<\/(?:h[1-4]|ul|ol|pre|blockquote)>)<br>/gi, '$1');
+    text = text.replace(/<br>(<(?:h[1-4]|ul|ol|pre|blockquote))/gi, '$1');
+
+    // 12. Restore code blocks
+    text = text.replace(/@@CODE_BLOCK_(\d+)@@/g, (match, idx) => {
+      return codeBlocks[parseInt(idx, 10)] || '';
+    });
+
+    return `<div class="plan-markdown-body">${text}</div>`;
+  }
+
+  async function fetchPlans(showLoading = false) {
+    if (showLoading && plansListContainer) {
+      plansListContainer.innerHTML = `
+        <div style="text-align: center; padding: 30px; color: #94A3B8; font-weight: 700;">
+          <i data-lucide="loader" class="lucide-md" style="margin-bottom: 6px; animation: spin 1s linear infinite;"></i>
+          <div>Loading plans...</div>
+        </div>
+      `;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    try {
+      const res = await fetch('/api/plans');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      loadedPlans = data.plans || [];
+
+      // Update summary counter badge
+      if (statPlansSummaryBadge) {
+        const total = loadedPlans.length;
+        const dispatched = loadedPlans.filter(p => p.status === 'dispatched').length;
+        const drafts = total - dispatched;
+        statPlansSummaryBadge.textContent = window.I18n
+          ? `${window.I18n.t('plans.total_plans')}: ${total} • ${window.I18n.t('plans.draft_plans')}: ${drafts} • ${window.I18n.t('plans.dispatched_plans')}: ${dispatched}`
+          : `Total: ${total} • Drafts: ${drafts} • Dispatched: ${dispatched}`;
+      }
+
+      renderPlansList(loadedPlans);
+
+      // Auto-select active plan or default to first plan
+      if (loadedPlans.length > 0) {
+        const stillExists = currentSelectedPlan ? loadedPlans.find(p => p.id === currentSelectedPlan.id) : null;
+        if (stillExists) {
+          selectPlan(stillExists.id, false);
+        } else if (!currentSelectedPlan) {
+          selectPlan(loadedPlans[0].id, false);
+        }
+      } else {
+        currentSelectedPlan = null;
+        if (planViewerHeader) planViewerHeader.style.display = 'none';
+        if (planViewerContent) {
+          planViewerContent.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #64748B;">
+              <i data-lucide="compass" class="lucide-lg" style="margin-bottom: 8px; opacity: 0.5;"></i>
+              <p style="font-weight: 700; font-size: 0.9rem;">${window.I18n ? window.I18n.t('plans.no_plans') : 'No implementation plans found yet.'}</p>
+            </div>
+          `;
+          if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch plans:', err);
+      if (plansListContainer) {
+        plansListContainer.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: #DC2626; font-size: 0.85rem;">
+            Failed to load plans: ${escapeHtml(err.message)}
+          </div>
+        `;
+      }
+    }
+  }
+
+  function renderPlansList(plans) {
+    if (!plansListContainer) return;
+    if (!plans || plans.length === 0) {
+      plansListContainer.innerHTML = `
+        <div style="text-align: center; padding: 30px 10px; color: #94A3B8; font-size: 0.82rem;">
+          ${window.I18n ? window.I18n.t('plans.no_plans') : 'No implementation plans found yet. Click "+ New Plan" or type /plan in Telegram!'}
+        </div>
+      `;
+      return;
+    }
+
+    const locale = (window.I18n && window.I18n.currentLocale === 'id') ? 'id-ID' : 'en-US';
+    const formatTime = (ts) => ts ? new Date(ts).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' }) : '-';
+
+    let html = '';
+    plans.forEach(p => {
+      const isSelected = currentSelectedPlan && currentSelectedPlan.id === p.id;
+      const isDispatched = p.status === 'dispatched';
+      const statusClass = isDispatched ? 'badge-done' : 'badge-todo';
+      const statusText = isDispatched
+        ? (window.I18n ? window.I18n.t('plans.status_dispatched') : 'Dispatched')
+        : (window.I18n ? window.I18n.t('plans.status_draft') : 'Draft');
+
+      html += `
+        <div class="plan-card ${isSelected ? 'active' : ''}" data-id="${p.id}">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+            <span style="font-weight:800; font-size:0.75rem; color:#2563EB;">${escapeHtml(p.id)}</span>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span class="neo-badge" style="background:var(--bg-main); font-size:0.65rem;">${escapeHtml(p.project || 'general')}</span>
+              <span class="neo-badge ${statusClass}" style="font-size:0.65rem;">${statusText}</span>
+            </div>
+          </div>
+          <div style="font-weight:700; font-size:0.86rem; color:var(--text-color); line-height:1.25; margin-top:2px;">
+            ${escapeHtml(p.title || p.id)}
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:#64748B; margin-top:4px;">
+            <span>${escapeHtml(p.author || 'HABIBIE')}</span>
+            <span>${formatTime(p.created_at)}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    plansListContainer.innerHTML = html;
+
+    // Attach click listeners to cards
+    plansListContainer.querySelectorAll('.plan-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.getAttribute('data-id');
+        if (soundFx) soundFx.playClick();
+        selectPlan(id);
+      });
+    });
+  }
+
+  async function selectPlan(planId, playSound = true) {
+    if (!planId) return;
+
+    // Highlight card immediately in sidebar
+    if (plansListContainer) {
+      plansListContainer.querySelectorAll('.plan-card').forEach(card => {
+        if (card.getAttribute('data-id') === planId) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
+    }
+
+    try {
+      const res = await fetch(`/api/plans/${planId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const plan = data.plan || data;
+      if (!plan) return;
+
+      currentSelectedPlan = plan;
+
+      // Update Reader Header
+      if (planViewerHeader) planViewerHeader.style.display = 'flex';
+      if (viewerPlanId) viewerPlanId.textContent = plan.id;
+      if (viewerPlanProject) viewerPlanProject.textContent = plan.project || 'general';
+
+      const isDispatched = plan.status === 'dispatched';
+      if (viewerPlanStatus) {
+        viewerPlanStatus.className = 'neo-badge ' + (isDispatched ? 'badge-done' : 'badge-todo');
+        viewerPlanStatus.textContent = isDispatched
+          ? (window.I18n ? window.I18n.t('plans.status_dispatched') : 'Dispatched')
+          : (window.I18n ? window.I18n.t('plans.status_draft') : 'Draft');
+      }
+
+      if (viewerPlanTitle) {
+        viewerPlanTitle.textContent = plan.title || plan.id;
+      }
+
+      // Configure Action Buttons
+      if (dispatchPlanBtn) {
+        if (isDispatched) {
+          dispatchPlanBtn.disabled = true;
+          dispatchPlanBtn.innerHTML = `<i data-lucide="check" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.status_dispatched') : 'Dispatched'} (${escapeHtml(plan.dispatched_task_id || '')})</span>`;
+        } else {
+          dispatchPlanBtn.disabled = false;
+          dispatchPlanBtn.innerHTML = `<i data-lucide="send" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.dispatch_btn') : 'Dispatch to Kanban'}</span>`;
+        }
+      }
+
+      // Render Markdown Body
+      if (planViewerContent) {
+        planViewerContent.innerHTML = renderMarkdownToHtml(plan.content || '');
+      }
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    } catch (err) {
+      console.error('Failed to select plan:', err);
+      if (planViewerContent) {
+        planViewerContent.innerHTML = `
+          <div style="color: #DC2626; padding: 20px; font-weight: 700;">
+            Failed to load plan details: ${escapeHtml(err.message)}
+          </div>
+        `;
+      }
+    }
+  }
+
+  // Submit New Plan Form (HABIBIE AI Generation)
+  if (newPlanForm) {
+    newPlanForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const idea = planIdeaInput ? planIdeaInput.value.trim() : '';
+      const project = planProjectSelect ? planProjectSelect.value : 'infobay';
+      const engine = planEngineSelect ? planEngineSelect.value : '9router';
+
+      if (!idea) return;
+
+      if (submitPlanBtn) submitPlanBtn.disabled = true;
+      if (submitPlanBtnText) {
+        submitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generating') : 'HABIBIE is Drafting Plan...';
+      }
+      if (soundFx) soundFx.playClick();
+
+      try {
+        const res = await fetch('/api/plans/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idea, project, engine })
+        });
+        const resJson = await res.json();
+        if (res.ok && resJson.success) {
+          if (soundFx) soundFx.playSuccess();
+          newPlanForm.reset();
+          if (newPlanFormContainer) newPlanFormContainer.style.display = 'none';
+          if (toggleNewPlanText) {
+            toggleNewPlanText.textContent = window.I18n ? window.I18n.t('plans.new_plan_btn') : '+ New Plan';
+          }
+          await fetchPlans(false);
+          const newPlanId = (resJson.plan && resJson.plan.id) || resJson.id;
+          if (newPlanId) {
+            selectPlan(newPlanId);
+          }
+        } else {
+          alert(`Failed: ${resJson.error || resJson.detail || 'Unknown error'}`);
+        }
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+      } finally {
+        if (submitPlanBtn) submitPlanBtn.disabled = false;
+        if (submitPlanBtnText) {
+          submitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generate_btn') : 'Ask HABIBIE to Draft Plan';
+        }
+      }
+    });
+  }
+
+  // Toggle New Plan Form
+  if (toggleNewPlanBtn) {
+    toggleNewPlanBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      if (!newPlanFormContainer) return;
+      const isHidden = newPlanFormContainer.style.display === 'none';
+      newPlanFormContainer.style.display = isHidden ? 'block' : 'none';
+      if (toggleNewPlanText) {
+        toggleNewPlanText.textContent = isHidden
+          ? (window.I18n ? window.I18n.t('plans.hide_form_btn') : 'Close Form')
+          : (window.I18n ? window.I18n.t('plans.new_plan_btn') : '+ New Plan');
+      }
+      if (isHidden && planIdeaInput) {
+        planIdeaInput.focus();
+      }
+    });
+  }
+
+  if (cancelNewPlanBtn) {
+    cancelNewPlanBtn.addEventListener('click', () => {
+      if (newPlanFormContainer) newPlanFormContainer.style.display = 'none';
+      if (toggleNewPlanText) {
+        toggleNewPlanText.textContent = window.I18n ? window.I18n.t('plans.new_plan_btn') : '+ New Plan';
+      }
+    });
+  }
+
+  // Dispatch Plan to Kanban
+  if (dispatchPlanBtn) {
+    dispatchPlanBtn.addEventListener('click', async () => {
+      if (!currentSelectedPlan) return;
+      const confirmMsg = `Dispatch plan "${currentSelectedPlan.title || currentSelectedPlan.id}" to Kanban backlog?`;
+      if (!confirm(confirmMsg)) return;
+
+      dispatchPlanBtn.disabled = true;
+      const origHtml = dispatchPlanBtn.innerHTML;
+      dispatchPlanBtn.innerHTML = `<i data-lucide="loader" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.dispatching') : 'Dispatching...'}</span>`;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+      if (soundFx) soundFx.playClick();
+
+      try {
+        const res = await fetch(`/api/plans/${currentSelectedPlan.id}/dispatch`, {
+          method: 'POST'
+        });
+        const resJson = await res.json();
+        if (res.ok && resJson.success) {
+          if (soundFx) soundFx.playSuccess();
+          const taskNotice = window.I18n
+            ? window.I18n.t('plans.dispatched_notice', { taskId: resJson.task_id })
+            : `Plan dispatched to Kanban backlog as ${resJson.task_id}!`;
+          alert(taskNotice);
+          await fetchPlans(false);
+          selectPlan(currentSelectedPlan.id);
+        } else {
+          alert(`Failed: ${resJson.error || resJson.detail || 'Unknown error'}`);
+          dispatchPlanBtn.disabled = false;
+          dispatchPlanBtn.innerHTML = origHtml;
+          if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+        }
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+        dispatchPlanBtn.disabled = false;
+        dispatchPlanBtn.innerHTML = origHtml;
+        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+      }
+    });
+  }
+
+  // Copy Plan Content
+  if (copyPlanBtn) {
+    copyPlanBtn.addEventListener('click', async () => {
+      if (!currentSelectedPlan || !currentSelectedPlan.content) return;
+      try {
+        await navigator.clipboard.writeText(currentSelectedPlan.content);
+        if (soundFx) soundFx.playSuccess();
+        const copySpan = copyPlanBtn.querySelector('span');
+        const origText = copySpan ? copySpan.textContent : 'Copy';
+        if (copySpan) copySpan.textContent = window.I18n ? window.I18n.t('plans.copied') : 'Copied!';
+        setTimeout(() => {
+          if (copySpan) copySpan.textContent = origText;
+        }, 1800);
+      } catch (err) {
+        console.error('Copy failed:', err);
+      }
+    });
+  }
+
+  // Delete Plan
+  if (deletePlanBtn) {
+    deletePlanBtn.addEventListener('click', async () => {
+      if (!currentSelectedPlan) return;
+      const title = currentSelectedPlan.title || currentSelectedPlan.id;
+      const confirmMsg = window.I18n
+        ? window.I18n.t('plans.delete_confirm', { title })
+        : `Are you sure you want to delete plan "${title}"?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      deletePlanBtn.disabled = true;
+      if (soundFx) soundFx.playClick();
+
+      try {
+        const res = await fetch(`/api/plans/${currentSelectedPlan.id}`, { method: 'DELETE' });
+        const resJson = await res.json();
+        if (res.ok && resJson.success) {
+          if (soundFx) soundFx.playSuccess();
+          currentSelectedPlan = null;
+          if (planViewerHeader) planViewerHeader.style.display = 'none';
+          if (planViewerContent) {
+            planViewerContent.innerHTML = `
+              <div style="text-align: center; padding: 60px 20px; color: #64748B;">
+                <i data-lucide="compass" class="lucide-lg" style="margin-bottom: 8px; opacity: 0.5;"></i>
+                <p style="font-weight: 700; font-size: 0.9rem;">${window.I18n ? window.I18n.t('plans.select_hint') : 'Select a plan on the left to read architecture details'}</p>
+              </div>
+            `;
+            if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+          }
+          await fetchPlans(false);
+        } else {
+          alert(`Failed: ${resJson.error || resJson.detail || 'Unknown error'}`);
+        }
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+      } finally {
+        deletePlanBtn.disabled = false;
+      }
+    });
+  }
+
+  // Modal Open/Close handlers
+  function openPlansModal() {
+    if (!plansModal) return;
+    if (soundFx) soundFx.playClick();
+    plansModal.classList.add('active');
+    fetchPlans(true);
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  function closePlansModal() {
+    if (!plansModal) return;
+    plansModal.classList.remove('active');
+    if (newPlanFormContainer) newPlanFormContainer.style.display = 'none';
+  }
+
+  if (openPlansBtn) {
+    openPlansBtn.addEventListener('click', openPlansModal);
+  }
+
+  if (kanbanPlansBtn) {
+    kanbanPlansBtn.addEventListener('click', openPlansModal);
+  }
+
+  if (closePlansModalBtn) {
+    closePlansModalBtn.addEventListener('click', closePlansModal);
+  }
+
+  if (refreshPlansBtn) {
+    refreshPlansBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      fetchPlans(true);
+    });
+  }
+
+  if (plansModal) {
+    plansModal.addEventListener('click', (e) => {
+      if (e.target === plansModal) closePlansModal();
     });
   }
 

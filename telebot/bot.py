@@ -1,4 +1,6 @@
 import os
+import sys
+import re
 import shutil
 import subprocess
 import asyncio
@@ -28,6 +30,13 @@ BAYAGENTS_DIR = Path(os.getenv("BAYAGENTS_DIR", str(ROOT_BAYAGENTS)))
 WORKSPACE_DIR = Path(os.getenv("WORKSPACE_DIR", str(Path.home())))
 DATA_DIR = Path(os.getenv("DATA_DIR", str(BAYAGENTS_DIR / "data")))
 SCRIPTS_DIR = Path(os.getenv("SCRIPTS_DIR", str(BAYAGENTS_DIR / "scripts")))
+
+# Import plans_manager dari bayoffice/backend
+sys.path.append(str(ROOT_BAYAGENTS / "bayoffice" / "backend"))
+try:
+    import plans_manager
+except Exception as _e:
+    plans_manager = None
 
 # Cooldown alert watchdog (2 jam) agar tidak berulang kali spam
 ALERT_COOLDOWNS = {}
@@ -1065,8 +1074,31 @@ async def plan_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if reply.startswith("⚠️"):
             reply = await asyncio.to_thread(run_agy, plan_prompt, False)
 
+    # Simpan plan ke file lokal data/plans/ agar bisa dibaca di BayOffice
+    saved_info = ""
+    if plans_manager:
+        try:
+            p_title = ide[:50]
+            m_title = re.search(r"^#\s+(?:Implementation Plan:\s*)?(.+)$", reply, re.MULTILINE | re.IGNORECASE)
+            if m_title:
+                p_title = m_title.group(1).strip()
+            
+            proj = "infobay" if "infobay" in ide.lower() else "bayoffice"
+            saved = plans_manager.save_plan(
+                title=p_title,
+                content=reply,
+                project=proj,
+                author="HABIBIE",
+                status="Draft"
+            )
+            saved_id = saved.get("id")
+            saved_info = f"\n\n📄 *Dokumen Rencana:* `{saved_id}` (Tersimpan di `data/plans/` & siap dibaca di BayOffice)"
+        except Exception as e:
+            print(f"⚠️ Gagal menyimpan plan ke data/plans: {e}")
+
     reply_footer = (
-        f"\n\n💡 *Siap dieksekusi?* Kirim tugas ke tim agen dengan:\n"
+        f"{saved_info}\n\n"
+        f"💡 *Siap dieksekusi?* Kirim tugas ke tim agen dengan:\n"
         f"`/task <proyek> {ide[:60]}`"
     )
     full_reply = f"📐 *[IMPLEMENTATION PLAN - HABIBIE]*\n\n{reply}{reply_footer}"

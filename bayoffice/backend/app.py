@@ -127,6 +127,11 @@ class ScheduleUpdateRequest(BaseModel):
 class ScheduleToggleRequest(BaseModel):
     enabled: Optional[bool] = None
 
+class PlanGenerateRequest(BaseModel):
+    idea: str
+    project: Optional[str] = "bayoffice"
+    engine: Optional[str] = "9router"
+
 # ==========================================================
 # PAGE ROUTES
 # ==========================================================
@@ -357,6 +362,46 @@ async def api_run_schedule_now(schedule_id: str, user: str = Depends(require_aut
     result = service.execute_schedule_now(schedule_id)
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Gagal mengeksekusi task terjadwal"))
+    return result
+
+# ==========================================================
+# IMPLEMENTATION PLANS API (HABIBIE)
+# ==========================================================
+@app.get("/api/plans")
+async def api_get_plans(user: str = Depends(require_auth)):
+    """Mengambil daftar seluruh implementation plan."""
+    return {"plans": service.get_plans_list()}
+
+@app.get("/api/plans/{plan_id}")
+async def api_get_plan_detail(plan_id: str, user: str = Depends(require_auth)):
+    """Mengambil satu dokumen implementation plan."""
+    item = service.get_plan_detail(plan_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Plan tidak ditemukan")
+    return item
+
+@app.post("/api/plans/generate")
+async def api_generate_plan(data: PlanGenerateRequest, user: str = Depends(require_auth)):
+    """Meminta HABIBIE merancang implementation plan baru."""
+    result = service.generate_plan_ai(data.idea, data.project or "bayoffice", data.engine or "9router")
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal merancang plan"))
+    return result
+
+@app.post("/api/plans/{plan_id}/dispatch")
+async def api_dispatch_plan(plan_id: str, user: str = Depends(require_auth)):
+    """Mendelegasikan implementation plan ke tim agen di Kanban."""
+    result = service.dispatch_plan_to_kanban(plan_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal meneruskan plan ke Kanban"))
+    return result
+
+@app.delete("/api/plans/{plan_id}")
+async def api_delete_plan(plan_id: str, user: str = Depends(require_auth)):
+    """Menghapus dokumen implementation plan."""
+    result = service.delete_plan_by_id(plan_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal menghapus plan"))
     return result
 
 # ==========================================================

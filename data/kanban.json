@@ -2098,6 +2098,21 @@
         "realtime_sse_sync": "VALID - Event stream /api/stream mendeteksi pembaruan jadwal real-time via updated_at mtime.",
         "automated_tests": "VALID - 10/10 unit test (test_scheduler.py & test_api_endpoints.py) lulus tanpa kegagalan."
       }
+    },
+    {
+      "id": "TASK-OPS-12",
+      "project": "bayoffice",
+      "assignee": "LUHUT",
+      "title": "[Jadwal: SCHED-01] Lakukan verifikasi integritas database postgresql dan cek dis...",
+      "skills_required": [
+        "Lead Orchestrator",
+        "Task Delegation"
+      ],
+      "description": "[Jadwal: SCHED-01] Lakukan verifikasi integritas database postgresql dan cek disk space",
+      "status": "To-Do",
+      "target_dir": "/home/bay/bayoffice",
+      "created_at": "2026-10-30T02:00:00.267770+07:00",
+      "notes": "Tugas baru via BayOffice Web UI [Proyek: bayoffice | General]. Target pelaksana: LUHUT."
     }
   ]
 }

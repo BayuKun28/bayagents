@@ -886,6 +886,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   .btn-task,
   .btn-logs,
   .btn-schedules,
+  .btn-plans,
   .btn-logout {
     padding: 5px 7px;
   }
@@ -916,6 +917,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   .btn-theme,
   .btn-logs,
   .btn-schedules,
+  .btn-plans,
   .btn-logout {
     min-width: 30px;
     padding: 5px 6px;
@@ -972,6 +974,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   .btn-task,
   .btn-logs,
   .btn-schedules,
+  .btn-plans,
   .btn-logout {
     padding: 4px 5px;
     min-width: 26px;
@@ -1357,4 +1360,107 @@ body.dark-mode #statActiveSchedules {
 body.dark-mode #statNextRunSched {
   background: #172554 !important;
   color: #93C5FD !important;
+}
+
+/* Implementation Plans (HABIBIE) */
+.plan-card {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 2px 2px 0px var(--shadow-color);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plan-card:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--shadow-color);
+}
+
+.plan-card.active {
+  background: var(--yellow) !important;
+  border-color: #1A1A1A;
+}
+
+body.dark-mode .plan-card.active {
+  background: #38BDF8 !important;
+  color: #0F172A !important;
+}
+
+.plan-markdown-body h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 10px 0 8px 0;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+.plan-markdown-body h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 14px 0 6px 0;
+  color: #2563EB;
+}
+
+body.dark-mode .plan-markdown-body h2 {
+  color: #60A5FA;
+}
+
+.plan-markdown-body h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 10px 0 4px 0;
+}
+
+.plan-markdown-body ul, .plan-markdown-body ol {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+
+.plan-markdown-body li {
+  margin-bottom: 4px;
+  font-size: 0.88rem;
+}
+
+.plan-markdown-body pre {
+  background: #1E293B;
+  color: #F8FAFC;
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  border: 2px solid var(--border-color);
+  margin: 8px 0;
+}
+
+.plan-markdown-body code {
+  background: #F1F5F9;
+  color: #0F172A;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: monospace;
+}
+
+body.dark-mode .plan-markdown-body code {
+  background: #334155;
+  color: #E2E8F0;
+}
+
+@media screen and (max-width: 768px) {
+  .plans-split-layout {
+    flex-direction: column !important;
+    max-height: none !important;
+  }
+  #plansSidebar {
+    width: 100% !important;
+    max-height: 180px !important;
+    border-right: none !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    padding-bottom: 10px !important;
+  }
 }

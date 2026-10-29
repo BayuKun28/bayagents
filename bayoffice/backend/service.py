@@ -679,3 +679,29 @@ def execute_schedule_now(schedule_id: str) -> Dict[str, Any]:
     """Menjalankan task terjadwal secara manual."""
     return scheduler.execute_schedule_now(schedule_id, dispatch_fn=dispatch_task_from_web)
 
+
+# ==========================================================
+# IMPLEMENTATION PLANS (HABIBIE)
+# ==========================================================
+import plans_manager
+
+def get_plans_list() -> List[Dict[str, Any]]:
+    """Mengambil daftar seluruh implementation plan yang dirancang HABIBIE."""
+    return plans_manager.list_plans()
+
+def get_plan_detail(plan_id: str) -> Optional[Dict[str, Any]]:
+    """Mengambil detail dokumen implementation plan."""
+    return plans_manager.get_plan(plan_id)
+
+def generate_plan_ai(idea: str, project: str = "bayoffice", engine: str = "9router") -> Dict[str, Any]:
+    """Meminta HABIBIE menyusun implementation plan teknis."""
+    return plans_manager.generate_plan_ai(idea=idea, project=project, engine=engine)
+
+def dispatch_plan_to_kanban(plan_id: str) -> Dict[str, Any]:
+    """Mendelegasikan implementation plan ke tim agen di Kanban."""
+    return plans_manager.dispatch_plan_to_kanban(plan_id, dispatch_fn=dispatch_task_from_web)
+
+def delete_plan_by_id(plan_id: str) -> Dict[str, Any]:
+    """Menghapus dokumen implementation plan."""
+    return plans_manager.delete_plan(plan_id)
+
