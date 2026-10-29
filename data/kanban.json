@@ -444,7 +444,7 @@
       "qa_certification": {
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
-        "profile_data_sync": "VALID - defaultProfileData experience period adalah 2019 \u2014 Sekarang.",
+        "profile_data_sync": "VALID - defaultProfileData experience period adalah 2019 — Sekarang.",
         "vite_dist_build": "VALID - File dist frontend lokal berhasil dikompilasi ulang dengan integritas penuh."
       }
     },
@@ -595,10 +595,10 @@
         "Mobile Responsiveness",
         "taste-skill"
       ],
-      "description": "1. Hero.jsx: Tampilkan hero_headline, hero_subheadline, role_badge, dan stat counters secara dinamis dari API. Tambahkan tombol Neubrutalism [\ud83d\udcc4 DOWNLOAD RESUME / CV] jika cv_file_url tersedia. 2. Marquee.jsx: Konsumsi marquee_items dinamis dari API. 3. Buat komponen publik Testimonials.jsx bergaya Neubrutalism (quote cards tebal, offset shadow, rating stars). 4. Buat komponen publik Certifications.jsx (grid kredensial dengan badge organisasi terverifikasi). 5. Integrasikan ke Home.jsx. Verifikasi npm run build sukses 100%. Serahkan ke GIBRAN untuk QA-Review.",
+      "description": "1. Hero.jsx: Tampilkan hero_headline, hero_subheadline, role_badge, dan stat counters secara dinamis dari API. Tambahkan tombol Neubrutalism [📄 DOWNLOAD RESUME / CV] jika cv_file_url tersedia. 2. Marquee.jsx: Konsumsi marquee_items dinamis dari API. 3. Buat komponen publik Testimonials.jsx bergaya Neubrutalism (quote cards tebal, offset shadow, rating stars). 4. Buat komponen publik Certifications.jsx (grid kredensial dengan badge organisasi terverifikasi). 5. Integrasikan ke Home.jsx. Verifikasi npm run build sukses 100%. Serahkan ke GIBRAN untuk QA-Review.",
       "status": "Done",
       "target_dir": "/home/bay/infobay/frontend",
-      "notes": "Selesai dikerjakan oleh PRABOWO: 1. Hero.jsx telah mengonsumsi hero_headline, hero_subheadline, role_badge, serta stat counters dinamis dari API dengan tombol Neubrutalism [\ud83d\udcc4 DOWNLOAD RESUME / CV] saat cv_file_url tersedia. 2. Marquee.jsx mengonsumsi marquee_items dinamis dengan rotasi ikon dan loop tak berujung. 3. Komponen publik Testimonials.jsx dibuat dengan gaya Neubrutalism autentik (quote cards tebal, offset shadow, star rating 1-5, badge verified partner). 4. Komponen publik Certifications.jsx dibuat dengan grid kredensial, badge verifikasi, metadata tanggal terbit/berlaku, credential ID, dan tombol verifikasi tautan. 5. PublicPortfolio.jsx & Navbar.jsx diintegrasikan penuh. npm run build sukses 100% (2642 modul). Siap diaudit oleh GIBRAN.",
+      "notes": "Selesai dikerjakan oleh PRABOWO: 1. Hero.jsx telah mengonsumsi hero_headline, hero_subheadline, role_badge, serta stat counters dinamis dari API dengan tombol Neubrutalism [📄 DOWNLOAD RESUME / CV] saat cv_file_url tersedia. 2. Marquee.jsx mengonsumsi marquee_items dinamis dengan rotasi ikon dan loop tak berujung. 3. Komponen publik Testimonials.jsx dibuat dengan gaya Neubrutalism autentik (quote cards tebal, offset shadow, star rating 1-5, badge verified partner). 4. Komponen publik Certifications.jsx dibuat dengan grid kredensial, badge verifikasi, metadata tanggal terbit/berlaku, credential ID, dan tombol verifikasi tautan. 5. PublicPortfolio.jsx & Navbar.jsx diintegrasikan penuh. npm run build sukses 100% (2642 modul). Siap diaudit oleh GIBRAN.",
       "qa_review": "PASSED - Verifikasi integrasi portofolio publik: 1) Hero.jsx mengonsumsi headline, subheadline, role badge, dan counters dinamis secara graceful, serta tombol Neubrutalism 'DOWNLOAD RESUME / CV' muncul dengan tautan berkas CV valid. 2) Marquee.jsx mengonsumsi marquee_items dinamis dengan fallback dan animasi ticker berulang mulus. 3) Testimonials.jsx bergaya Neubrutalism (border 4px solid, hard shadow no-blur, rating bintang, dan badge verified partner). 4) Certifications.jsx menyajikan grid kredensial dengan badge organisasi resmi, metadata tanggal terbit/masa berlaku, ID, dan tautan verifikasi. 5) Navbar.jsx & PublicPortfolio.jsx terhubung lengkap. 6) Build produksi Vite 'npm run build' lulus 100% (2642 modul, 0 eror, 27.65s)."
     },
     {
@@ -1297,24 +1297,24 @@
     {
       "id": "TASK-BE-11",
       "assignee": "JOKOWI",
-      "title": "Pembaruan Rentang Waktu Pengalaman PT GLOBAL INTERMEDIA NUSANTARA ke 2019 \u2014 Sekarang pada Seeder & Seeding Ulang DB",
+      "title": "Pembaruan Rentang Waktu Pengalaman PT GLOBAL INTERMEDIA NUSANTARA ke 2019 — Sekarang pada Seeder & Seeding Ulang DB",
       "skills_required": [
         "Laravel 13",
         "Database Seeder",
         "PostgreSQL 17",
         "JSON Data"
       ],
-      "description": "Mengubah rentang waktu (period) pekerjaan PT GLOBAL INTERMEDIA NUSANTARA dari 2019 \u2014 2026 menjadi 2019 \u2014 Sekarang di profile_seed_data.json, memastikan semua data seeder (avatar Google Drive dan 4 icon SVG lokal layanan) tetap utuh, dan menjalankan seeding ulang database PostgreSQL 17 di backend lokal.",
+      "description": "Mengubah rentang waktu (period) pekerjaan PT GLOBAL INTERMEDIA NUSANTARA dari 2019 — 2026 menjadi 2019 — Sekarang di profile_seed_data.json, memastikan semua data seeder (avatar Google Drive dan 4 icon SVG lokal layanan) tetap utuh, dan menjalankan seeding ulang database PostgreSQL 17 di backend lokal.",
       "status": "Done",
       "target_dir": "/home/bay/infobay/backend",
-      "notes": "profile_seed_data.json diperbarui untuk PT GLOBAL INTERMEDIA NUSANTARA (period: 2019 \u2014 Sekarang). Database PostgreSQL 17 berhasil di-seed ulang dan terverifikasi via GET /api/v1/experiences (period: '2019 \u2014 Sekarang'), dengan avatar (/images/avatar.png) dan 4 icon SVG layanan tetap 100% utuh. 36/36 feature tests PHPUnit PASSED (269 assertions). Diserahkan ke GIBRAN untuk audit QA.",
-      "qa_review": "PASSED - Verifikasi pembaruan rentang waktu pengalaman & seeder database: 1) profile_seed_data.json memuat period PT GLOBAL INTERMEDIA NUSANTARA sebagai '2019 \u2014 Sekarang'. 2) Seeding ulang database PostgreSQL 17 via php artisan db:seed sukses dan endpoint /api/v1/experiences menyajikan '2019 \u2014 Sekarang' dengan status HTTP 200 OK. 3) Seluruh aset avatar (/images/avatar.png) dan 4 icon SVG layanan (/icons/services/...) tetap utuh dan tersaji normal. 4) Automated test suite backend lulus 100% (36/36 tests passed, 269 assertions).",
+      "notes": "profile_seed_data.json diperbarui untuk PT GLOBAL INTERMEDIA NUSANTARA (period: 2019 — Sekarang). Database PostgreSQL 17 berhasil di-seed ulang dan terverifikasi via GET /api/v1/experiences (period: '2019 — Sekarang'), dengan avatar (/images/avatar.png) dan 4 icon SVG layanan tetap 100% utuh. 36/36 feature tests PHPUnit PASSED (269 assertions). Diserahkan ke GIBRAN untuk audit QA.",
+      "qa_review": "PASSED - Verifikasi pembaruan rentang waktu pengalaman & seeder database: 1) profile_seed_data.json memuat period PT GLOBAL INTERMEDIA NUSANTARA sebagai '2019 — Sekarang'. 2) Seeding ulang database PostgreSQL 17 via php artisan db:seed sukses dan endpoint /api/v1/experiences menyajikan '2019 — Sekarang' dengan status HTTP 200 OK. 3) Seluruh aset avatar (/images/avatar.png) dan 4 icon SVG layanan (/icons/services/...) tetap utuh dan tersaji normal. 4) Automated test suite backend lulus 100% (36/36 tests passed, 269 assertions).",
       "qa_certification": {
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
-        "experience_period_update": "VALID - PT GLOBAL INTERMEDIA NUSANTARA period berhasil diubah ke 2019 \u2014 Sekarang di profile_seed_data.json.",
+        "experience_period_update": "VALID - PT GLOBAL INTERMEDIA NUSANTARA period berhasil diubah ke 2019 — Sekarang di profile_seed_data.json.",
         "avatar_and_svg_integrity": "VALID - Foto profil Google Drive (/images/avatar.png) dan 4 icon SVG lokal layanan tetap 100% terjaga utuh.",
-        "local_db_seed": "VALID - GET /api/v1/experiences lokal mengembalikan period 2019 \u2014 Sekarang."
+        "local_db_seed": "VALID - GET /api/v1/experiences lokal mengembalikan period 2019 — Sekarang."
       }
     },
     {
@@ -1326,15 +1326,15 @@
         "ProfileData",
         "Vite Build"
       ],
-      "description": "Menyelaraskan data statis di frontend/src/data/profileData.js agar rentang waktu PT GLOBAL INTERMEDIA NUSANTARA menjadi 2019 \u2014 Sekarang, serta melakukan build ulang produksi frontend.",
+      "description": "Menyelaraskan data statis di frontend/src/data/profileData.js agar rentang waktu PT GLOBAL INTERMEDIA NUSANTARA menjadi 2019 — Sekarang, serta melakukan build ulang produksi frontend.",
       "status": "Done",
       "target_dir": "/home/bay/infobay/frontend",
-      "notes": "profileData.js terverifikasi selaras (period: 2019 \u2014 Sekarang), dan build produksi frontend sukses dihasilkan (dist/assets/index-DqzAQebO.js). Diserahkan ke GIBRAN untuk audit QA.",
-      "qa_review": "PASSED - Verifikasi frontend fallback profileData & rebuild produksi: 1) profileData.js line 109 memuat '2019 \u2014 Sekarang' untuk PT GLOBAL INTERMEDIA NUSANTARA. 2) Kompilasi Vite build berhasil menghasilkan bundle dist/assets/index-DqzAQebO.js yang terbukti memuat teks '2019 \u2014 Sekarang'. 3) Server port 9000 melayani dokumen HTML termutakhir dengan status HTTP 200 OK tanpa error.",
+      "notes": "profileData.js terverifikasi selaras (period: 2019 — Sekarang), dan build produksi frontend sukses dihasilkan (dist/assets/index-DqzAQebO.js). Diserahkan ke GIBRAN untuk audit QA.",
+      "qa_review": "PASSED - Verifikasi frontend fallback profileData & rebuild produksi: 1) profileData.js line 109 memuat '2019 — Sekarang' untuk PT GLOBAL INTERMEDIA NUSANTARA. 2) Kompilasi Vite build berhasil menghasilkan bundle dist/assets/index-DqzAQebO.js yang terbukti memuat teks '2019 — Sekarang'. 3) Server port 9000 melayani dokumen HTML termutakhir dengan status HTTP 200 OK tanpa error.",
       "qa_certification": {
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
-        "profile_data_sync": "VALID - defaultProfileData experience period adalah 2019 \u2014 Sekarang.",
+        "profile_data_sync": "VALID - defaultProfileData experience period adalah 2019 — Sekarang.",
         "vite_dist_build": "VALID - File dist frontend lokal berhasil dikompilasi ulang dengan integritas penuh."
       }
     },
@@ -1355,7 +1355,7 @@
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
         "git_sync": "VALID - Commit 7d4e396 sinkron penuh di host 146.",
-        "remote_deployment": "VALID - Nginx port 9000 merespons data pengalaman 2019 \u2014 Sekarang, avatar Google Drive, dan icon SVG layanan 200 OK."
+        "remote_deployment": "VALID - Nginx port 9000 merespons data pengalaman 2019 — Sekarang, avatar Google Drive, dan icon SVG layanan 200 OK."
       }
     },
     {
@@ -1367,14 +1367,14 @@
         "API Verification",
         "Dual Server Consistency"
       ],
-      "description": "Mengaudit API dan antarmuka web di kedua server (145 & 146) untuk memastikan rentang waktu pekerjaan PT GLOBAL INTERMEDIA NUSANTARA tampil sebagai 2019 \u2014 Sekarang, foto profil Google Drive dan 4 icon SVG layanan tetap utuh dan aktif.",
+      "description": "Mengaudit API dan antarmuka web di kedua server (145 & 146) untuk memastikan rentang waktu pekerjaan PT GLOBAL INTERMEDIA NUSANTARA tampil sebagai 2019 — Sekarang, foto profil Google Drive dan 4 icon SVG layanan tetap utuh dan aktif.",
       "status": "Done",
       "target_dir": "/home/bay/infobay",
-      "notes": "Audit QA paritas konten seeder selesai 100%. Rentang waktu pekerjaan PT GLOBAL INTERMEDIA NUSANTARA terverifikasi 2019 \u2014 Sekarang, foto profil Google Drive dan 4 icon SVG layanan tetap utuh dan aktif di kedua server.",
+      "notes": "Audit QA paritas konten seeder selesai 100%. Rentang waktu pekerjaan PT GLOBAL INTERMEDIA NUSANTARA terverifikasi 2019 — Sekarang, foto profil Google Drive dan 4 icon SVG layanan tetap utuh dan aktif di kedua server.",
       "qa_certification": {
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
-        "experience_period": "PASSED - PT GLOBAL INTERMEDIA NUSANTARA period terverifikasi 2019 \u2014 Sekarang di DB dan UI kedua server.",
+        "experience_period": "PASSED - PT GLOBAL INTERMEDIA NUSANTARA period terverifikasi 2019 — Sekarang di DB dan UI kedua server.",
         "asset_preservation": "PASSED - Avatar Google Drive (/images/avatar.png) dan 4 icon SVG lokal layanan tetap 100% terjaga utuh tanpa reverted.",
         "dual_server_parity": "PASSED - Host 145 dan Host 146 memiliki data DB dan file aset identik.",
         "sprint_completion": "100% - Seluruh 69 tugas dalam kanban.json berstatus Done."
@@ -1459,7 +1459,7 @@
       "status": "Done",
       "target_dir": "/home/bay/infobay/backend",
       "notes": "profile_seed_data.json & DatabaseSeeder.php berhasil menambahkan UNIVERSITAS TERBUKA (period: Sampai Sekarang). Seeding ulang database PostgreSQL 17 sukses dan terverifikasi via GET /api/v1/educations (count: 2). Diserahkan ke GIBRAN untuk audit QA.",
-      "qa_review": "PASSED - Verifikasi penambahan riwayat pendidikan UNIVERSITAS TERBUKA: 1) profile_seed_data.json memuat 2 entri pendidikan (SMKN 02 KARANGANYAR 2016 \u2014 2019 dan UNIVERSITAS TERBUKA Sampai Sekarang). 2) DatabaseSeeder.php sukses mengeksekusi re-seeding di PostgreSQL 17 lokal. 3) Endpoint /api/v1/educations menyajikan 2 data riil dengan status HTTP 200 OK. 4) Data seeder lainnya (avatar /images/avatar.png, 4 icon layanan SVG, pengalaman 2019 \u2014 Sekarang) tetap utuh tanpa regresi. 5) Seluruh 36 test suite PHPUnit lulus 100% (269 assertions, 0 errors).",
+      "qa_review": "PASSED - Verifikasi penambahan riwayat pendidikan UNIVERSITAS TERBUKA: 1) profile_seed_data.json memuat 2 entri pendidikan (SMKN 02 KARANGANYAR 2016 — 2019 dan UNIVERSITAS TERBUKA Sampai Sekarang). 2) DatabaseSeeder.php sukses mengeksekusi re-seeding di PostgreSQL 17 lokal. 3) Endpoint /api/v1/educations menyajikan 2 data riil dengan status HTTP 200 OK. 4) Data seeder lainnya (avatar /images/avatar.png, 4 icon layanan SVG, pengalaman 2019 — Sekarang) tetap utuh tanpa regresi. 5) Seluruh 36 test suite PHPUnit lulus 100% (269 assertions, 0 errors).",
       "qa_certification": {
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
@@ -1806,7 +1806,7 @@
       "created_at": "2026-10-26T13:24:35.720468+07:00",
       "started_at": "2026-10-26T13:24:35.720468+07:00",
       "completed_at": "2026-10-26T13:37:30+07:00",
-      "notes": "1. Dark Mode: Ditambahkan CSS custom properties & neubrutalism dark theme di style.css, toggle button di navbar, serta localStorage persistence. 2. Fullscreen Canvas: Ditambahkan tombol '\u26f6 Fullscreen' dan overlay exit button yang memanfaatkan HTML5 Fullscreen API dengan aspect-ratio preservation. 3. Image & Sprite Loader: Canvas engine dimodernisasi dengan Image Preloader (loadAssets), menambahkan 3 aset SVG retro (arcade cabinet di lounge, poster neon di dinding, server rack di ruang devops) dengan fallback rendering yang aman.",
+      "notes": "1. Dark Mode: Ditambahkan CSS custom properties & neubrutalism dark theme di style.css, toggle button di navbar, serta localStorage persistence. 2. Fullscreen Canvas: Ditambahkan tombol '⛶ Fullscreen' dan overlay exit button yang memanfaatkan HTML5 Fullscreen API dengan aspect-ratio preservation. 3. Image & Sprite Loader: Canvas engine dimodernisasi dengan Image Preloader (loadAssets), menambahkan 3 aset SVG retro (arcade cabinet di lounge, poster neon di dinding, server rack di ruang devops) dengan fallback rendering yang aman.",
       "qa_certification": {
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
@@ -1833,7 +1833,7 @@
       "created_at": "2026-10-26T13:41:00+07:00",
       "started_at": "2026-10-26T13:41:00+07:00",
       "completed_at": "2026-10-26T13:52:30+07:00",
-      "notes": "1. Sanitasi Bubble: Menghapus tmux capture-pane mentah dari service.py, menggantinya dengan pesan persona sesuai ruangan dan status. 2. Avatar Agen: Mengunduh 4 foto profil asli ke frontend/assets/avatars/ dan me-render avatar melingkar di canvas serta kartu info agen. 3. Multi-Room Canvas: Mengembangkan tata letak 4 zona (Ruang Pimpinan, Engineering Bay, Game Room, Kantin) dengan pergerakan lerp (posisi target dinamis sesuai working, standby, sleeping). 4. Dynamic Projects: Memuat /api/projects ke filter Kanban dan Modal Tugas, serta opsi '\u2795 Proyek Baru' dengan auto-register ke projects.json. 5. Cache-Busting: Menambahkan cache query param (?v=...) dan No-Cache HTTP Middleware serta favicon.ico handler.",
+      "notes": "1. Sanitasi Bubble: Menghapus tmux capture-pane mentah dari service.py, menggantinya dengan pesan persona sesuai ruangan dan status. 2. Avatar Agen: Mengunduh 4 foto profil asli ke frontend/assets/avatars/ dan me-render avatar melingkar di canvas serta kartu info agen. 3. Multi-Room Canvas: Mengembangkan tata letak 4 zona (Ruang Pimpinan, Engineering Bay, Game Room, Kantin) dengan pergerakan lerp (posisi target dinamis sesuai working, standby, sleeping). 4. Dynamic Projects: Memuat /api/projects ke filter Kanban dan Modal Tugas, serta opsi '➕ Proyek Baru' dengan auto-register ke projects.json. 5. Cache-Busting: Menambahkan cache query param (?v=...) dan No-Cache HTTP Middleware serta favicon.ico handler.",
       "qa_certification": {
         "status": "PASSED_100%",
         "auditor": "GIBRAN",
@@ -2046,6 +2046,31 @@
         "ui_neubrutalism_taste": "VALID - Dropdown & range input neo-box-sm dengan kontras tinggi, webkit calendar picker indicator terbalik filter invert(1) di dark mode, layout rapi.",
         "i18n_dwibahasa": "VALID - Seluruh preset terdaftar di dictionary id & en (i18n.js) dan sinkron dinamis saat toggle bahasa.",
         "security_and_performance": "VALID - Sanitasi XSS kanban task card terjaga via escapeHtml, manipulasi DOM murni tanpa memory leak, HTTP 200 OK di uvicorn."
+      }
+    },
+    {
+      "id": "TASK-FE-21",
+      "project": "bayoffice",
+      "assignee": "PRABOWO",
+      "title": "Pada mode mobile bayoffice topbar karena ada tambahan toogle bahasa jadi tombol ...",
+      "skills_required": [
+        "Frontend Engineering",
+        "UI/UX"
+      ],
+      "description": "Pada mode mobile bayoffice topbar karena ada tambahan toogle bahasa jadi tombol logout seperti offsite dari kontainer coba buat agar lebih dinamis dengan semua perangkat",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/bayoffice/frontend",
+      "created_at": "2026-10-29T17:37:16.396846+07:00",
+      "notes": "Responsivitas topbar mobile bayoffice selesai dirombak oleh PRABOWO: 1. Grid header diperbarui dengan minmax(0, 1fr) auto dan html/body overflow-x hidden. 2. Action controls dinamis & fluid: di layar <480px tombol Task menjadi icon-only (+) dan toggle bahasa menampilkan kode ringkas (EN/ID) sehingga tombol logout tetap berada rapi di dalam container tanpa terpotong/offsite di semua perangkat (termasuk 320px). 3. Pada mode desktop dan tablet, label dan icon tetap lengkap sesuai desain awal. 4. CSS version cache buster dinaikkan ke v=20261029_02. Siap diaudit QA oleh GIBRAN.",
+      "completed_at": "2026-10-29T17:49:55.305945+07:00",
+      "qa_review": "PASSED - Audit responsivitas topbar mobile bayoffice lulus 100%. Problem tombol logout terpotong/offsite di mode mobile telah terselesaikan sepenuhnya di seluruh breakpoint viewport (desktop >=900px, tablet/mobile <900px, compact <480px, ultra-compact <350px). Action buttons beradaptasi dinamis: icon-only pada layar sempit, toggle bahasa ringkas (EN/ID), body/html overflow-x terkontrol rapi tanpa clipping, kontras Neubrutalism terjaga konsisten di light & dark mode, cache buster v=20261029_02 terverifikasi aktif.",
+      "qa_certification": {
+        "status": "PASSED_100%",
+        "auditor": "GIBRAN",
+        "responsiveness_mobile": "VALID - Layout topbar grid fleksibel minmax(0, 1fr) auto, tombol aksi beradaptasi dinamis di 320px-480px, tombol logout 100% aman di dalam kontainer tanpa offsite/clipping.",
+        "ui_neubrutalism_taste": "VALID - Style neo-btn, active press state, box-shadow 2px/3px, dan estetika Neubrutalism konsisten sempurna di light mode maupun dark mode.",
+        "i18n_dwibahasa": "VALID - Toggle bahasa berfungsi dinamis (EN/ID badge code pada mobile <480px, full icon+label pada desktop), title & accessibility aria-label terjaga.",
+        "security_and_performance": "VALID - Murni implementasi CSS fluid & performan tanpa runtime overhead, sanitasi layout overflow-x: hidden aman, HTTP 200 OK di uvicorn port 8888."
       }
     }
   ]

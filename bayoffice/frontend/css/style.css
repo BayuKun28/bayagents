@@ -23,6 +23,11 @@
   padding: 0;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-main);
@@ -447,6 +452,8 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   z-index: 100;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
   transition: background-color 0.2s ease, border-color 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .topbar-container {
@@ -455,7 +462,9 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 24px;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 1. Brand Section (Kiri) */
@@ -463,6 +472,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .topbar-logo-box {
@@ -475,17 +485,20 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   align-items: center;
   justify-content: center;
   color: var(--border-color);
+  flex-shrink: 0;
 }
 
 .brand-text-block {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .brand-title-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .topbar-title {
@@ -494,6 +507,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   line-height: 1.15;
   letter-spacing: -0.4px;
   color: var(--border-color);
+  white-space: nowrap;
 }
 
 .brand-badge-version {
@@ -505,6 +519,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   color: #334155;
   border: 1px solid #CBD5E1;
   font-family: var(--font-mono);
+  flex-shrink: 0;
 }
 
 .topbar-subtitle {
@@ -515,6 +530,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   align-items: center;
   gap: 6px;
   margin-top: 1px;
+  white-space: nowrap;
 }
 
 .homelab-dot {
@@ -523,6 +539,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   border-radius: 50%;
   background: #10B981;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 /* 2. Command Center Telemetry Hub (Tengah Desktop) */
@@ -530,6 +547,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-width: 0;
 }
 
 /* Text Switcher for Desktop vs Mobile */
@@ -550,6 +568,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   align-items: center;
   gap: 14px;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .telemetry-badge {
@@ -559,12 +578,14 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   border-radius: 20px !important;
   letter-spacing: 0.3px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .telemetry-divider {
   width: 1px;
   height: 16px;
   background: #CBD5E1;
+  flex-shrink: 0;
 }
 
 .telemetry-chip {
@@ -575,6 +596,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   font-weight: 700;
   font-family: var(--font-mono);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chip-label {
@@ -593,7 +615,8 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .topbar-btn {
@@ -601,10 +624,25 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   font-size: 0.85rem;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  transition: all 0.1s ease;
+  box-sizing: border-box;
+}
+
+.topbar-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0px var(--shadow-color);
+}
+
+.topbar-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0px 0px 0px var(--shadow-color);
 }
 
 .btn-theme {
@@ -612,7 +650,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 }
 
 .btn-lang {
-  padding: 8px 10px;
+  padding: 8px 12px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -634,7 +672,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 }
 
 /* ==========================================================
-   DEDICATED MOBILE TOPBAR (VIEWPORT < 900px)
+   RESPONSIVE TOPBAR (TABLET & MOBILE APP BAR: < 900px)
    ========================================================== */
 @media screen and (max-width: 899px) {
   .topbar-header {
@@ -643,9 +681,11 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 
   .topbar-container {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px 10px;
+    gap: 8px 8px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   /* Baris 1 Kiri: Brand */
@@ -653,20 +693,33 @@ body.dark-mode ::-webkit-scrollbar-thumb {
     grid-column: 1;
     order: 1;
     gap: 8px;
+    min-width: 0;
   }
 
   .topbar-logo-box {
     padding: 5px 7px;
     border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .brand-text-block {
+    min-width: 0;
+  }
+
+  .brand-title-row {
+    gap: 6px;
+    min-width: 0;
   }
 
   .topbar-title {
     font-size: 1.05rem;
+    white-space: nowrap;
   }
 
   .brand-badge-version {
     font-size: 0.58rem;
-    padding: 0 4px;
+    padding: 1px 4px;
+    flex-shrink: 0;
   }
 
   .topbar-subtitle {
@@ -677,16 +730,48 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   .topbar-actions {
     grid-column: 2;
     order: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     gap: 6px;
+    flex-shrink: 0;
   }
 
   .topbar-btn {
-    padding: 6px 9px;
+    padding: 6px 8px;
     font-size: 0.78rem;
+    border-width: 2px;
+    box-shadow: 2px 2px 0px var(--shadow-color);
+    border-radius: 6px;
+    min-height: 32px;
+    box-sizing: border-box;
+  }
+
+  .btn-theme,
+  .btn-lang,
+  .btn-task,
+  .btn-logout {
+    padding: 6px 8px;
+  }
+
+  .btn-theme,
+  .btn-logout {
+    min-width: 32px;
+    justify-content: center;
+  }
+
+  .topbar-btn:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px var(--shadow-color);
+  }
+
+  .topbar-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px var(--shadow-color);
   }
 
   .btn-label-desktop {
-    display: none;
+    display: none !important;
   }
 
   .btn-label-mobile {
@@ -708,7 +793,9 @@ body.dark-mode ::-webkit-scrollbar-thumb {
     width: 100%;
     display: flex;
     justify-content: stretch;
-    padding: 2px 0 2px 0;
+    padding: 2px 0;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .telemetry-deck {
@@ -720,8 +807,10 @@ body.dark-mode ::-webkit-scrollbar-thumb {
     justify-content: space-between !important;
     align-items: center !important;
     box-shadow: 2px 2px 0px var(--shadow-color);
+    border-width: 2px;
     box-sizing: border-box;
     white-space: nowrap;
+    overflow-x: auto;
   }
 
   .telemetry-badge {
@@ -750,6 +839,158 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   }
 }
 
+/* ==========================================================
+   COMPACT MOBILE (< 480px) - DYNAMIC RESPONSIVE FIT
+   ========================================================== */
+@media screen and (max-width: 480px) {
+  .topbar-header {
+    padding: 6px 10px;
+  }
+
+  .topbar-container {
+    gap: 6px 6px;
+  }
+
+  .topbar-brand {
+    gap: 6px;
+  }
+
+  .topbar-logo-box {
+    padding: 4px 6px;
+  }
+
+  .topbar-logo-box .lucide-lg {
+    width: 1.15em;
+    height: 1.15em;
+  }
+
+  .topbar-title {
+    font-size: 0.95rem;
+  }
+
+  .topbar-actions {
+    gap: 5px;
+  }
+
+  .topbar-btn {
+    padding: 5px 7px;
+    min-height: 30px;
+    min-width: 30px;
+    font-size: 0.74rem;
+    border-width: 2px;
+    box-shadow: 2px 2px 0px var(--shadow-color);
+  }
+
+  .btn-theme,
+  .btn-lang,
+  .btn-task,
+  .btn-logout {
+    padding: 5px 7px;
+  }
+
+  /* Compact Action Icons: hide text on task button so container never overflows */
+  .btn-label-mobile {
+    display: none !important;
+  }
+
+  .btn-task {
+    min-width: 30px;
+    justify-content: center;
+  }
+
+  /* Language toggle in compact mode: badge code text only */
+  .lang-icon {
+    display: none !important;
+  }
+
+  .btn-lang {
+    min-width: 28px;
+    padding: 4px 6px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    justify-content: center;
+  }
+
+  .btn-theme,
+  .btn-logout {
+    min-width: 30px;
+    padding: 5px 6px;
+    justify-content: center;
+  }
+
+  .topbar-btn .lucide-sm {
+    width: 0.9em;
+    height: 0.9em;
+  }
+}
+
+/* ==========================================================
+   ULTRA-COMPACT SCREENS (< 350px, e.g. Galaxy Fold Folded / iPhone SE 1)
+   ========================================================== */
+@media screen and (max-width: 350px) {
+  .topbar-header {
+    padding: 5px 6px;
+  }
+
+  .topbar-container {
+    gap: 4px 4px;
+  }
+
+  .topbar-brand {
+    gap: 4px;
+  }
+
+  .topbar-logo-box {
+    padding: 3px 5px;
+  }
+
+  .topbar-title {
+    font-size: 0.86rem;
+  }
+
+  .brand-badge-version {
+    display: none;
+  }
+
+  .topbar-actions {
+    gap: 3px;
+  }
+
+  .topbar-btn {
+    padding: 4px 5px;
+    min-width: 26px;
+    min-height: 26px;
+    font-size: 0.68rem;
+  }
+
+  .btn-theme,
+  .btn-lang,
+  .btn-task,
+  .btn-logout {
+    padding: 4px 5px;
+    min-width: 26px;
+    min-height: 26px;
+  }
+
+  .btn-lang {
+    font-size: 0.65rem;
+  }
+
+  .telemetry-deck {
+    padding: 3px 6px !important;
+    gap: 4px;
+  }
+
+  .telemetry-badge {
+    font-size: 0.58rem !important;
+    padding: 2px 4px !important;
+  }
+
+  .telemetry-chip {
+    font-size: 0.62rem;
+  }
+}
+
 /* Dark Mode Overrides for Topbar */
 body.dark-mode .brand-badge-version {
   background: #1E293B;
@@ -773,6 +1014,17 @@ body.dark-mode .chip-val-ram {
 
 body.dark-mode .chip-val-cpu {
   color: #FBBF24 !important;
+}
+
+body.dark-mode .topbar-btn {
+  border-color: #333F50 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+}
+
+@media screen and (max-width: 899px) {
+  body.dark-mode .topbar-btn {
+    box-shadow: 2px 2px 0px #000000 !important;
+  }
 }
 
 /* ==========================================================
