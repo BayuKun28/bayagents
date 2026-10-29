@@ -99,6 +99,14 @@ if [ "$MODE" = "all" ] || [ "$MODE" = "--deps-only" ]; then
     # Set hak akses kepemilikan folder instalasi
     chown -R "$BAY_USER:$BAY_GROUP" "$BAYAGENTS_DIR"
     chmod +x "$BAYAGENTS_DIR/scripts/"*.sh 2>/dev/null || true
+
+    # Sinkronisasi path proyek internal bayoffice di data/projects.json
+    if [ -f "$BAYAGENTS_DIR/data/projects.json" ]; then
+        sed -i "s|\"root_dir\": \".*/bayoffice\"|\"root_dir\": \"$BAYAGENTS_DIR/bayoffice\"|" "$BAYAGENTS_DIR/data/projects.json"
+        sed -i "s|\"frontend_dir\": \".*/bayoffice/frontend\"|\"frontend_dir\": \"$BAYAGENTS_DIR/bayoffice/frontend\"|" "$BAYAGENTS_DIR/data/projects.json"
+        sed -i "s|\"backend_dir\": \".*/bayoffice/backend\"|\"backend_dir\": \"$BAYAGENTS_DIR/bayoffice/backend\"|" "$BAYAGENTS_DIR/data/projects.json"
+        sed -i "s|\"rules_file\": \".*/bayoffice/README.md\"|\"rules_file\": \"$BAYAGENTS_DIR/bayoffice/README.md\"|" "$BAYAGENTS_DIR/data/projects.json"
+    fi
 fi
 
 # ==============================================================================
@@ -197,3 +205,16 @@ echo "• User Pelaksana      : $BAY_USER"
 echo "• Status Layanan Telebot  : $(systemctl is-active agy-telebot.service 2>/dev/null || echo 'inactive')"
 echo "• Status Layanan BayOffice: $(systemctl is-active bayoffice.service 2>/dev/null || echo 'inactive')"
 echo "=========================================================="
+
+if grep -q "YOUR_TELEGRAM_BOT_TOKEN" "$ENV_FILE" 2>/dev/null; then
+    echo ""
+    echo "⚠️  [PENTING] Token Telegram belum diatur di .env:"
+    echo "    Buka '$ENV_FILE' dan masukkan TELEGRAM_BOT_TOKEN serta TELEGRAM_ALLOWED_USER_ID Anda."
+fi
+
+if ! command -v agy &>/dev/null && [ ! -f "/home/$BAY_USER/.local/bin/agy" ] && [ ! -f "/home/$BAY_USER/.gemini/antigravity-cli/bin/agy" ]; then
+    echo ""
+    echo "💡 [INFO] Binary 'agy' (Antigravity CLI) belum terpasang di PATH pengguna."
+    echo "   Dashboard BayOffice & Bot tetap berjalan normal. Pasang Antigravity CLI jika"
+    echo "   ingin menjalankan fitur orkestrasi 4 agen AI di terminal/tmux."
+fi

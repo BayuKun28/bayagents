@@ -1697,6 +1697,12 @@ async def post_init(application: Application):
     await check_and_notify_boot(application.bot, ALLOWED_USER_ID)
 
 def main():
+    if not BOT_TOKEN or "YOUR_TELEGRAM_BOT_TOKEN" in BOT_TOKEN:
+        print("⚠️ [Telebot] TELEGRAM_BOT_TOKEN belum diatur di .env! Silakan isi token Telegram Anda.")
+        print("ℹ️ Layanan telebot masuk mode standby menunggu konfigurasi token...")
+        while True:
+            time.sleep(60)
+
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler(["engine", "mode"], engine_cmd))
@@ -1762,6 +1768,10 @@ def main():
     app.run_polling()
 
 async def send_cli_message(message: str):
+    if not BOT_TOKEN or "YOUR_TELEGRAM_BOT_TOKEN" in BOT_TOKEN:
+        print(f"📢 [Local Notification (Telegram Token Not Configured)]: {message}")
+        return
+
     bot = Bot(token=BOT_TOKEN)
     try:
         await bot.send_message(chat_id=ALLOWED_USER_ID, text=message, parse_mode="Markdown")
