@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 56" width="48" height="56">
+  <!-- Ground Shadow -->
+  <ellipse cx="24" cy="52" rx="16" ry="4" fill="#000000" opacity="0.3"/>
+
+  <!-- Terracotta Ceramic Pot -->
+  <path d="M 12 36 L 36 36 L 33 50 L 15 50 Z" fill="#C2410C" stroke="#9A3412" stroke-width="1.5"/>
+  <rect x="10" y="33" width="28" height="5" rx="1.5" fill="#EA580C" stroke="#9A3412" stroke-width="1.2"/>
+  <!-- Soil -->
+  <ellipse cx="24" cy="34" rx="12" ry="2" fill="#451A03"/>
+
+  <!-- Monstera Leaves & Stems -->
+  <!-- Stem Center -->
+  <path d="M 24 34 Q 24 20 22 10" fill="none" stroke="#15803D" stroke-width="2" stroke-linecap="round"/>
+  <!-- Stem Left -->
+  <path d="M 24 34 Q 16 26 8 18" fill="none" stroke="#166534" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Stem Right -->
+  <path d="M 24 34 Q 32 24 40 16" fill="none" stroke="#166534" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Main Top Leaf -->
+  <path d="M 22 10 C 15 6, 12 18, 22 24 C 32 18, 29 6, 22 10 Z" fill="#22C55E" stroke="#166534" stroke-width="1.2"/>
+  <!-- Leaf cutouts -->
+  <line x1="17" y1="14" x2="21" y2="16" stroke="#15803D" stroke-width="1"/>
+  <line x1="27" y1="14" x2="23" y2="16" stroke="#15803D" stroke-width="1"/>
+
+  <!-- Left Leaf -->
+  <path d="M 8 18 C 2 15, 2 28, 12 30 C 18 24, 15 15, 8 18 Z" fill="#16A34A" stroke="#14532D" stroke-width="1.2"/>
+  <!-- Right Leaf -->
+  <path d="M 40 16 C 46 13, 46 26, 36 28 C 30 22, 33 13, 40 16 Z" fill="#15803D" stroke="#14532D" stroke-width="1.2"/>
+
+  <!-- Small Front Leaf -->
+  <path d="M 24 26 C 20 23, 20 32, 25 33 C 28 30, 27 23, 24 26 Z" fill="#4ADE80" stroke="#15803D" stroke-width="1"/>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" width="64" height="48">
+  <defs>
+    <linearGradient id="chromeBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9"/>
+      <stop offset="35%" stop-color="#CBD5E1"/>
+      <stop offset="70%" stop-color="#94A3B8"/>
+      <stop offset="100%" stop-color="#64748B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Machine Shadow -->
+  <rect x="3" y="10" width="58" height="36" rx="3" fill="#000000" opacity="0.3"/>
+
+  <!-- Main Stainless Steel Chassis -->
+  <rect x="4" y="8" width="56" height="36" rx="3" fill="url(#chromeBody)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Top Cup Warming Tray & Cups -->
+  <rect x="8" y="5" width="48" height="4" rx="1" fill="#475569" stroke="#1E293B" stroke-width="0.8"/>
+  <!-- Stacked porcelain cups -->
+  <ellipse cx="14" cy="4" rx="3" ry="1.8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8"/>
+  <ellipse cx="22" cy="4" rx="3" ry="1.8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8"/>
+  <ellipse cx="30" cy="4" rx="3" ry="1.8" fill="#FFDE59" stroke="#CA8A04" stroke-width="0.8"/>
+  <ellipse cx="38" cy="4" rx="3" ry="1.8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8"/>
+
+  <!-- Front Control Header Panel (Glossy Black / Mirror) -->
+  <rect x="7" y="11" width="50" height="12" rx="1.5" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+  <!-- Pressure Gauges (Circular) -->
+  <circle cx="16" cy="17" r="3.2" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8"/>
+  <line x1="16" y1="17" x2="17.5" y2="15.5" stroke="#EF4444" stroke-width="0.8"/>
+  <circle cx="48" cy="17" r="3.2" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8"/>
+  <line x1="48" y1="17" x2="49.5" y2="15.5" stroke="#38BDF8" stroke-width="0.8"/>
+
+  <!-- Brew Buttons (LED lit) -->
+  <circle cx="27" cy="17" r="1.5" fill="#22C55E"/>
+  <circle cx="32" cy="17" r="1.5" fill="#38BDF8"/>
+  <circle cx="37" cy="17" r="1.5" fill="#EAB308"/>
+
+  <!-- Dual Groupheads & Portafilters (Left & Right) -->
+  <!-- Left Grouphead -->
+  <rect x="18" y="23" width="8" height="6" fill="#1E293B"/>
+  <rect x="16" y="28" width="12" height="3" rx="1" fill="#475569"/>
+  <!-- Handle -->
+  <line x1="22" y1="29.5" x2="14" y2="34" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Right Grouphead -->
+  <rect x="38" y="23" width="8" height="6" fill="#1E293B"/>
+  <rect x="36" y="28" width="12" height="3" rx="1" fill="#475569"/>
+  <!-- Handle -->
+  <line x1="42" y1="29.5" x2="50" y2="34" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Steam Wands (Left & Right) -->
+  <path d="M 10 23 L 8 32 L 6 36" fill="none" stroke="#E2E8F0" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M 54 23 L 56 32 L 58 36" fill="none" stroke="#E2E8F0" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Lower Drip Tray with Perforated Stainless Grid -->
+  <rect x="6" y="38" width="52" height="5" rx="1" fill="#1E293B" stroke="#475569" stroke-width="1"/>
+  <line x1="10" y1="40" x2="54" y2="40" stroke="#64748B" stroke-width="0.8" stroke-dasharray="2 1.5"/>
+</svg>

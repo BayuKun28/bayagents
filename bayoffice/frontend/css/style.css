@@ -1,0 +1,917 @@
+/* BayOffice - Modern Retro Neubrutalism Style */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Press+Start+2P&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --bg-main: #F4F0EA;
+  --bg-card: #FFFFFF;
+  --border-color: #1A1A1A;
+  --shadow-color: #1A1A1A;
+  --yellow: #FFDE59;
+  --neo-mint: #98D8AA;
+  --coral: #FF6B6B;
+  --cyan: #54BAB9;
+  --lilac: #D8B4F8;
+  --orange: #FFA07A;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-pixel: 'Press Start 2P', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--border-color);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* Neubrutalism Card & Utility */
+.neo-box {
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  box-shadow: 5px 5px 0px var(--shadow-color);
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+}
+
+.neo-box-sm {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-radius: 6px;
+}
+
+.neo-btn {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  border: 3px solid var(--border-color);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+
+.neo-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--shadow-color);
+}
+
+.neo-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px var(--shadow-color);
+}
+
+.neo-btn-primary {
+  background-color: var(--yellow);
+  color: var(--border-color);
+}
+
+.neo-btn-primary:hover {
+  background-color: #ffd633;
+}
+
+.neo-btn-cyan {
+  background-color: var(--cyan);
+  color: white;
+}
+
+.neo-btn-danger {
+  background-color: var(--coral);
+  color: white;
+}
+
+.neo-btn-secondary {
+  background-color: #FFFFFF;
+  color: var(--border-color);
+}
+
+.neo-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px var(--shadow-color);
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.badge-todo { background: #E2E8F0; color: #334155; }
+.badge-progress { background: var(--yellow); color: #000; }
+.badge-qa { background: var(--lilac); color: #000; }
+.badge-done { background: var(--neo-mint); color: #064E3B; }
+
+.badge-luhut { background: #FFD2D2; color: #991B1B; }
+.badge-jokowi { background: #BAE6FD; color: #0369A1; }
+.badge-prabowo { background: #FED7AA; color: #C2410C; }
+.badge-gibran { background: #D1FAE5; color: #047857; }
+
+.badge-task-id {
+  background: #1A1A1A;
+  color: #FFFFFF;
+  border-color: #1A1A1A;
+}
+
+.badge-project {
+  background: #EDE9FE;
+  color: #5B21B6;
+  border-color: #C4B5FD;
+}
+
+/* Pixel canvas wrapper */
+.canvas-container {
+  position: relative;
+  border: 3px solid var(--border-color);
+  box-shadow: 6px 6px 0px var(--shadow-color);
+  border-radius: 10px;
+  background: #2A2F35;
+  overflow: hidden;
+}
+
+canvas#officeCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #E5E0D8;
+}
+::-webkit-scrollbar-thumb {
+  background: #1A1A1A;
+  border: 2px solid #E5E0D8;
+  border-radius: 4px;
+}
+
+/* Modal Backdrop */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background: #FFFFFF;
+  border: 4px solid var(--border-color);
+  box-shadow: 8px 8px 0px var(--shadow-color);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(20px);
+  transition: transform 0.2s ease;
+}
+
+.modal-overlay.active .modal-content {
+  transform: translateY(0);
+}
+
+/* Zzz Floating Animation */
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(-24px) scale(1.2); opacity: 0; }
+}
+
+.floating-zzz {
+  animation: floatUp 2s infinite ease-out;
+}
+
+/* ==========================================================
+   DARK MODE OVERRIDES
+   ========================================================== */
+body.dark-mode {
+  --bg-main: #0E131A;
+  --bg-card: #181E26;
+  --border-color: #333F50;
+  --shadow-color: #000000;
+  background-color: var(--bg-main);
+  color: #E6EDF3;
+}
+
+body.dark-mode header {
+  background: #161B22 !important;
+  border-bottom-color: #333F50 !important;
+}
+
+body.dark-mode .neo-box {
+  background: #181E26 !important;
+  border-color: #333F50 !important;
+  box-shadow: 5px 5px 0px #000000 !important;
+  color: #E6EDF3;
+}
+
+body.dark-mode .neo-box-sm {
+  background: #1F2633 !important;
+  border-color: #333F50 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  color: #E6EDF3 !important;
+}
+
+body.dark-mode .neo-btn-secondary {
+  background-color: #1F2633 !important;
+  color: #E6EDF3 !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode select,
+body.dark-mode input,
+body.dark-mode textarea {
+  background-color: #11161D !important;
+  color: #E6EDF3 !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode .agent-bubble-box {
+  background-color: #11161D !important;
+  color: #CBD5E1 !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode .kanban-col-box {
+  background-color: #131822 !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode .kanban-task-card {
+  background-color: #1C2330 !important;
+  border-color: #333F50 !important;
+  color: #E6EDF3 !important;
+}
+
+body.dark-mode .kanban-task-notes {
+  background-color: #11161F !important;
+  color: #94A3B8 !important;
+  border-left-color: var(--yellow) !important;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4 {
+  color: #E6EDF3 !important;
+}
+
+/* Modal Topbar Yellow Override (Keep text pure black on yellow background) */
+.modal-header-yellow,
+.modal-header-yellow h3,
+.modal-header-yellow i,
+.modal-header-yellow button {
+  color: #1A1A1A !important;
+}
+
+body.dark-mode .modal-header-yellow,
+body.dark-mode .modal-header-yellow h3,
+body.dark-mode .modal-header-yellow i,
+body.dark-mode .modal-header-yellow button {
+  color: #1A1A1A !important;
+  background: var(--yellow) !important;
+  border-bottom-color: #1A1A1A !important;
+}
+
+/* High-Contrast Dark Mode Badges */
+body.dark-mode .badge-task-id {
+  background: #242D3D !important;
+  color: #F8FAFC !important;
+  border-color: #475569 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+}
+
+body.dark-mode .badge-project {
+  background: #2E1065 !important;
+  color: #DDD6FE !important;
+  border-color: #6D28D9 !important;
+}
+
+body.dark-mode .badge-todo { 
+  background: #1E293B !important; 
+  color: #CBD5E1 !important; 
+  border-color: #333F50 !important; 
+}
+
+body.dark-mode .badge-progress { 
+  background: #713F12 !important; 
+  color: #FEF08A !important; 
+  border-color: #CA8A04 !important; 
+}
+
+body.dark-mode .badge-qa { 
+  background: #3B0764 !important; 
+  color: #E9D5FF !important; 
+  border-color: #9333EA !important; 
+}
+
+body.dark-mode .badge-done { 
+  background: #064E3B !important; 
+  color: #A7F3D0 !important; 
+  border-color: #059669 !important; 
+}
+
+body.dark-mode .badge-luhut { 
+  background: #450A0A !important; 
+  color: #FECACA !important; 
+  border-color: #DC2626 !important; 
+}
+
+body.dark-mode .badge-jokowi { 
+  background: #082F49 !important; 
+  color: #BAE6FD !important; 
+  border-color: #0284C7 !important; 
+}
+
+body.dark-mode .badge-prabowo { 
+  background: #431407 !important; 
+  color: #FED7AA !important; 
+  border-color: #EA580C !important; 
+}
+
+body.dark-mode .badge-gibran { 
+  background: #064E3B !important; 
+  color: #A7F3D0 !important; 
+  border-color: #059669 !important; 
+}
+
+/* High Contrast Header Metrics & Controls */
+body.dark-mode #ramMetric { color: #38BDF8 !important; font-weight: 800; }
+body.dark-mode #cpuMetric { color: #FBBF24 !important; font-weight: 800; }
+
+body.dark-mode #searchInput {
+  background-color: #11161F !important;
+  color: #F8FAFC !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode #searchInput::placeholder {
+  color: #64748B !important;
+}
+
+/* Primary Button Text Contrast */
+.neo-btn-primary,
+body.dark-mode .neo-btn-primary {
+  background-color: var(--yellow) !important;
+  color: #1A1A1A !important;
+  font-weight: 800;
+}
+
+/* Fast-Track Info Box Contrast */
+.info-box-fasttrack {
+  background: #F8FAFC;
+  color: #475569;
+  border-color: #E2E8F0;
+}
+
+body.dark-mode .info-box-fasttrack {
+  background: #11161F !important;
+  color: #94A3B8 !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode .info-box-fasttrack b,
+body.dark-mode .info-box-fasttrack code {
+  color: #E2E8F0 !important;
+}
+
+body.dark-mode .modal-content {
+  background: #181E26 !important;
+  border-color: #333F50 !important;
+  box-shadow: 8px 8px 0px #000000 !important;
+  color: #E6EDF3;
+}
+
+body.dark-mode .modal-content textarea,
+body.dark-mode .modal-content select {
+  background: #11161D !important;
+  color: #E6EDF3 !important;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  background: #161B22;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #333F50;
+  border: 2px solid #161B22;
+}
+
+/* ==========================================================
+   TOPBAR REDESIGN (COMMAND CENTER DESKTOP + MOBILE APP BAR)
+   ========================================================== */
+.topbar-header {
+  background: var(--bg-card);
+  border-bottom: 3px solid var(--border-color);
+  padding: 12px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.topbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 24px;
+}
+
+/* 1. Brand Section (Kiri) */
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo-box {
+  background: var(--yellow);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  padding: 7px 9px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--border-color);
+}
+
+.brand-text-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.4px;
+  color: var(--border-color);
+}
+
+.brand-badge-version {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #E2E8F0;
+  color: #334155;
+  border: 1px solid #CBD5E1;
+  font-family: var(--font-mono);
+}
+
+.topbar-subtitle {
+  font-size: 0.72rem;
+  color: #64748B;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+.homelab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+}
+
+/* 2. Command Center Telemetry Hub (Tengah Desktop) */
+.topbar-telemetry {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Text Switcher for Desktop vs Mobile */
+.desk-txt {
+  display: inline;
+}
+.mob-txt {
+  display: none;
+}
+
+.telemetry-deck {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-radius: 30px;
+  padding: 5px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.15s ease;
+}
+
+.telemetry-badge {
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  padding: 3px 10px !important;
+  border-radius: 20px !important;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.telemetry-divider {
+  width: 1px;
+  height: 16px;
+  background: #CBD5E1;
+}
+
+.telemetry-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.chip-label {
+  color: #64748B;
+  font-size: 0.7rem;
+}
+
+.chip-icon-ram { color: #0284C7; }
+.chip-icon-cpu { color: #D97706; }
+
+.chip-val-ram { color: #0284C7; font-weight: 800; }
+.chip-val-cpu { color: #D97706; font-weight: 800; }
+
+/* 3. Action Suite (Kanan Desktop) */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.topbar-btn {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-theme {
+  padding: 8px 11px;
+}
+
+.btn-task {
+  font-weight: 800;
+  background: var(--yellow) !important;
+  color: #1A1A1A !important;
+}
+
+.btn-logout {
+  font-weight: 700;
+}
+
+.btn-label-mobile {
+  display: none;
+}
+
+/* ==========================================================
+   DEDICATED MOBILE TOPBAR (VIEWPORT < 900px)
+   ========================================================== */
+@media screen and (max-width: 899px) {
+  .topbar-header {
+    padding: 8px 12px;
+  }
+
+  .topbar-container {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px 10px;
+  }
+
+  /* Baris 1 Kiri: Brand */
+  .topbar-brand {
+    grid-column: 1;
+    order: 1;
+    gap: 8px;
+  }
+
+  .topbar-logo-box {
+    padding: 5px 7px;
+    border-radius: 6px;
+  }
+
+  .topbar-title {
+    font-size: 1.05rem;
+  }
+
+  .brand-badge-version {
+    font-size: 0.58rem;
+    padding: 0 4px;
+  }
+
+  .topbar-subtitle {
+    display: none;
+  }
+
+  /* Baris 1 Kanan: Actions */
+  .topbar-actions {
+    grid-column: 2;
+    order: 2;
+    gap: 6px;
+  }
+
+  .topbar-btn {
+    padding: 6px 9px;
+    font-size: 0.78rem;
+  }
+
+  .btn-label-desktop {
+    display: none;
+  }
+
+  .btn-label-mobile {
+    display: inline;
+  }
+
+  /* Baris 2 Full-Width: Telemetry Hub Strip */
+  .desk-txt {
+    display: none !important;
+  }
+
+  .mob-txt {
+    display: inline !important;
+  }
+
+  .topbar-telemetry {
+    grid-column: 1 / -1;
+    order: 3;
+    width: 100%;
+    display: flex;
+    justify-content: stretch;
+    padding: 2px 0 2px 0;
+  }
+
+  .telemetry-deck {
+    width: 100% !important;
+    border-radius: 8px;
+    padding: 4px 8px !important;
+    gap: 6px;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    box-shadow: 2px 2px 0px var(--shadow-color);
+    box-sizing: border-box;
+    white-space: nowrap;
+  }
+
+  .telemetry-badge {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    flex-shrink: 0;
+  }
+
+  .telemetry-divider {
+    height: 12px;
+    background: #CBD5E1;
+    flex-shrink: 0;
+  }
+
+  .telemetry-chip {
+    font-size: 0.68rem;
+    gap: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .chip-label {
+    display: none;
+  }
+}
+
+/* Dark Mode Overrides for Topbar */
+body.dark-mode .brand-badge-version {
+  background: #1E293B;
+  color: #94A3B8;
+  border-color: #334155;
+}
+
+body.dark-mode .telemetry-deck {
+  background: #181E26 !important;
+  border-color: #333F50 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+}
+
+body.dark-mode .telemetry-divider {
+  background: #333F50 !important;
+}
+
+body.dark-mode .chip-val-ram {
+  color: #38BDF8 !important;
+}
+
+body.dark-mode .chip-val-cpu {
+  color: #FBBF24 !important;
+}
+
+/* ==========================================================
+   FULLSCREEN CANVAS SUPPORT (WITH MOBILE LANDSCAPE ENHANCEMENT)
+   ========================================================== */
+.canvas-container:fullscreen,
+.canvas-container:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  border: none !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #090C10 !important;
+  padding: 12px !important;
+  box-sizing: border-box;
+}
+
+.canvas-container:fullscreen canvas#officeCanvas,
+.canvas-container:-webkit-full-screen canvas#officeCanvas {
+  width: min(97vw, calc(95vh * 2)) !important;
+  height: min(95vh, calc(97vw / 2)) !important;
+  max-width: 98vw !important;
+  max-height: 96vh !important;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+  border: 3px solid #333F50;
+  border-radius: 8px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Mobile Fullscreen Landscape Fallback:
+   Jika browser HP dalam mode portrait saat fullscreen dan tidak mengizinkan orientation.lock(),
+   putar kanvas otomatis 90 derajat agar menjadi landscape penuh! */
+@media screen and (orientation: portrait) and (max-width: 900px) {
+  .canvas-container:fullscreen,
+  .canvas-container:-webkit-full-screen {
+    width: 100vh !important;
+    height: 100vw !important;
+    max-width: 100vh !important;
+    max-height: 100vw !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center center !important;
+    overflow: hidden !important;
+  }
+
+  .canvas-container:fullscreen canvas#officeCanvas,
+  .canvas-container:-webkit-full-screen canvas#officeCanvas {
+    width: min(96vh, calc(94vw * 2)) !important;
+    height: min(94vw, calc(96vh / 2)) !important;
+  }
+
+  .canvas-container:fullscreen .fullscreen-controls,
+  .canvas-container:-webkit-full-screen .fullscreen-controls {
+    top: 10px;
+    right: 12px;
+  }
+}
+
+.fullscreen-controls {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================
+   LUCIDE ICONS & ANTI-SLOP TYPOGRAPHY
+   ========================================================== */
+.lucide {
+  width: 1.15em;
+  height: 1.15em;
+  display: inline-block;
+  vertical-align: -0.2em;
+  stroke-width: 2.25px;
+}
+
+.lucide-sm {
+  width: 0.95em;
+  height: 0.95em;
+  vertical-align: -0.15em;
+}
+
+.lucide-lg {
+  width: 1.4em;
+  height: 1.4em;
+  vertical-align: -0.25em;
+}
+
+/* Micro status dots */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.dot-active {
+  background-color: #22C55E;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.dot-sleep {
+  background-color: #94A3B8;
+}
+
+.dot-working {
+  background-color: #38BDF8;
+}
+
+.dot-qa {
+  background-color: #C084FC;
+}
+
+/* Interactive Kanban Task Card */
+.kanban-task-card {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  cursor: pointer !important;
+}
+
+.kanban-task-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px var(--shadow-color) !important;
+}
+
+.kanban-task-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0px var(--shadow-color) !important;
+}
+
+/* Detail Modal Dark Mode Overrides */
+body.dark-mode #detailTaskDesc,
+body.dark-mode #detailTaskNotes {
+  background: #11161F !important;
+  color: #E2E8F0 !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode #detailTaskQA {
+  background: #062419 !important;
+  color: #86EFAC !important;
+  border-color: #059669 !important;
+}

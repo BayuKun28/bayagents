@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 48" width="150" height="48">
+  <!-- Outer Aluminum Frame -->
+  <rect x="2" y="2" width="146" height="42" rx="3" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+  
+  <!-- Whiteboard Gloss Surface -->
+  <rect x="5" y="5" width="140" height="36" fill="#FFFFFF"/>
+  <rect x="5" y="5" width="140" height="6" fill="#F1F5F9" opacity="0.6"/>
+
+  <!-- Kanban Column Lines (To-Do | In-Progress | QA | Done) -->
+  <line x1="40" y1="7" x2="40" y2="38" stroke="#E2E8F0" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <line x1="78" y1="7" x2="78" y2="38" stroke="#E2E8F0" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <line x1="114" y1="7" x2="114" y2="38" stroke="#E2E8F0" stroke-width="1.2" stroke-dasharray="3 2"/>
+
+  <!-- Column Header Labels (Micro text hint) -->
+  <rect x="12" y="8" width="18" height="3" rx="1" fill="#94A3B8"/>
+  <rect x="48" y="8" width="22" height="3" rx="1" fill="#38BDF8"/>
+  <rect x="85" y="8" width="16" height="3" rx="1" fill="#A855F7"/>
+  <rect x="122" y="8" width="18" height="3" rx="1" fill="#22C55E"/>
+
+  <!-- Sticky Notes (Yellow, Pink, Blue, Green) -->
+  <!-- Col 1 To-Do -->
+  <rect x="10" y="14" width="12" height="10" rx="1" fill="#FEF08A" stroke="#FACC15" stroke-width="0.6"/>
+  <rect x="24" y="15" width="11" height="9" rx="1" fill="#FBCFE8" stroke="#F472B6" stroke-width="0.6"/>
+  <rect x="12" y="26" width="13" height="9" rx="1" fill="#BAE6FD" stroke="#38BDF8" stroke-width="0.6"/>
+
+  <!-- Col 2 In-Progress -->
+  <rect x="46" y="14" width="13" height="10" rx="1" fill="#FED7AA" stroke="#FB923C" stroke-width="0.6"/>
+  <rect x="61" y="15" width="12" height="9" rx="1" fill="#FEF08A" stroke="#FACC15" stroke-width="0.6"/>
+  <!-- Architecture flowchart arrows on whiteboard -->
+  <circle cx="52" cy="30" r="3" fill="none" stroke="#2563EB" stroke-width="1"/>
+  <line x1="55" y1="30" x2="65" y2="30" stroke="#2563EB" stroke-width="1"/>
+  <rect x="65" y="27" width="8" height="6" rx="1" fill="none" stroke="#2563EB" stroke-width="1"/>
+
+  <!-- Col 3 QA -->
+  <rect x="84" y="15" width="12" height="10" rx="1" fill="#E9D5FF" stroke="#C084FC" stroke-width="0.6"/>
+  <rect x="98" y="16" width="11" height="9" rx="1" fill="#FEF08A" stroke="#FACC15" stroke-width="0.6"/>
+
+  <!-- Col 4 Done -->
+  <rect x="120" y="14" width="13" height="10" rx="1" fill="#BBF7D0" stroke="#4ADE80" stroke-width="0.6"/>
+  <!-- Checkmark -->
+  <path d="M 123 20 L 125 22 L 130 17" fill="none" stroke="#15803D" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Marker Tray (Bottom Edge) -->
+  <rect x="45" y="43" width="60" height="3" rx="1" fill="#475569"/>
+  <!-- Markers: Black, Red, Blue, Eraser -->
+  <rect x="50" y="42" width="8" height="2" rx="0.5" fill="#0F172A"/>
+  <rect x="60" y="42" width="8" height="2" rx="0.5" fill="#EF4444"/>
+  <rect x="70" y="42" width="8" height="2" rx="0.5" fill="#2563EB"/>
+  <rect x="85" y="41.5" width="12" height="3" rx="1" fill="#0F172A"/> <!-- Eraser -->
+</svg>

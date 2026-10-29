@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <radialGradient id="clockFace" cx="45%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="90%" stop-color="#F1F5F9"/>
+      <stop offset="100%" stop-color="#CBD5E1"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Wall Drop Shadow -->
+  <circle cx="16" cy="17" r="14" fill="#090D14" opacity="0.3"/>
+
+  <!-- Outer Black/Dark Aluminum Rim -->
+  <circle cx="16" cy="16" r="14" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Inner Clock Face -->
+  <circle cx="16" cy="16" r="12" fill="url(#clockFace)"/>
+
+  <!-- 12, 3, 6, 9 Hour Markers -->
+  <rect x="15.2" y="5.5" width="1.6" height="3" rx="0.4" fill="#0F172A"/>
+  <rect x="15.2" y="23.5" width="1.6" height="3" rx="0.4" fill="#0F172A"/>
+  <rect x="23.5" y="15.2" width="3" height="1.6" rx="0.4" fill="#0F172A"/>
+  <rect x="5.5" y="15.2" width="3" height="1.6" rx="0.4" fill="#0F172A"/>
+
+  <!-- Hour Hand (pointing at 10) -->
+  <line x1="16" y1="16" x2="10.5" y2="10.5" stroke="#0F172A" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Minute Hand (pointing at 2) -->
+  <line x1="16" y1="16" x2="21" y2="9" stroke="#1E293B" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Center Pin (Red) & Second Hand -->
+  <line x1="16" y1="16" x2="18" y2="23" stroke="#EF4444" stroke-width="0.8" stroke-linecap="round"/>
+  <circle cx="16" cy="16" r="1.5" fill="#EF4444"/>
+</svg>

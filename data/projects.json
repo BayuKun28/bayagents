@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-10-26T12:54:00+07:00",
+  "projects": {
+    "infobay": {
+      "id": "infobay",
+      "name": "Infobay Portfolio & Admin",
+      "description": "Website portofolio dinamis dan admin panel Baydev",
+      "root_dir": "/home/bay/infobay",
+      "frontend_dir": "/home/bay/infobay/frontend",
+      "backend_dir": "/home/bay/infobay/backend",
+      "tech_stack": {
+        "frontend": "ReactJS (Vite, Port 9000), Tailwind CSS Neubrutalism, Material-UI",
+        "backend": "Laravel 13 REST API, PostgreSQL 17, PHP-FPM FastCGI Unix Socket"
+      },
+      "dual_server_sync": true,
+      "remote_146": {
+        "host": "192.168.100.146",
+        "user": "masbay",
+        "path": "/home/masbay/infobay",
+        "git_remote": "server146"
+      },
+      "rules_file": "/home/bay/infobay/RULES.md"
+    },
+    "bayoffice": {
+      "id": "bayoffice",
+      "name": "BayOffice Virtual Workspace",
+      "description": "Webapp 2D Retro Pixel Canvas & Dashboard Kanban 4 Agen AI",
+      "root_dir": "/home/bay/bayagents/bayoffice",
+      "frontend_dir": "/home/bay/bayagents/bayoffice/frontend",
+      "backend_dir": "/home/bay/bayagents/bayoffice/backend",
+      "tech_stack": {
+        "frontend": "HTML5 2D Canvas Pixel Art, Vanilla JS, Neubrutalism UI",
+        "backend": "Python 3.13 FastAPI, Uvicorn, Server-Sent Events (SSE)"
+      },
+      "port": 8888,
+      "dual_server_sync": false,
+      "service_name": "bayoffice.service",
+      "rules_file": "/home/bay/bayagents/bayoffice/README.md"
+    }
+  }
+}

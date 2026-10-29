@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 64" width="50" height="64">
+  <defs>
+    <!-- Vending Machine Body Gradient -->
+    <linearGradient id="vendingBody" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B91C1C"/>
+      <stop offset="60%" stop-color="#DC2626"/>
+      <stop offset="100%" stop-color="#991B1B"/>
+    </linearGradient>
+    <!-- Glass Case Gradient with Soft Glare -->
+    <linearGradient id="vendingGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.3"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="80%" stop-color="#0284C7" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <rect x="2" y="58" width="46" height="5" rx="2" fill="#090D14" opacity="0.4"/>
+
+  <!-- Machine Outer Frame -->
+  <rect x="2" y="2" width="46" height="58" rx="3" fill="url(#vendingBody)" stroke="#7F1D1D" stroke-width="1.5"/>
+
+  <!-- Header Lightbox Brand (SNACKS & BITES) -->
+  <rect x="5" y="4" width="40" height="7" rx="1.5" fill="#1E293B"/>
+  <text x="25" y="9.5" font-family="sans-serif" font-size="4.5" font-weight="900" fill="#FDE047" text-anchor="middle" letter-spacing="1">SNACKS</text>
+
+  <!-- Main Glass Showcase Area -->
+  <rect x="5" y="13" width="28" height="34" rx="1" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+
+  <!-- Shelf 1 (Top: Potato Chips & Nachos) -->
+  <line x1="5" y1="24" x2="33" y2="24" stroke="#64748B" stroke-width="0.8"/>
+  <rect x="7" y="15" width="5" height="8" rx="1" fill="#FACC15"/> <!-- Lays Yellow -->
+  <rect x="13" y="15" width="5" height="8" rx="1" fill="#EF4444"/> <!-- Doritos Red -->
+  <rect x="19" y="15" width="5" height="8" rx="1" fill="#10B981"/> <!-- Sour Cream Green -->
+  <rect x="25" y="15" width="5" height="8" rx="1" fill="#3B82F6"/> <!-- Blue Chips -->
+
+  <!-- Shelf 2 (Middle: Chocolate & Candy Bars) -->
+  <line x1="5" y1="35" x2="33" y2="35" stroke="#64748B" stroke-width="0.8"/>
+  <rect x="7" y="26" width="5" height="8" rx="1" fill="#78350F"/> <!-- Snickers -->
+  <rect x="13" y="26" width="5" height="8" rx="1" fill="#EA580C"/> <!-- Reese's -->
+  <rect x="19" y="26" width="5" height="8" rx="1" fill="#EC4899"/> <!-- Strawberry Wafer -->
+  <rect x="25" y="26" width="5" height="8" rx="1" fill="#7C3AED"/> <!-- Cadbury -->
+
+  <!-- Shelf 3 (Bottom: Cookies & Nuts) -->
+  <rect x="7" y="37" width="5" height="8" rx="1" fill="#0284C7"/> <!-- Oreo Blue -->
+  <rect x="13" y="37" width="5" height="8" rx="1" fill="#D97706"/> <!-- Peanut Gold -->
+  <rect x="19" y="37" width="5" height="8" rx="1" fill="#059669"/> <!-- Mint Crisps -->
+  <rect x="25" y="37" width="5" height="8" rx="1" fill="#E11D48"/> <!-- KitKat -->
+
+  <!-- Glass Overlay & Glare Diagonal Lines -->
+  <rect x="5" y="13" width="28" height="34" rx="1" fill="url(#vendingGlass)"/>
+  <polygon points="10,13 14,13 26,47 22,47" fill="#FFFFFF" opacity="0.12"/>
+
+  <!-- Right Side Keypad & Payment Panel -->
+  <rect x="35" y="13" width="10" height="34" rx="1.5" fill="#1E293B" stroke="#0F172A" stroke-width="1"/>
+  
+  <!-- Digital LED Display (Green Screen) -->
+  <rect x="36.5" y="15" width="7" height="4" rx="0.5" fill="#064E3B"/>
+  <text x="40" y="18" font-family="monospace" font-size="2.8" font-weight="bold" fill="#34D399" text-anchor="middle">$1.50</text>
+
+  <!-- Number Keypad Buttons 3x3 -->
+  <rect x="36.5" y="21" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="39" y="21" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="41.5" y="21" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="36.5" y="24" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="39" y="24" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="41.5" y="24" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="36.5" y="27" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="39" y="27" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+  <rect x="41.5" y="27" width="1.8" height="1.8" rx="0.3" fill="#64748B"/>
+
+  <!-- Bill / Card Reader Slot -->
+  <rect x="37" y="32" width="6" height="1" fill="#0F172A"/>
+  <circle cx="40" cy="35" r="1" fill="#38BDF8"/> <!-- NFC Pay Wave -->
+
+  <!-- Bottom Item Retrieval Push Door (Flap) -->
+  <rect x="5" y="49" width="40" height="9" rx="1.5" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+  <rect x="8" y="51" width="34" height="5" rx="1" fill="#1E293B"/>
+  <text x="25" y="55" font-family="sans-serif" font-size="3" font-weight="bold" fill="#64748B" text-anchor="middle" letter-spacing="0.5">PUSH</text>
+</svg>

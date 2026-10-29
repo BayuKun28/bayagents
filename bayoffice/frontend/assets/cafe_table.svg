@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90" width="90" height="90">
+  <defs>
+    <!-- Table Wood Grain Radial Gradient -->
+    <radialGradient id="tableWood" cx="45%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#B45309"/>
+      <stop offset="70%" stop-color="#92400E"/>
+      <stop offset="100%" stop-color="#78350F"/>
+    </radialGradient>
+    <!-- Ceramic Plate & Cup -->
+    <radialGradient id="ceramic" cx="40%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="85%" stop-color="#F1F5F9"/>
+      <stop offset="100%" stop-color="#CBD5E1"/>
+    </radialGradient>
+    <!-- Coffee Foam Gradient -->
+    <radialGradient id="coffeeFoam" cx="45%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="40%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#78350F"/>
+    </radialGradient>
+    <filter id="tableShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#0F172A" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Left Chair (Top View) -->
+  <circle cx="16" cy="45" r="10" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+  <path d="M 9,38 A 12,12 0 0,0 9,52" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Right Chair (Top View) -->
+  <circle cx="74" cy="45" r="10" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+  <path d="M 81,38 A 12,12 0 0,1 81,52" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Table Ground Shadow -->
+  <circle cx="45" cy="47" r="26" fill="#090D14" opacity="0.3" filter="url(#tableShadow)"/>
+
+  <!-- Round Table Top (Oak Timber) -->
+  <circle cx="45" cy="45" r="25" fill="url(#tableWood)" stroke="#451A03" stroke-width="2"/>
+  <circle cx="45" cy="45" r="23.5" fill="none" stroke="#FDE68A" stroke-width="0.8" opacity="0.3"/>
+
+  <!-- Table Runner / Center Mat -->
+  <rect x="36" y="24" width="18" height="42" rx="3" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="1" opacity="0.85"/>
+  <!-- Minimalist Stripes on Runner -->
+  <line x1="39" y1="26" x2="39" y2="64" stroke="#EF4444" stroke-width="1"/>
+  <line x1="51" y1="26" x2="51" y2="64" stroke="#EF4444" stroke-width="1"/>
+
+  <!-- Ceramic Coffee Cup 1 (Left) -->
+  <!-- Saucer -->
+  <circle cx="36" cy="41" r="6" fill="url(#ceramic)" stroke="#94A3B8" stroke-width="0.6"/>
+  <!-- Cup Rim -->
+  <circle cx="36" cy="41" r="4.2" fill="url(#coffeeFoam)"/>
+  <!-- Latte Art Heart in coffee -->
+  <circle cx="35" cy="40.5" r="1" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="37" cy="40.5" r="1" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Cup Handle -->
+  <path d="M 31,41 A 2,2 0 0,1 31,43" fill="none" stroke="#CBD5E1" stroke-width="1.2"/>
+
+  <!-- Ceramic Coffee Cup 2 (Right) -->
+  <circle cx="54" cy="49" r="6" fill="url(#ceramic)" stroke="#94A3B8" stroke-width="0.6"/>
+  <circle cx="54" cy="49" r="4.2" fill="url(#coffeeFoam)"/>
+  <circle cx="53" cy="48.5" r="1" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="55" cy="48.5" r="1" fill="#FFFFFF" opacity="0.9"/>
+  <path d="M 59,49 A 2,2 0 0,0 59,51" fill="none" stroke="#CBD5E1" stroke-width="1.2"/>
+</svg>

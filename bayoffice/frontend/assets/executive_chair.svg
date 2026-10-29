@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" width="52" height="52">
+  <defs>
+    <radialGradient id="leatherBoss" cx="45%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#991B1B"/>
+      <stop offset="60%" stop-color="#7F1D1D"/>
+      <stop offset="100%" stop-color="#450A0A"/>
+    </radialGradient>
+    <linearGradient id="goldBrass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="50%" stop-color="#FDE68A"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <circle cx="26" cy="32" r="18" fill="#090D14" opacity="0.4"/>
+
+  <!-- Chrome/Gold 5-Star Wheel Base -->
+  <g stroke="#0F172A" stroke-width="2.5" stroke-linecap="round">
+    <line x1="26" y1="30" x2="26" y2="44"/>
+    <line x1="26" y1="30" x2="39" y2="38"/>
+    <line x1="26" y1="30" x2="34" y2="21"/>
+    <line x1="26" y1="30" x2="18" y2="21"/>
+    <line x1="26" y1="30" x2="13" y2="38"/>
+  </g>
+  <!-- Castor Wheel Caps -->
+  <circle cx="26" cy="44" r="2.2" fill="#1E293B"/>
+  <circle cx="39" cy="38" r="2.2" fill="#1E293B"/>
+  <circle cx="34" cy="21" r="2.2" fill="#1E293B"/>
+  <circle cx="18" cy="21" r="2.2" fill="#1E293B"/>
+  <circle cx="13" cy="38" r="2.2" fill="#1E293B"/>
+
+  <!-- Center Lift Cylinder -->
+  <circle cx="26" cy="30" r="4.5" fill="url(#goldBrass)"/>
+
+  <!-- High-Back Executive Leather Headrest & Backrest -->
+  <path d="M 12,18 C 12,6 40,6 40,18 L 38,24 C 38,12 14,12 14,24 Z" fill="url(#leatherBoss)" stroke="#450A0A" stroke-width="1.5"/>
+  <!-- Headrest Pillow Pad -->
+  <rect x="18" y="7" width="16" height="7" rx="3" fill="#B91C1C" stroke="#7F1D1D" stroke-width="1"/>
+  <!-- Tufting Buttons on Leather Backrest -->
+  <circle cx="20" cy="18" r="1.2" fill="#450A0A"/>
+  <circle cx="26" cy="18" r="1.2" fill="#450A0A"/>
+  <circle cx="32" cy="18" r="1.2" fill="#450A0A"/>
+
+  <!-- Left Executive Armrest (Polished Wood & Leather Pad) -->
+  <rect x="7" y="16" width="6" height="15" rx="3" fill="#78350F" stroke="#451A03" stroke-width="1"/>
+  <rect x="8" y="18" width="4" height="11" rx="2" fill="#991B1B"/>
+
+  <!-- Right Executive Armrest -->
+  <rect x="39" y="16" width="6" height="15" rx="3" fill="#78350F" stroke="#451A03" stroke-width="1"/>
+  <rect x="40" y="18" width="4" height="11" rx="2" fill="#991B1B"/>
+
+  <!-- Thick Cushioned Leather Seat Pan -->
+  <ellipse cx="26" cy="27" rx="13" ry="9" fill="url(#leatherBoss)" stroke="#450A0A" stroke-width="1.5"/>
+  <ellipse cx="26" cy="26" rx="9" ry="6" fill="none" stroke="#F87171" stroke-width="0.8" opacity="0.3"/>
+</svg>

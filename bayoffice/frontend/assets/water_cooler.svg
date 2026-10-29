@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 64" width="32" height="64">
+  <!-- Translucent Blue Water Bottle (Top) -->
+  <path d="M 9 20 L 9 8 Q 16 3 23 8 L 23 20 Z" fill="#38BDF8" fill-opacity="0.8" stroke="#0284C7" stroke-width="1.2"/>
+  <rect x="13" y="20" width="6" height="4" fill="#0369A1"/>
+  <!-- Water Level Wave & Reflection -->
+  <path d="M 11 12 Q 16 9 21 12" stroke="#FFFFFF" stroke-width="1.2" fill="none" opacity="0.6"/>
+  <!-- Ridges on water jug -->
+  <line x1="10" y1="11" x2="22" y2="11" stroke="#0284C7" stroke-width="0.8" opacity="0.5"/>
+  <line x1="10" y1="16" x2="22" y2="16" stroke="#0284C7" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Dispenser Base (White / Matte Gray) -->
+  <rect x="6" y="24" width="20" height="36" rx="2" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.2"/>
+  
+  <!-- Dispense Alcove (Recessed black niche) -->
+  <rect x="9" y="28" width="14" height="15" rx="1.5" fill="#1E293B" stroke="#475569" stroke-width="0.8"/>
+  
+  <!-- Hot & Cold Spigots -->
+  <rect x="11" y="30" width="3" height="4" rx="0.5" fill="#EF4444"/> <!-- Hot red -->
+  <rect x="18" y="30" width="3" height="4" rx="0.5" fill="#38BDF8"/> <!-- Cold blue -->
+
+  <!-- Small Drip Tray Grid -->
+  <rect x="9" y="41" width="14" height="2" fill="#475569"/>
+
+  <!-- Lower Cabinet Door line & Brand logo dot -->
+  <line x1="8" y1="48" x2="24" y2="48" stroke="#CBD5E1" stroke-width="0.8"/>
+  <circle cx="16" cy="52" r="1.5" fill="#0284C7"/>
+</svg>

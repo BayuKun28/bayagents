@@ -1,0 +1,22 @@
+[Unit]
+Description=BayOffice - Virtual Workspace for Multi-Agent AI (Port 8888)
+After=network.target
+
+[Service]
+Type=simple
+User=bay
+Group=bay
+WorkingDirectory=/home/bay/bayoffice
+ExecStart=/home/bay/bayoffice/scripts/start_service.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=3
+KillMode=mixed
+Environment="HOME=/home/bay"
+Environment="PATH=/home/bay/.gemini/antigravity-cli/bin:/home/bay/.local/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=-/home/bay/bayoffice/.env
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

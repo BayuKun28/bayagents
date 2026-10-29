@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 64" width="36" height="64">
+  <!-- Arcade Cabinet Shell -->
+  <path d="M4 64 L4 8 L8 0 L28 0 L32 8 L32 64 Z" fill="#1E293B" stroke="#0F172A" stroke-width="1.5"/>
+  <!-- Marquee Header -->
+  <rect x="7" y="3" width="22" height="9" fill="#F43F5E"/>
+  <text x="18" y="9.5" font-family="monospace" font-size="3.8" font-weight="bold" fill="#FFF" text-anchor="middle">PAC-MAN</text>
+  <!-- Screen Bezel & Screen -->
+  <rect x="6" y="14" width="24" height="20" fill="#020617"/>
+  <rect x="8" y="16" width="20" height="16" fill="#10B981"/>
+  <!-- Arcade game pixel invaders -->
+  <rect x="12" y="19" width="4" height="4" fill="#000"/>
+  <rect x="20" y="19" width="4" height="4" fill="#000"/>
+  <rect x="14" y="27" width="8" height="3" fill="#FFF"/>
+  <!-- Control Panel & Joystick -->
+  <polygon points="4,35 32,35 34,44 2,44" fill="#334155"/>
+  <circle cx="12" cy="39" r="2.5" fill="#EF4444"/>
+  <circle cx="22" cy="38" r="1.5" fill="#3B82F6"/>
+  <circle cx="26" cy="40" r="1.5" fill="#FBBF24"/>
+  <!-- Coin Door -->
+  <rect x="10" y="48" width="16" height="12" fill="#0F172A"/>
+  <rect x="13" y="51" width="3" height="5" fill="#F59E0B"/>
+  <rect x="20" y="51" width="3" height="5" fill="#F59E0B"/>
+</svg>

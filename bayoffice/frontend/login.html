@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BayOffice — Login Virtual Office AI</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261026_06">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #EAE6DF;
+      background-image: radial-gradient(#D5CFC5 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      padding: 32px 28px;
+      background: #FFFFFF;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 3px solid #1A1A1A;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 1rem;
+      background: #FDFBF7;
+      box-shadow: 3px 3px 0px #1A1A1A;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .form-input:focus {
+      background: #FFFFFF;
+      box-shadow: 4px 4px 0px #FFDE59;
+    }
+    .error-box {
+      display: none;
+      padding: 12px;
+      background: #FFE2E2;
+      border: 2px solid #FF6B6B;
+      color: #991B1B;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="neo-box login-card">
+    <div style="text-align: center; margin-bottom: 28px;">
+      <div style="display: inline-flex; align-items: center; justify-content: center; background: #FFDE59; border: 3px solid #1A1A1A; box-shadow: 4px 4px 0px #1A1A1A; padding: 12px 18px; border-radius: 12px; margin-bottom: 14px;">
+        <i data-lucide="building-2" style="width: 2.2rem; height: 2.2rem; stroke-width: 2.5px; color: #1A1A1A;"></i>
+      </div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;">BayOffice</h1>
+      <p style="color: #64748B; font-size: 0.9rem; font-weight: 600; margin-top: 4px;">
+        Virtual Workspace 4 Agen AI
+      </p>
+      <div style="margin-top: 8px;">
+        <span class="neo-badge badge-done" style="font-size: 0.7rem;">Port 8888 • Secured</span>
+      </div>
+    </div>
+
+    <div id="errorBox" class="error-box"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input class="form-input" type="text" id="username" placeholder="Masukkan username" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" id="submitBtn" class="neo-btn neo-btn-primary" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 8px;">
+        <span>Masuk ke Kantor</span> ➔
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 24px; font-size: 0.8rem; color: #94A3B8; font-weight: 600;">
+      Orchestrator: LUHUT • JOKOWI • PRABOWO • GIBRAN
+    </div>
+  </div>
+
+  <script src="/static/js/lucide.min.js"></script>
+  <script>
+    if (window.lucide) window.lucide.createIcons();
+    const form = document.getElementById('loginForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorBox = document.getElementById('errorBox');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Memverifikasi...</span>';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          window.location.href = '/';
+        } else {
+          errorBox.textContent = data.message || 'Username atau password salah.';
+          errorBox.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>Masuk ke Kantor</span> ➔';
+        }
+      } catch (err) {
+        errorBox.textContent = 'Gagal terhubung ke server BayOffice.';
+        errorBox.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Masuk ke Kantor</span> ➔';
+      }
+    });
+  </script>
+</body>
+</html>

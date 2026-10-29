@@ -1,0 +1,17 @@
+[Unit]
+Description=Antigravity Telegram Bot & System Auditor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bay
+WorkingDirectory=/home/bay/agy-telebot
+ExecStart=/home/bay/agy-telebot/.venv/bin/python /home/bay/agy-telebot/bot.py
+Restart=always
+RestartSec=10
+Environment="HOME=/home/bay"
+Environment="PATH=/home/bay/.local/bin:/usr/local/bin:/usr/bin:/bin"
+
+[Install]
+WantedBy=multi-user.target
