@@ -9,6 +9,9 @@ class KanbanBoard {
     this.tasks = [];
     this.selectedAssignee = 'ALL';
     this.selectedProject = 'ALL';
+    this.selectedPeriod = 'THIS_MONTH';
+    this.customStartDate = null;
+    this.customEndDate = null;
     this.searchQuery = '';
     
     this.columns = [
@@ -47,6 +50,79 @@ class KanbanBoard {
     this.render();
   }
 
+  setPeriodFilter(period) {
+    this.selectedPeriod = period || 'THIS_MONTH';
+    this.render();
+  }
+
+  setCustomDateRange(startDate, endDate) {
+    this.customStartDate = startDate || null;
+    this.customEndDate = endDate || null;
+    this.render();
+  }
+
+  getTaskDate(task) {
+    if (!task) return null;
+    const raw = task.created_at || task.started_at || task.completed_at;
+    if (raw) {
+      const d = new Date(raw);
+      if (!isNaN(d.getTime())) return d;
+    }
+    // Fallback for legacy sprint tasks created before timestamp logging
+    return new Date('2026-10-25T08:00:00+07:00');
+  }
+
+  isTaskInPeriod(task) {
+    if (this.selectedPeriod === 'ALL') return true;
+
+    const taskDate = this.getTaskDate(task);
+    if (!taskDate) return true;
+
+    const now = new Date();
+
+    if (this.selectedPeriod === 'THIS_MONTH') {
+      return taskDate.getFullYear() === now.getFullYear() &&
+             taskDate.getMonth() === now.getMonth();
+    }
+
+    if (this.selectedPeriod === 'TODAY') {
+      return taskDate.getFullYear() === now.getFullYear() &&
+             taskDate.getMonth() === now.getMonth() &&
+             taskDate.getDate() === now.getDate();
+    }
+
+    if (this.selectedPeriod === 'THIS_WEEK') {
+      const currentDay = now.getDay();
+      const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+      return taskDate >= startOfWeek && taskDate <= endOfWeek;
+    }
+
+    if (this.selectedPeriod === 'LAST_MONTH') {
+      const prevMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      return taskDate.getFullYear() === prevMonthYear &&
+             taskDate.getMonth() === prevMonth;
+    }
+
+    if (this.selectedPeriod === 'CUSTOM') {
+      if (this.customStartDate) {
+        const start = new Date(this.customStartDate);
+        start.setHours(0, 0, 0, 0);
+        if (taskDate < start) return false;
+      }
+      if (this.customEndDate) {
+        const end = new Date(this.customEndDate);
+        end.setHours(23, 59, 59, 999);
+        if (taskDate > end) return false;
+      }
+      return true;
+    }
+
+    return true;
+  }
+
   setSearch(query) {
     this.searchQuery = query.toLowerCase().trim();
     this.render();
@@ -66,6 +142,11 @@ class KanbanBoard {
       if (this.selectedProject !== 'ALL') {
         const p = (t.project || 'infobay').toLowerCase();
         if (p !== this.selectedProject.toLowerCase()) return false;
+      }
+
+      // Filter date period (Default: THIS_MONTH)
+      if (!this.isTaskInPeriod(t)) {
+        return false;
       }
 
       // Filter search
@@ -158,8 +239,19 @@ class KanbanBoard {
           const assigneeClass = this.getAssigneeBadgeClass(task.assignee);
           const notesText = task.notes ? `<div class="kanban-task-notes" style="margin-top: 8px; font-size: 0.78rem; padding: 6px 8px; border-radius: 4px; border-left: 3px solid var(--border-color); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${this.escapeHtml(task.notes)}</div>` : '';
           const timeText = task.started_at || task.created_at || task.completed_at || '';
-          const displayTime = timeText ? new Date(timeText).toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '';
-          const timeSuffix = isId && displayTime ? ' WIB' : '';
+          let displayTime = '';
+          if (timeText) {
+            const tDate = new Date(timeText);
+            if (!isNaN(tDate.getTime())) {
+              const isToday = tDate.toDateString() === new Date().toDateString();
+              if (isToday) {
+                displayTime = tDate.toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' }) + (isId ? ' WIB' : '');
+              } else {
+                displayTime = tDate.toLocaleDateString(isId ? 'id-ID' : 'en-US', { month: 'short', day: 'numeric' }) + ' ' +
+                              tDate.toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+              }
+            }
+          }
 
           html += `
             <div class="neo-box-sm kanban-task-card" data-task-id="${this.escapeHtml(task.id)}" style="padding: 12px; cursor: pointer;" title="${cardTitleHint}">
@@ -181,7 +273,7 @@ class KanbanBoard {
                 </span>
                 <span style="display: flex; align-items: center; gap: 4px;">
                   <i data-lucide="clock" class="lucide-sm"></i>
-                  ${displayTime ? displayTime + timeSuffix : ''}
+                  ${displayTime}
                 </span>
               </div>
             </div>

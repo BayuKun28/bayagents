@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const langToggle = document.getElementById('langToggle');
   const filterBtns = document.querySelectorAll('.filter-btn');
   const projectFilterSelect = document.getElementById('projectFilterSelect');
+  const periodFilterSelect = document.getElementById('periodFilterSelect');
+  const customDateContainer = document.getElementById('customDateContainer');
+  const customStartDate = document.getElementById('customStartDate');
+  const customEndDate = document.getElementById('customEndDate');
   const taskProjectSelect = document.getElementById('taskProject');
   const customProjectContainer = document.getElementById('customProjectContainer');
   const customProjectInput = document.getElementById('customProjectInput');
@@ -236,6 +240,43 @@ document.addEventListener('DOMContentLoaded', () => {
   if (projectFilterSelect) {
     projectFilterSelect.addEventListener('change', (e) => {
       kanban.setProjectFilter(e.target.value);
+    });
+  }
+
+  // 4b. Date Period Filter (Default: THIS_MONTH)
+  if (periodFilterSelect) {
+    periodFilterSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'CUSTOM') {
+        if (customDateContainer) customDateContainer.style.display = 'inline-flex';
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        if (customStartDate && !customStartDate.value) {
+          customStartDate.value = `${yyyy}-${mm}-01`;
+        }
+        if (customEndDate && !customEndDate.value) {
+          customEndDate.value = `${yyyy}-${mm}-${dd}`;
+        }
+        kanban.setPeriodFilter('CUSTOM');
+        kanban.setCustomDateRange(customStartDate ? customStartDate.value : null, customEndDate ? customEndDate.value : null);
+      } else {
+        if (customDateContainer) customDateContainer.style.display = 'none';
+        kanban.setPeriodFilter(val);
+      }
+    });
+  }
+
+  if (customStartDate) {
+    customStartDate.addEventListener('change', () => {
+      kanban.setCustomDateRange(customStartDate.value, customEndDate ? customEndDate.value : null);
+    });
+  }
+
+  if (customEndDate) {
+    customEndDate.addEventListener('change', () => {
+      kanban.setCustomDateRange(customStartDate ? customStartDate.value : null, customEndDate.value);
     });
   }
 

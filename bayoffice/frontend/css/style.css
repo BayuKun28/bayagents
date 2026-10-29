@@ -259,6 +259,11 @@ body.dark-mode textarea {
   border-color: #333F50 !important;
 }
 
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
 body.dark-mode .agent-bubble-box {
   background-color: #11161D !important;
   color: #CBD5E1 !important;
