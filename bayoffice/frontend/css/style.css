@@ -1180,3 +1180,115 @@ body.dark-mode #detailTaskQA {
   color: #86EFAC !important;
   border-color: #059669 !important;
 }
+
+/* ==========================================================
+   EXPANSION V2.3: TERMINAL LOGS, SERVER HEALTH & ANALYTICS
+   ========================================================== */
+
+/* Clickable Telemetry Deck */
+.telemetry-deck {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.telemetry-deck:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--shadow-color) !important;
+}
+
+/* Terminal Console Box */
+.terminal-box {
+  background: #0D1117 !important;
+  color: #58A6FF !important;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  box-shadow: inset 2px 2px 0px rgba(0, 0, 0, 0.4);
+}
+
+.terminal-box::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.terminal-box::-webkit-scrollbar-track {
+  background: #161B22;
+}
+
+.terminal-box::-webkit-scrollbar-thumb {
+  background: #30363D;
+  border-radius: 4px;
+}
+
+.terminal-box::-webkit-scrollbar-thumb:hover {
+  background: #8B949E;
+}
+
+/* Server Health Progress Bars */
+.progress-bar-track {
+  width: 100%;
+  height: 10px;
+  background: #E2E8F0;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.fill-ram {
+  background: #2563EB;
+}
+
+.fill-swap {
+  background: #F59E0B;
+}
+
+.fill-disk {
+  background: #8B5CF6;
+}
+
+/* Status service pill */
+.service-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Dark Mode Overrides for Expansion Components */
+body.dark-mode .progress-bar-track {
+  background: #21262D;
+  border-color: #333F50;
+}
+
+body.dark-mode #detailActionsContainer {
+  background: #11161F !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode .service-pill {
+  background: #181E26 !important;
+  border-color: #333F50 !important;
+}
+
+body.dark-mode #statActiveTasks {
+  background: #38240D !important;
+  color: #FCD34D !important;
+}
+
+body.dark-mode #statDoneTasks {
+  background: #062E1E !important;
+  color: #86EFAC !important;
+}

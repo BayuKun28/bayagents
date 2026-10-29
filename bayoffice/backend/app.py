@@ -87,6 +87,10 @@ class TaskCreateRequest(BaseModel):
     project: Optional[str] = "auto"
     engine: Optional[str] = "agy"
 
+class TaskStatusUpdateRequest(BaseModel):
+    status: str
+    notes: Optional[str] = None
+
 # ==========================================================
 # PAGE ROUTES
 # ==========================================================
@@ -183,6 +187,61 @@ async def api_create_task(data: TaskCreateRequest, user: str = Depends(require_a
         raise HTTPException(status_code=400, detail=result.get("error", "Gagal mengirim tugas"))
     return result
 
+@app.get("/api/system/health")
+async def api_get_system_health(user: str = Depends(require_auth)):
+    """Mengambil metrik komprehensif (RAM, CPU, Suhu, Swap, Disk, Services)."""
+    return service.get_expanded_system_metrics()
+
+@app.get("/api/agents/{agent_name}/logs")
+async def api_get_agent_logs(agent_name: str, lines: int = 120, user: str = Depends(require_auth)):
+    """Mengambil log riwayat terminal tmux agen."""
+    result = service.get_agent_logs(agent_name, lines=lines)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal mengambil log"))
+    return result
+
+@app.delete("/api/tasks/{task_id}")
+async def api_delete_task(task_id: str, user: str = Depends(require_auth)):
+    """Menghapus tugas dari kanban."""
+    result = service.delete_task(task_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Gagal menghapus tugas"))
+    return result
+
+@app.post("/api/tasks/{task_id}/retry")
+async def api_retry_task(task_id: str, user: str = Depends(require_auth)):
+    """Menjalankan ulang tugas yang ada ke agen terkait."""
+    result = service.retry_task(task_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal me-retry tugas"))
+    return result
+
+@app.patch("/api/tasks/{task_id}/status")
+async def api_update_task_status(task_id: str, data: TaskStatusUpdateRequest, user: str = Depends(require_auth)):
+    """Memperbarui status tugas secara manual."""
+    result = service.update_task_status(task_id, data.status, data.notes)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal update status"))
+    return result
+
+@app.get("/api/kanban/export")
+async def api_export_kanban(format: str = "json", user: str = Depends(require_auth)):
+    """Mengunduh data kanban dalam format JSON atau CSV."""
+    if format.lower() == "csv":
+        csv_data = service.export_kanban_csv()
+        return Response(
+            content=csv_data,
+            media_type="text/csv",
+            headers={"Content-Disposition": 'attachment; filename="kanban_tasks.csv"'}
+        )
+    else:
+        k_data = service.get_kanban_data()
+        return Response(
+            content=json.dumps(k_data, indent=2, ensure_ascii=False),
+            media_type="application/json",
+            headers={"Content-Disposition": 'attachment; filename="kanban_tasks.json"'}
+        )
+
 # ==========================================================
 # SERVER-SENT EVENTS (SSE) STREAM
 # ==========================================================
@@ -199,16 +258,14 @@ async def api_stream(request: Request):
         ping_counter = 0
 
         while True:
-            # Jika koneksi client terputus
             if await request.is_disconnected():
                 break
 
             current_k = service.get_kanban_data()
             current_mtime = current_k.get("mtime", 0)
-            sys_metrics = service.get_system_metrics()
+            sys_metrics = service.get_expanded_system_metrics()
             current_tmux = sys_metrics["tmux_active"]
 
-            # Kirim update jika ada perubahan file kanban atau status tmux
             if current_mtime != last_mtime or current_tmux != last_tmux_state or ping_counter >= 10:
                 last_mtime = current_mtime
                 last_tmux_state = current_tmux
@@ -222,7 +279,6 @@ async def api_stream(request: Request):
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
             else:
-                # Heartbeat ping sederhana
                 yield f": heartbeat\n\n"
 
             ping_counter += 1

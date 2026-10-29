@@ -9,16 +9,55 @@ document.addEventListener('DOMContentLoaded', () => {
     window.I18n.init();
   }
 
-  // 1. Inisialisasi Canvas & Kanban
+  // 1. Inisialisasi Canvas, Kanban & Audio Synth
+  const soundFx = (typeof SoundFX === 'function') ? new SoundFX() : null;
   const canvas = new OfficeCanvas('officeCanvas');
   const kanban = new KanbanBoard('kanbanContainer');
+
+  // 1b. Canvas 2D Hit Detection Callback
+  if (canvas) {
+    canvas.onAgentClick = (agentName) => {
+      if (soundFx) soundFx.playClick();
+      // Filter kanban to agent
+      const fBtns = document.querySelectorAll('.filter-btn');
+      fBtns.forEach(b => {
+        if (b.getAttribute('data-assignee') === agentName) {
+          b.classList.add('neo-btn-primary');
+          b.classList.remove('neo-btn-secondary');
+        } else {
+          b.classList.remove('neo-btn-primary');
+          b.classList.add('neo-btn-secondary');
+        }
+      });
+      kanban.setFilter(agentName);
+
+      // Smooth scroll to Kanban board
+      const kanbanSection = document.getElementById('kanbanContainer');
+      if (kanbanSection) {
+        kanbanSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Visual pulse pada kartu agen di bawah canvas
+      const cards = document.querySelectorAll('#agentsGrid .neo-box-sm');
+      cards.forEach(card => {
+        if (card.textContent.includes(agentName)) {
+          card.style.outline = '3px solid var(--border-color)';
+          setTimeout(() => { card.style.outline = 'none'; }, 1500);
+        }
+      });
+    };
+  }
 
   // Cache data terakhir untuk re-render saat bahasa berubah
   window.latestAgentsData = null;
   window.latestSystemData = null;
+  let prevDoneTaskIds = null;
+  let currentDetailTaskId = null;
+  let currentDetailTask = null;
 
   // 2. DOM Elements
   const tmuxBadge = document.getElementById('tmuxBadge');
+  const telemetryDeck = document.getElementById('telemetryDeck');
   const ramMetric = document.getElementById('ramMetric');
   const cpuMetric = document.getElementById('cpuMetric');
   const agentsGrid = document.getElementById('agentsGrid');
@@ -31,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
   const logoutBtn = document.getElementById('logoutBtn');
   const langToggle = document.getElementById('langToggle');
+  const audioToggleBtn = document.getElementById('audioToggleBtn');
+  const audioIcon = document.getElementById('audioIcon');
+  const openLogsBtn = document.getElementById('openLogsBtn');
   const filterBtns = document.querySelectorAll('.filter-btn');
   const projectFilterSelect = document.getElementById('projectFilterSelect');
   const periodFilterSelect = document.getElementById('periodFilterSelect');
@@ -60,6 +102,53 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailCreatedAt = document.getElementById('detailCreatedAt');
   const detailCompletedAt = document.getElementById('detailCompletedAt');
 
+  // Detail Action Controls
+  const detailStatusSelect = document.getElementById('detailStatusSelect');
+  const detailUpdateStatusBtn = document.getElementById('detailUpdateStatusBtn');
+  const detailRetryBtn = document.getElementById('detailRetryBtn');
+  const detailDeleteBtn = document.getElementById('detailDeleteBtn');
+  const taskActionFeedback = document.getElementById('taskActionFeedback');
+
+  // Live Logs Modal DOM
+  const logsModal = document.getElementById('logsModal');
+  const closeLogsBtn = document.getElementById('closeLogsBtn');
+  const logActiveBadge = document.getElementById('logActiveBadge');
+  const logAgentTabs = document.querySelectorAll('.log-tab-btn');
+  const autoRefreshLogsCheckbox = document.getElementById('autoRefreshLogsCheckbox');
+  const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+  const copyLogsBtn = document.getElementById('copyLogsBtn');
+  const terminalLogContent = document.getElementById('terminalLogContent');
+  const logTimestamp = document.getElementById('logTimestamp');
+
+  // Server Health Modal DOM
+  const serverHealthModal = document.getElementById('serverHealthModal');
+  const closeHealthModalBtn = document.getElementById('closeHealthModalBtn');
+  const refreshHealthBtn = document.getElementById('refreshHealthBtn');
+  const healthRamText = document.getElementById('healthRamText');
+  const healthRamBar = document.getElementById('healthRamBar');
+  const healthSwapText = document.getElementById('healthSwapText');
+  const healthSwapBar = document.getElementById('healthSwapBar');
+  const healthCpuTemp = document.getElementById('healthCpuTemp');
+  const healthCpuLoad = document.getElementById('healthCpuLoad');
+  const healthDiskText = document.getElementById('healthDiskText');
+  const healthDiskBar = document.getElementById('healthDiskBar');
+  const healthServicesContainer = document.getElementById('healthServicesContainer');
+  const healthLastChecked = document.getElementById('healthLastChecked');
+
+  // Analytics & Export DOM
+  const openAnalyticsBtn = document.getElementById('openAnalyticsBtn');
+  const analyticsModal = document.getElementById('analyticsModal');
+  const closeAnalyticsModalBtn = document.getElementById('closeAnalyticsModalBtn');
+  const statTotalTasks = document.getElementById('statTotalTasks');
+  const statDoneTasks = document.getElementById('statDoneTasks');
+  const statActiveTasks = document.getElementById('statActiveTasks');
+  const statCompletionRate = document.getElementById('statCompletionRate');
+  const workloadBarsContainer = document.getElementById('workloadBarsContainer');
+  const projectsBreakdownContainer = document.getElementById('projectsBreakdownContainer');
+  const statCycleTime = document.getElementById('statCycleTime');
+  const exportCsvBtn = document.getElementById('exportCsvBtn');
+  const exportJsonBtn = document.getElementById('exportJsonBtn');
+
   // Render icons initially
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
@@ -77,6 +166,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload.type === 'sync') {
           window.latestAgentsData = payload.agents;
           window.latestSystemData = payload.system;
+
+          // Detect newly completed tasks for audio chime
+          if (payload.kanban && Array.isArray(payload.kanban.tasks)) {
+            const currentDoneIds = payload.kanban.tasks
+              .filter(t => t && (t.status === 'Done' || t.status === 'done'))
+              .map(t => t.id);
+
+            if (prevDoneTaskIds !== null) {
+              const newlyDone = currentDoneIds.filter(id => !prevDoneTaskIds.includes(id));
+              if (newlyDone.length > 0 && soundFx) {
+                soundFx.playSuccess();
+              }
+            }
+            prevDoneTaskIds = currentDoneIds;
+          }
 
           // Update Canvas
           canvas.updateAgents(payload.agents);
@@ -349,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await res.json();
         if (res.ok && data.success) {
+          if (soundFx) soundFx.playDispatch();
           taskAlert.className = 'neo-box-sm';
           taskAlert.style.background = '#DCFCE7';
           taskAlert.style.color = '#166534';
@@ -469,6 +574,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     taskDetailModal.classList.add('active');
+
+    // Populate Task Action Controls
+    currentDetailTaskId = task.id;
+    currentDetailTask = task;
+    if (detailStatusSelect) {
+      detailStatusSelect.value = status;
+    }
+    if (taskActionFeedback) {
+      taskActionFeedback.style.display = 'none';
+      taskActionFeedback.textContent = '';
+    }
+
     if (window.lucide) window.lucide.createIcons();
   };
 
@@ -484,10 +601,121 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // 7b. Task Action Listeners (Status Change, Retry, Delete)
+  if (detailUpdateStatusBtn) {
+    detailUpdateStatusBtn.addEventListener('click', async () => {
+      if (!currentDetailTaskId) return;
+      const newStatus = detailStatusSelect.value;
+      detailUpdateStatusBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/tasks/${currentDetailTaskId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (soundFx) {
+            if (newStatus === 'Done') soundFx.playSuccess();
+            else soundFx.playClick();
+          }
+          let statusClass = 'badge-todo';
+          if (newStatus === 'In-Progress') statusClass = 'badge-progress';
+          else if (newStatus === 'QA-Review') statusClass = 'badge-qa';
+          else if (newStatus === 'Done') statusClass = 'badge-done';
+          detailTaskStatus.className = `neo-badge ${statusClass}`;
+          detailTaskStatus.textContent = newStatus.toUpperCase();
+
+          if (taskActionFeedback) {
+            taskActionFeedback.style.color = '#166534';
+            taskActionFeedback.textContent = window.I18n 
+              ? window.I18n.t('modal_detail.status_updated', { status: newStatus }) 
+              : `Status updated to ${newStatus}`;
+            taskActionFeedback.style.display = 'inline-block';
+          }
+        } else {
+          if (taskActionFeedback) {
+            taskActionFeedback.style.color = '#991B1B';
+            taskActionFeedback.textContent = data.error || 'Failed to update';
+            taskActionFeedback.style.display = 'inline-block';
+          }
+        }
+      } catch (err) {
+        if (taskActionFeedback) {
+          taskActionFeedback.style.color = '#991B1B';
+          taskActionFeedback.textContent = 'Network error';
+          taskActionFeedback.style.display = 'inline-block';
+        }
+      } finally {
+        detailUpdateStatusBtn.disabled = false;
+      }
+    });
+  }
+
+  if (detailRetryBtn) {
+    detailRetryBtn.addEventListener('click', async () => {
+      if (!currentDetailTaskId) return;
+      const assignee = (currentDetailTask && currentDetailTask.assignee) ? currentDetailTask.assignee : 'AGENT';
+      const confirmMsg = window.I18n 
+        ? window.I18n.t('modal_detail.retry_confirm', { task_id: currentDetailTaskId, assignee })
+        : `Do you want to retry task ${currentDetailTaskId} and notify ${assignee}?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      detailRetryBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/tasks/${currentDetailTaskId}/retry`, { method: 'POST' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (soundFx) soundFx.playDispatch();
+          taskDetailModal.classList.remove('active');
+          alert(window.I18n ? window.I18n.t('modal_detail.task_retried', { task_id: currentDetailTaskId }) : `Task ${currentDetailTaskId} retried.`);
+        } else {
+          alert(data.error || 'Failed to retry task');
+        }
+      } catch (e) {
+        alert('Server connection error');
+      } finally {
+        detailRetryBtn.disabled = false;
+      }
+    });
+  }
+
+  if (detailDeleteBtn) {
+    detailDeleteBtn.addEventListener('click', async () => {
+      if (!currentDetailTaskId) return;
+      const confirmMsg = window.I18n 
+        ? window.I18n.t('modal_detail.delete_confirm', { task_id: currentDetailTaskId })
+        : `Are you sure you want to permanently delete task ${currentDetailTaskId}?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      detailDeleteBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/tasks/${currentDetailTaskId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (soundFx) soundFx.playClick();
+          taskDetailModal.classList.remove('active');
+          alert(window.I18n ? window.I18n.t('modal_detail.task_deleted', { task_id: currentDetailTaskId }) : `Task ${currentDetailTaskId} deleted.`);
+        } else {
+          alert(data.error || 'Failed to delete task');
+        }
+      } catch (e) {
+        alert('Server connection error');
+      } finally {
+        detailDeleteBtn.disabled = false;
+      }
+    });
+  }
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (taskDetailModal.classList.contains('active')) taskDetailModal.classList.remove('active');
-      if (taskModal.classList.contains('active')) taskModal.classList.remove('active');
+      if (taskDetailModal && taskDetailModal.classList.contains('active')) taskDetailModal.classList.remove('active');
+      if (taskModal && taskModal.classList.contains('active')) taskModal.classList.remove('active');
+      if (logsModal && logsModal.classList.contains('active')) closeLogsModal();
+      if (serverHealthModal && serverHealthModal.classList.contains('active')) serverHealthModal.classList.remove('active');
+      if (analyticsModal && analyticsModal.classList.contains('active')) analyticsModal.classList.remove('active');
     }
   });
 
@@ -548,6 +776,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('bayoffice_language_changed', () => {
     // Re-render kanban
     kanban.render();
+    // Update audio button tooltip
+    updateAudioButtonUI();
     // Re-load projects options in selects
     loadProjects();
     // Re-render agent cards
@@ -650,6 +880,381 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
       }
+    });
+  }
+
+  // ==========================================================
+  // 13. 8-Bit Retro Sound Effects & Audio Toggle
+  // ==========================================================
+  function updateAudioButtonUI() {
+    if (!audioToggleBtn || !audioIcon || !soundFx) return;
+    const isEn = soundFx.isEnabled();
+    audioIcon.innerHTML = isEn 
+      ? '<i data-lucide="volume-2" class="lucide-sm"></i>' 
+      : '<i data-lucide="volume-x" class="lucide-sm"></i>';
+    
+    const tip = window.I18n 
+      ? (isEn ? window.I18n.t('actions.audio_mute') : window.I18n.t('actions.audio_unmute'))
+      : (isEn ? 'Mute 8-Bit Audio' : 'Unmute 8-Bit Audio');
+    audioToggleBtn.title = tip;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  if (audioToggleBtn) {
+    audioToggleBtn.addEventListener('click', () => {
+      if (soundFx) {
+        soundFx.toggle();
+        updateAudioButtonUI();
+      }
+    });
+  }
+  updateAudioButtonUI();
+
+  // ==========================================================
+  // 14. Live Agent Terminal Logs Viewer
+  // ==========================================================
+  let selectedLogAgent = 'LUHUT';
+  let logsRefreshInterval = null;
+
+  async function fetchAgentLogs(agentName) {
+    if (!terminalLogContent) return;
+    try {
+      const res = await fetch(`/api/agents/${agentName}/logs?lines=120`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        terminalLogContent.textContent = data.logs || '(No logs returned)';
+        if (logActiveBadge) {
+          logActiveBadge.textContent = data.pane || `PANE :0.${['LUHUT', 'GIBRAN', 'JOKOWI', 'PRABOWO'].indexOf(agentName)}`;
+          logActiveBadge.className = data.active ? 'neo-badge badge-done' : 'neo-badge badge-todo';
+        }
+        if (logTimestamp) {
+          logTimestamp.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+        // Auto scroll to bottom of logs
+        terminalLogContent.scrollTop = terminalLogContent.scrollHeight;
+      } else {
+        terminalLogContent.textContent = data.error || 'Failed to fetch logs';
+      }
+    } catch (e) {
+      terminalLogContent.textContent = `Network error fetching logs: ${e.message}`;
+    }
+  }
+
+  function openLogsModal() {
+    if (!logsModal) return;
+    if (soundFx) soundFx.playClick();
+    logsModal.classList.add('active');
+    fetchAgentLogs(selectedLogAgent);
+
+    if (logsRefreshInterval) clearInterval(logsRefreshInterval);
+    logsRefreshInterval = setInterval(() => {
+      if (logsModal.classList.contains('active') && autoRefreshLogsCheckbox && autoRefreshLogsCheckbox.checked) {
+        fetchAgentLogs(selectedLogAgent);
+      }
+    }, 3000);
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  function closeLogsModal() {
+    if (!logsModal) return;
+    logsModal.classList.remove('active');
+    if (logsRefreshInterval) {
+      clearInterval(logsRefreshInterval);
+      logsRefreshInterval = null;
+    }
+  }
+
+  if (openLogsBtn) {
+    openLogsBtn.addEventListener('click', openLogsModal);
+  }
+
+  if (closeLogsBtn) {
+    closeLogsBtn.addEventListener('click', closeLogsModal);
+  }
+
+  if (logsModal) {
+    logsModal.addEventListener('click', (e) => {
+      if (e.target === logsModal) closeLogsModal();
+    });
+  }
+
+  logAgentTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      logAgentTabs.forEach(t => {
+        t.classList.remove('neo-btn-primary');
+        t.classList.add('neo-btn-secondary');
+      });
+      tab.classList.add('neo-btn-primary');
+      tab.classList.remove('neo-btn-secondary');
+      selectedLogAgent = tab.getAttribute('data-agent');
+      if (soundFx) soundFx.playClick();
+      fetchAgentLogs(selectedLogAgent);
+    });
+  });
+
+  if (refreshLogsBtn) {
+    refreshLogsBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      fetchAgentLogs(selectedLogAgent);
+    });
+  }
+
+  if (copyLogsBtn && terminalLogContent) {
+    copyLogsBtn.addEventListener('click', () => {
+      const text = terminalLogContent.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const origHtml = copyLogsBtn.innerHTML;
+        const copiedTxt = window.I18n ? window.I18n.t('logs.copied') : 'Copied!';
+        copyLogsBtn.innerHTML = `<i data-lucide="check" class="lucide-sm"></i> <span>${copiedTxt}</span>`;
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+        setTimeout(() => {
+          copyLogsBtn.innerHTML = origHtml;
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        }, 1800);
+      });
+    });
+  }
+
+  // ==========================================================
+  // 15. Server Health Guardian Modal
+  // ==========================================================
+  async function fetchHealthMetrics() {
+    if (!serverHealthModal) return;
+    try {
+      const res = await fetch('/api/system/health');
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // RAM
+      if (healthRamText) healthRamText.textContent = `${data.ram_used} / ${data.ram_total} (${data.ram_percent}%)`;
+      if (healthRamBar) {
+        healthRamBar.style.width = `${data.ram_percent}%`;
+        healthRamBar.style.backgroundColor = (data.ram_percent > 85) ? '#EF4444' : (data.ram_percent > 70) ? '#F59E0B' : '#2563EB';
+      }
+
+      // Swap
+      if (healthSwapText) healthSwapText.textContent = `${data.swap_used} / ${data.swap_total} (${data.swap_percent}%)`;
+      if (healthSwapBar) {
+        healthSwapBar.style.width = `${data.swap_percent}%`;
+        healthSwapBar.style.backgroundColor = (data.swap_percent > 80) ? '#EF4444' : (data.swap_percent > 50) ? '#F59E0B' : '#10B981';
+      }
+
+      // CPU Temp
+      if (healthCpuTemp) {
+        healthCpuTemp.textContent = data.cpu_temp || '-';
+        const cVal = data.cpu_temp_val || 0;
+        healthCpuTemp.style.color = (cVal > 75) ? '#EF4444' : (cVal > 60) ? '#F59E0B' : '#16A34A';
+      }
+
+      // CPU Load Avg
+      if (healthCpuLoad) {
+        healthCpuLoad.textContent = (data.load_avg || []).join(', ') || '-';
+      }
+
+      // Disk Root
+      if (healthDiskText) healthDiskText.textContent = `${data.disk_used} / ${data.disk_total} (${data.disk_percent}%)`;
+      if (healthDiskBar) {
+        healthDiskBar.style.width = `${data.disk_percent}%`;
+        healthDiskBar.style.backgroundColor = (data.disk_percent > 85) ? '#EF4444' : '#8B5CF6';
+      }
+
+      // Vital Services
+      if (healthServicesContainer && data.services) {
+        let svcsHtml = '';
+        const isId = (window.I18n && window.I18n.getLanguage() === 'id');
+        for (const [sName, sStatus] of Object.entries(data.services)) {
+          const isActive = (sStatus === 'active');
+          const badgeClass = isActive ? 'badge-done' : 'badge-todo';
+          const label = isActive ? (isId ? 'AKTIF' : 'ACTIVE') : (isId ? 'MATI' : 'INACTIVE');
+          svcsHtml += `
+            <div class="service-pill">
+              <span>${sName}</span>
+              <span class="neo-badge ${badgeClass}" style="font-size:0.68rem;">${label}</span>
+            </div>
+          `;
+        }
+        healthServicesContainer.innerHTML = svcsHtml;
+      }
+
+      if (healthLastChecked) {
+        healthLastChecked.textContent = `Last checked: ${new Date().toLocaleTimeString()}`;
+      }
+    } catch (e) {
+      console.warn('Gagal memuat telemetri kesehatan server:', e);
+    }
+  }
+
+  function openHealthModal() {
+    if (!serverHealthModal) return;
+    if (soundFx) soundFx.playClick();
+    serverHealthModal.classList.add('active');
+    fetchHealthMetrics();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  if (telemetryDeck) {
+    telemetryDeck.addEventListener('click', openHealthModal);
+  }
+
+  if (closeHealthModalBtn) {
+    closeHealthModalBtn.addEventListener('click', () => {
+      serverHealthModal.classList.remove('active');
+    });
+  }
+
+  if (serverHealthModal) {
+    serverHealthModal.addEventListener('click', (e) => {
+      if (e.target === serverHealthModal) serverHealthModal.classList.remove('active');
+    });
+  }
+
+  if (refreshHealthBtn) {
+    refreshHealthBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      fetchHealthMetrics();
+    });
+  }
+
+  // ==========================================================
+  // 16. Kanban Insights & Analytics Modal
+  // ==========================================================
+  function openAnalyticsModal() {
+    if (!analyticsModal) return;
+    if (soundFx) soundFx.playClick();
+
+    const tasks = kanban.tasks || [];
+    const total = tasks.length;
+    const doneTasks = tasks.filter(t => kanban.normalizeStatus(t.status) === 'Done');
+    const activeTasks = tasks.filter(t => kanban.normalizeStatus(t.status) === 'In-Progress');
+    const doneCount = doneTasks.length;
+    const activeCount = activeTasks.length;
+    const completionRate = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+    if (statTotalTasks) statTotalTasks.textContent = total;
+    if (statDoneTasks) statDoneTasks.textContent = doneCount;
+    if (statActiveTasks) statActiveTasks.textContent = activeCount;
+    if (statCompletionRate) statCompletionRate.textContent = `${completionRate}%`;
+
+    // Workload Distribution
+    if (workloadBarsContainer) {
+      const agents = ['LUHUT', 'JOKOWI', 'PRABOWO', 'GIBRAN'];
+      const agentColors = { LUHUT: '#EF4444', JOKOWI: '#0EA5E9', PRABOWO: '#F97316', GIBRAN: '#10B981' };
+      let workloadHtml = '';
+
+      agents.forEach(ag => {
+        const agTasks = tasks.filter(t => (t.assignee || '').toUpperCase() === ag);
+        const count = agTasks.length;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        workloadHtml += `
+          <div style="font-size:0.78rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-weight:700;">
+              <span>${ag}</span>
+              <span>${count} tasks (${pct}%)</span>
+            </div>
+            <div class="progress-bar-track" style="height:8px;">
+              <div class="progress-bar-fill" style="width:${pct}%; background-color:${agentColors[ag]};"></div>
+            </div>
+          </div>
+        `;
+      });
+      workloadBarsContainer.innerHTML = workloadHtml;
+    }
+
+    // Projects Breakdown
+    if (projectsBreakdownContainer) {
+      const projectCounts = {};
+      tasks.forEach(t => {
+        const p = t.project || 'unknown';
+        projectCounts[p] = (projectCounts[p] || 0) + 1;
+      });
+      let projHtml = '';
+      for (const [p, c] of Object.entries(projectCounts)) {
+        projHtml += `
+          <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed var(--border-color);">
+            <span style="font-weight:700;">${p}</span>
+            <span class="neo-badge" style="font-size:0.7rem; background:var(--bg-main);">${c}</span>
+          </div>
+        `;
+      }
+      projectsBreakdownContainer.innerHTML = projHtml || '<div style="color:#64748B;">No projects</div>';
+    }
+
+    // Average Cycle Time
+    if (statCycleTime) {
+      let totalMinutes = 0;
+      let validCount = 0;
+      doneTasks.forEach(t => {
+        const startRaw = t.created_at || t.started_at;
+        const endRaw = t.completed_at;
+        if (startRaw && endRaw) {
+          const s = new Date(startRaw).getTime();
+          const e = new Date(endRaw).getTime();
+          if (!isNaN(s) && !isNaN(e) && e > s) {
+            totalMinutes += (e - s) / 60000;
+            validCount++;
+          }
+        }
+      });
+
+      if (validCount > 0) {
+        const avgMin = totalMinutes / validCount;
+        if (avgMin >= 60) {
+          statCycleTime.textContent = `${(avgMin / 60).toFixed(1)} hrs`;
+        } else {
+          statCycleTime.textContent = `${Math.round(avgMin)} mins`;
+        }
+      } else {
+        statCycleTime.textContent = window.I18n ? window.I18n.t('analytics.cycle_none') : 'N/A';
+      }
+    }
+
+    analyticsModal.classList.add('active');
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  if (openAnalyticsBtn) {
+    openAnalyticsBtn.addEventListener('click', openAnalyticsModal);
+  }
+
+  if (closeAnalyticsModalBtn) {
+    closeAnalyticsModalBtn.addEventListener('click', () => {
+      analyticsModal.classList.remove('active');
+    });
+  }
+
+  if (analyticsModal) {
+    analyticsModal.addEventListener('click', (e) => {
+      if (e.target === analyticsModal) analyticsModal.classList.remove('active');
+    });
+  }
+
+  // ==========================================================
+  // 17. Kanban Data Export (CSV & JSON)
+  // ==========================================================
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      window.location.href = '/api/kanban/export?format=csv';
+    });
+  }
+
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      window.location.href = '/api/kanban/export?format=json';
     });
   }
 

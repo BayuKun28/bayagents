@@ -90,7 +90,61 @@ class OfficeCanvas {
       }
     };
 
+    this.hoveredAgent = null;
+    this.onAgentClick = null;
+    this.setupHitDetection();
     this.startLoop();
+  }
+
+  setupHitDetection() {
+    if (!this.canvas) return;
+
+    const getCanvasCoords = (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    };
+
+    const getAgentAt = (x, y) => {
+      const hitRadius = 35;
+      for (const [name, ag] of Object.entries(this.agents)) {
+        if (!ag) continue;
+        const dist = Math.hypot(x - ag.x, y - ag.y);
+        if (dist <= hitRadius) {
+          return name;
+        }
+      }
+      return null;
+    };
+
+    this.canvas.addEventListener('mousemove', (e) => {
+      const coords = getCanvasCoords(e);
+      const targetAgent = getAgentAt(coords.x, coords.y);
+      if (targetAgent) {
+        this.canvas.style.cursor = 'pointer';
+        this.hoveredAgent = targetAgent;
+      } else {
+        this.canvas.style.cursor = 'default';
+        this.hoveredAgent = null;
+      }
+    });
+
+    this.canvas.addEventListener('mouseleave', () => {
+      this.canvas.style.cursor = 'default';
+      this.hoveredAgent = null;
+    });
+
+    this.canvas.addEventListener('click', (e) => {
+      const coords = getCanvasCoords(e);
+      const targetAgent = getAgentAt(coords.x, coords.y);
+      if (targetAgent && typeof this.onAgentClick === 'function') {
+        this.onAgentClick(targetAgent);
+      }
+    });
   }
 
   loadAssets(assetList) {
@@ -792,6 +846,15 @@ class OfficeCanvas {
       ctx.lineWidth = 3.5;
       ctx.strokeStyle = statusBorder;
       ctx.stroke();
+
+      // Visual Glow Ring saat Hover Kursor
+      if (this.hoveredAgent === name) {
+        ctx.beginPath();
+        ctx.arc(drawX, drawY, radius + 5, 0, Math.PI * 2);
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#38BDF8';
+        ctx.stroke();
+      }
 
       // Label Nama Agen di bawah Avatar
       ctx.fillStyle = '#0F172A';

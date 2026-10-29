@@ -1,10 +1,13 @@
 import os
 import json
 import time
+import glob
+import csv
+import io
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -206,6 +209,235 @@ def get_projects_registry() -> Dict[str, Any]:
         except Exception:
             pass
     return {"projects": {}}
+
+def get_expanded_system_metrics() -> Dict[str, Any]:
+    """Membaca metrik mendalam (RAM, CPU, Suhu APU, Swap, Disk, Services) tanpa overhead."""
+    metrics = get_system_metrics()
+
+    # 1. Swap / ZRAM dari /proc/meminfo
+    metrics["swap_total"] = "0 MiB"
+    metrics["swap_used"] = "0 MiB"
+    metrics["swap_percent"] = 0
+    try:
+        mem_info = {}
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                parts = line.split(":")
+                if len(parts) == 2:
+                    mem_info[parts[0].strip()] = int(parts[1].strip().split()[0])
+        s_total = mem_info.get("SwapTotal", 0)
+        s_free = mem_info.get("SwapFree", 0)
+        s_used = s_total - s_free
+        if s_total > 0:
+            metrics["swap_total"] = f"{s_total / 1024:.0f} MiB"
+            metrics["swap_used"] = f"{s_used / 1024:.0f} MiB"
+            metrics["swap_percent"] = round((s_used / s_total) * 100)
+    except Exception:
+        pass
+
+    # 2. Suhu APU (k10temp hwmon)
+    metrics["cpu_temp"] = "N/A"
+    metrics["cpu_temp_val"] = 0
+    try:
+        for path in glob.glob("/sys/class/hwmon/hwmon*/name"):
+            with open(path, "r") as f:
+                if "k10temp" in f.read():
+                    tpath = path.replace("name", "temp1_input")
+                    with open(tpath, "r") as tf:
+                        c_val = round(int(tf.read().strip()) / 1000, 1)
+                        metrics["cpu_temp"] = f"{c_val}°C"
+                        metrics["cpu_temp_val"] = c_val
+                    break
+    except Exception:
+        pass
+
+    # 3. Disk Usage Partisi Root
+    metrics["disk_total"] = "0 GiB"
+    metrics["disk_used"] = "0 GiB"
+    metrics["disk_free"] = "0 GiB"
+    metrics["disk_percent"] = 0
+    try:
+        st = os.statvfs("/")
+        total_b = st.f_blocks * st.f_frsize
+        free_b = st.f_bavail * st.f_frsize
+        used_b = total_b - free_b
+        if total_b > 0:
+            metrics["disk_total"] = f"{total_b / (1024**3):.1f} GiB"
+            metrics["disk_used"] = f"{used_b / (1024**3):.1f} GiB"
+            metrics["disk_free"] = f"{free_b / (1024**3):.1f} GiB"
+            metrics["disk_percent"] = round((used_b / total_b) * 100)
+    except Exception:
+        pass
+
+    # 4. Status Service Vital
+    services = ["bayoffice.service", "nginx.service", "postgresql.service", "cloudflared.service"]
+    service_status = {}
+    for s in services:
+        try:
+            r = subprocess.run(["systemctl", "is-active", s], capture_output=True, text=True)
+            service_status[s.replace(".service", "")] = r.stdout.strip()
+        except Exception:
+            service_status[s.replace(".service", "")] = "unknown"
+    metrics["services"] = service_status
+
+    return metrics
+
+def get_agent_logs(agent_name: str, lines: int = 120) -> Dict[str, Any]:
+    """Membaca riwayat terminal terakhir dari panel tmux agen."""
+    agent_name = agent_name.upper().strip()
+    if agent_name not in AGENT_PANES:
+        return {"success": False, "error": f"Agen '{agent_name}' tidak dikenal. Pilihan: LUHUT, GIBRAN, JOKOWI, PRABOWO"}
+
+    pane = AGENT_PANES[agent_name]
+    res_tmux = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
+    if res_tmux.returncode != 0:
+        return {
+            "success": True,
+            "agent": agent_name,
+            "pane": pane,
+            "active": False,
+            "logs": f"💤 Sesi tmux '{TMUX_SESSION_NAME}' saat ini sedang HIBERNASI (hemat RAM).\nPanel agen {agent_name} akan otomatis aktif saat ada tugas baru yang dikirimkan via Web UI atau Telegram."
+        }
+
+    try:
+        capture_cmd = ["tmux", "capture-pane", "-p", "-t", pane, "-S", f"-{lines}"]
+        result = subprocess.run(capture_cmd, capture_output=True, text=True, errors="replace", timeout=3)
+        raw_output = result.stdout
+        if not raw_output.strip():
+            raw_output = f"(Panel {agent_name} aktif di {pane}, belum ada log baru)"
+        return {
+            "success": True,
+            "agent": agent_name,
+            "pane": pane,
+            "active": True,
+            "logs": raw_output
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Gagal membaca capture pane: {e}"}
+
+def delete_task(task_id: str) -> Dict[str, Any]:
+    """Menghapus tugas dari kanban.json."""
+    task_id = task_id.strip()
+    try:
+        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
+            k_data = json.load(f)
+        tasks = k_data.get("tasks", [])
+        found = False
+        new_tasks = []
+        deleted_task = None
+        for t in tasks:
+            if isinstance(t, dict) and t.get("id") == task_id:
+                found = True
+                deleted_task = t
+            else:
+                new_tasks.append(t)
+        if not found:
+            return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
+        k_data["tasks"] = new_tasks
+        with open(KANBAN_PATH, "w", encoding="utf-8") as f:
+            json.dump(k_data, f, indent=2, ensure_ascii=False)
+        return {"success": True, "message": f"Tugas {task_id} berhasil dihapus", "task": deleted_task}
+    except Exception as e:
+        return {"success": False, "error": f"Gagal menghapus tugas: {e}"}
+
+def update_task_status(task_id: str, new_status: str, notes: Optional[str] = None) -> Dict[str, Any]:
+    """Memperbarui status tugas secara manual di kanban.json."""
+    valid_statuses = ["To-Do", "In-Progress", "QA-Review", "Done"]
+    normalized_status = None
+    for vs in valid_statuses:
+        if vs.lower() == new_status.lower().strip():
+            normalized_status = vs
+            break
+    if not normalized_status:
+        return {"success": False, "error": f"Status tidak valid: {new_status}"}
+
+    try:
+        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
+            k_data = json.load(f)
+        found = False
+        target_t = None
+        for t in k_data.get("tasks", []):
+            if isinstance(t, dict) and t.get("id") == task_id:
+                found = True
+                target_t = t
+                t["status"] = normalized_status
+                if notes:
+                    t["notes"] = notes
+                if normalized_status == "Done" and not t.get("completed_at"):
+                    t["completed_at"] = datetime.now().astimezone().isoformat()
+                break
+        if not found:
+            return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
+        with open(KANBAN_PATH, "w", encoding="utf-8") as f:
+            json.dump(k_data, f, indent=2, ensure_ascii=False)
+        return {"success": True, "message": f"Status {task_id} diperbarui menjadi {normalized_status}", "task": target_t}
+    except Exception as e:
+        return {"success": False, "error": f"Gagal memperbarui status: {e}"}
+
+def retry_task(task_id: str) -> Dict[str, Any]:
+    """Menjalankan ulang (retry) tugas yang ada ke agen terkait."""
+    try:
+        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
+            k_data = json.load(f)
+        found = False
+        target_t = None
+        for t in k_data.get("tasks", []):
+            if isinstance(t, dict) and t.get("id") == task_id:
+                found = True
+                target_t = t
+                t["status"] = "In-Progress"
+                t["notes"] = f"Tugas di-retry manual via BayOffice Web UI pada {datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')}."
+                break
+        if not found:
+            return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
+        with open(KANBAN_PATH, "w", encoding="utf-8") as f:
+            json.dump(k_data, f, indent=2, ensure_ascii=False)
+
+        assignee = target_t.get("assignee", "LUHUT")
+        pane = AGENT_PANES.get(assignee, f"{TMUX_SESSION_NAME}:0.0")
+        target_dir = target_t.get("target_dir", str(WORKSPACE_DIR))
+        instr = target_t.get("description", target_t.get("title", ""))
+        project_id = target_t.get("project", "bayoffice")
+
+        res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
+        if res.returncode == 0:
+            msg = f"{assignee}: Tugas {task_id} [Proyek: {project_id}] di-retry manual di {target_dir}. Lanjutkan eksekusi: '{instr}'"
+            subprocess.run(["tmux", "send-keys", "-t", pane, msg, "Enter"], check=False)
+        else:
+            task_summary = f"{task_id} [Proyek: {project_id}] (Retry): {instr}"
+            subprocess.Popen([START_AGENTS_SCRIPT, "daemon", task_summary])
+
+        try:
+            subprocess.Popen(["python3", TELEBOT_SCRIPT, f"[BayOffice]: 🔁 Tugas *{task_id}* di-retry manual untuk agen `{assignee}`."])
+        except Exception:
+            pass
+
+        return {"success": True, "message": f"Tugas {task_id} berhasil di-retry untuk {assignee}", "task": target_t}
+    except Exception as e:
+        return {"success": False, "error": f"Gagal retry tugas: {e}"}
+
+def export_kanban_csv() -> str:
+    """Mengonversi seluruh tugas kanban menjadi format CSV."""
+    k_data = get_kanban_data()
+    tasks = k_data.get("tasks", [])
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Project", "Assignee", "Status", "Title", "Description", "Created At", "Completed At", "Notes", "QA Review"])
+    for t in tasks:
+        if isinstance(t, dict):
+            writer.writerow([
+                t.get("id", ""),
+                t.get("project", ""),
+                t.get("assignee", ""),
+                t.get("status", ""),
+                t.get("title", ""),
+                t.get("description", ""),
+                t.get("created_at", ""),
+                t.get("completed_at", ""),
+                t.get("notes", ""),
+                t.get("qa_review", "")
+            ])
+    return output.getvalue()
 
 def dispatch_task_from_web(instruction: str, category_hint: str = "auto", project_hint: str = "auto", engine: str = "agy") -> Dict[str, Any]:
     """Mengeksekusi penugasan baru dari Web UI persis seperti /task di Telegram."""
