@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import asyncio
 import json
+import yaml
 import time
 from datetime import datetime, timezone, timedelta, time as dtime
 from pathlib import Path
@@ -83,6 +84,31 @@ ROUTER9_LAST_ACTIVITY = 0
 ROUTER9_HISTORY_TIMEOUT = 1800  # Reset otomatis jika jeda percakapan > 30 menit
 ROUTER9_MAX_PAIRS = 8  # Simpan 8 pasang obrolan terakhir (16 pesan)
 
+# ==========================================
+# AGEN STANDALONE: HABIBIE (CHIEF ARCHITECT & PLANNER)
+# ==========================================
+HABIBIE_CONFIG_FILE = BAYAGENTS_DIR / "configs" / "habibie.yaml"
+
+def load_habibie_system_prompt() -> str:
+    """Memuat system prompt HABIBIE dari file configs/habibie.yaml."""
+    if HABIBIE_CONFIG_FILE.exists():
+        try:
+            with open(HABIBIE_CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+                prompt = (data.get("system_prompt") or "").strip()
+                if prompt:
+                    return f"[Instruksi Sistem HABIBIE:\n{prompt}]\n\n"
+        except Exception as e:
+            print(f"⚠️ Gagal membaca habibie.yaml: {e}")
+    # Fallback default jika file yaml tidak terbaca
+    return (
+        "[Instruksi Sistem: Kamu adalah HABIBIE (Chief Architect, Strategic Planner & Homelab System Advisor) "
+        "untuk server Debian (hostname: bay, AMD E2-9000 2-core, RAM ~3.2GB). "
+        "Bantu pengguna menyusun implementation plan teknis, menjawab pertanyaan pemrograman, dan mengawasi kesehatan server. "
+        "Jawab selalu dalam Bahasa Indonesia yang ringkas, terstruktur dengan emoji & bullet points. "
+        "Awali respon dengan '[HABIBIE]: '.]\n\n"
+    )
+
 def call_9router(user_prompt: str, system_prompt: str = None) -> str:
     """Memanggil 9Router (gemini-free-smart) di host 192.168.100.146 dengan memori multi-turn context."""
     global ROUTER9_CHAT_HISTORY, ROUTER9_LAST_ACTIVITY
@@ -91,12 +117,7 @@ def call_9router(user_prompt: str, system_prompt: str = None) -> str:
         ROUTER9_CHAT_HISTORY.clear()
     ROUTER9_LAST_ACTIVITY = now
 
-    sys_prompt = system_prompt or (
-        "Kamu adalah Asisten AI Pribadi cerdas & ramah untuk server Debian (hostname: bay). "
-        "Bantu pengguna menjawab pertanyaan umum, konsep pemrograman, analisa teknis, cuaca, atau obrolan santai. "
-        "Perhatikan dan pahami konteks riwayat percakapan sebelumnya dengan cermat agar jawaban selalu nyambung dan relevan. "
-        "Jawab selalu dalam Bahasa Indonesia yang ringkas, terstruktur dengan emoji & bullet points, dan mudah dibaca di Telegram."
-    )
+    sys_prompt = system_prompt or load_habibie_system_prompt()
     headers = {
         "Authorization": f"Bearer {ROUTER9_API_KEY}",
         "Content-Type": "application/json"
@@ -136,23 +157,8 @@ AUDIT_INTERVAL_SECONDS = 21600
 # Cari lokasi binary agy secara otomatis
 AGY_BIN = shutil.which("agy") or str(WORKSPACE_DIR / ".local/bin/agy")
 
-SYSTEM_RULES = (
-    "[Instruksi Sistem: Kamu adalah Asisten AI Pribadi & System Administrator untuk server Debian (hostname: bay, AMD E2-9000 2-core, RAM ~3.2GB). "
-    "Kamu memiliki keahlian dan skills terpasang: "
-    "1) server-ops (diagnostik sistem, CPU, RAM, suhu hwmon/thermal, disk lokal), "
-    "2) docker-homelab (manajemen dan monitoring kontainer Docker), "
-    "3) storage-hdd-manager (kesehatan penyimpanan disk /dev/sda, SMART health, cek kapasitas partisi), "
-    "4) network-watchdog (diagnostik interface jaringan, IP lokal/publik, port listening), "
-    "5) memory-guardian (pemantauan RAM ~3.2GB, swap, deteksi OOM-killer), "
-    "6) server-cleanup (pembersihan aman storage/cache apt/journalctl), dan "
-    "7) personal-assistant (format rapi, ramah, proaktif). "
-    "Secara default, jalankan perintah pembacaan/inspeksi (read-only) untuk menjawab pertanyaan user. "
-    "Jika user meminta tindakan perbaikan/eksekusi, lakukan sesuai instruksi dengan mengutamakan keselamatan data & batas memori server. "
-    "Jawab selalu dalam Bahasa Indonesia yang ringkas, terstruktur dengan emoji & bullet points, dan mudah dibaca di Telegram.]\n\n"
-)
-
 def run_agy(user_prompt: str, continue_session: bool = False) -> str:
-    full_prompt = f"{SYSTEM_RULES}Permintaan User: {user_prompt}"
+    full_prompt = f"{load_habibie_system_prompt()}Permintaan User: {user_prompt}"
     env = os.environ.copy()
     env["HOME"] = str(WORKSPACE_DIR)
     env["PATH"] = f"{WORKSPACE_DIR}/.gemini/antigravity-cli/bin:{WORKSPACE_DIR}/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
@@ -441,11 +447,11 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
                 return
 
             if target_engine == "agy":
-                await query.edit_message_text(f"🧠 *[AGY CLI]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
+                await query.edit_message_text(f"📐 *[HABIBIE / AGY]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
                 reply = await asyncio.to_thread(run_agy, prompt, True)
                 keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
             else:
-                await query.edit_message_text(f"⚡ *[9Router]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
+                await query.edit_message_text(f"📐 *[HABIBIE]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
                 reply = await asyncio.to_thread(call_9router, prompt)
                 if reply.startswith("⚠️"):
                     reply = await asyncio.to_thread(run_agy, prompt, True)
@@ -994,22 +1000,81 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Akses ditolak. ID Anda: {update.effective_user.id}")
         return
     await update.message.reply_text(
-        "✅ Bot Antigravity Home Server Aktif!\n\n"
-        "Perintah yang tersedia:\n"
-        "• /task <instruksi> - Kirim tugas proyek baru ke orkestrasi 4 agen (agy)\n"
-        "• /task9 <instruksi> - Opsi Darurat: AI Agent mandiri via 9Router (hemat kuota agy)\n"
-        "• /kanban - Cek papan progres tugas agen secara real-time\n"
-        "• /agents - Cek status kesehatan tim agen AI & resource\n"
-        "• /briefing - Ringkasan status server harian (Morning Briefing)\n"
-        "• /limit - Cek sisa limit token & kuota AI\n"
-        "• /audit - Cek usage CPU, RAM, Suhu, Disk & Service mendalam\n"
-        "• /incidents - Cek riwayat insiden I/O, reset USB, atau freeze sistem (24 jam)\n"
-        "• /skills - Lihat keahlian & skills AI terpasang\n"
-        "• /weekly - AI Homelab Weekly Digest & Analisis Tren\n"
-        "• /model - Ganti pilihan model AI\n"
-        "• /reset - Mulai percakapan baru\n"
-        "• Ketik pesan langsung untuk tanya-jawab cepat via 9Router."
+        "✅ *Bot Multi-Agen & Homelab Server Aktif!*\n\n"
+        "📐 *Agen Konsultan & Arsitek (Standalone / On-Demand):*\n"
+        "• Chat langsung atau gunakan `/plan <ide>` untuk konsultasi teknis & pembuatan *Implementation Plan* bersama **HABIBIE** tanpa membangunkan tim 4 agen (hemat 1.5 GB RAM).\n\n"
+        "🚀 *Perintah Eksekusi Tim 4 Agen:*\n"
+        "• `/task <instruksi>` - Kirim tugas proyek baru ke orkestrasi 4 agen (agy)\n"
+        "• `/task9 <instruksi>` - Opsi Darurat: AI Agent mandiri via 9Router (hemat kuota agy)\n"
+        "• `/kanban` - Cek papan progres tugas agen secara real-time\n"
+        "• `/agents` - Cek status kesehatan tim agen AI & resource\n\n"
+        "📊 *Monitoring & Utilitas Server:*\n"
+        "• `/plan <ide>` - Rancang Implementation Plan teknis bersama HABIBIE\n"
+        "• `/briefing` - Ringkasan status server harian (Morning Briefing)\n"
+        "• `/limit` - Cek sisa limit token & kuota AI\n"
+        "• `/audit` - Cek usage CPU, RAM, Suhu, Disk & Service mendalam\n"
+        "• `/incidents` - Cek riwayat insiden I/O, reset USB, atau freeze sistem (24 jam)\n"
+        "• `/skills` - Lihat keahlian & skills AI terpasang\n"
+        "• `/weekly` - AI Homelab Weekly Digest & Analisis Tren\n"
+        "• `/model` - Ganti pilihan model AI\n"
+        "• `/reset` - Mulai percakapan baru dengan HABIBIE",
+        parse_mode="Markdown"
     )
+
+async def plan_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Menyusun Implementation Plan arsitektur teknis bersama HABIBIE."""
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+
+    raw_args = list(context.args) if context.args else []
+    if not raw_args:
+        await update.message.reply_text(
+            "📐 *[HABIBIE - CHIEF ARCHITECT & PLANNER]*\n\n"
+            "Format:\n"
+            "`/plan <deskripsi ide atau kebutuhan fitur>`\n\n"
+            "Contoh:\n"
+            "• `/plan buatkan endpoint dan modal filter portofolio di infobay`\n"
+            "• `/plan implementasikan notifikasi email saat disk > 90%`\n"
+            "• `/plan arsitektur sistem antrean background jobs`\n\n"
+            "HABIBIE akan menyusun *Implementation Plan* teknis yang memetakan tugas untuk JOKOWI (backend), PRABOWO (frontend), dan GIBRAN (QA).",
+            parse_mode="Markdown"
+        )
+        return
+
+    ide = " ".join(raw_args).strip()
+    msg = await update.message.reply_text("📐 [HABIBIE] Sedang merancang Implementation Plan arsitektur teknis...")
+
+    plan_prompt = (
+        f"Sebagai HABIBIE (Chief Architect & Strategic Planner), buatkan 'Implementation Plan' "
+        f"teknis yang presisi, efisien, dan anti-overengineering untuk kebutuhan berikut:\n\n"
+        f"'{ide}'\n\n"
+        f"Struktur rencana wajib mencakup:\n"
+        f"1. 🎯 *Tujuan & Scope Fitur*\n"
+        f"2. 🗄️ *Tugas Backend (JOKOWI)*: Model, DB Migration, Routes API & Logika\n"
+        f"3. 🎨 *Tugas Frontend (PRABOWO)*: Komponen UI, State & Responsivitas\n"
+        f"4. 🛡️ *Checklist QA & Verifikasi (GIBRAN)*: Test cases, edge cases & kriteria lulus\n"
+        f"5. 🚀 *Langkah Orkestrasi (LUHUT)*: Urutan eksekusi, build & deployment\n\n"
+        f"Format dengan markdown yang rapi, ringkas, dan mudah dibaca di Telegram."
+    )
+
+    current_engine = get_current_engine()
+    if current_engine == "agy":
+        reply = await asyncio.to_thread(run_agy, plan_prompt, False)
+    else:
+        reply = await asyncio.to_thread(call_9router, plan_prompt)
+        if reply.startswith("⚠️"):
+            reply = await asyncio.to_thread(run_agy, plan_prompt, False)
+
+    reply_footer = (
+        f"\n\n💡 *Siap dieksekusi?* Kirim tugas ke tim agen dengan:\n"
+        f"`/task <proyek> {ide[:60]}`"
+    )
+    full_reply = f"📐 *[IMPLEMENTATION PLAN - HABIBIE]*\n\n{reply}{reply_footer}"
+
+    try:
+        await msg.edit_text(full_reply, parse_mode="Markdown")
+    except Exception:
+        await msg.edit_text(full_reply)
 
 async def manual_audit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ALLOWED_USER_ID:
@@ -1095,7 +1160,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if is_ops_action or current_engine == "agy":
-        msg = await update.message.reply_text("⏳ [agy Engine] Sedang memeriksa sistem server...")
+        msg = await update.message.reply_text("📐 [HABIBIE / AGY] Sedang memeriksa sistem server...")
         reply = await asyncio.to_thread(run_agy, update.message.text, True)
         # Jika agy mengalami kendala kuota atau limit, tawarkan atau fallback ke Emergency Agent
         if any(err_word in reply.lower() for err_word in ["quota", "rate limit", "exceeded", "429"]):
@@ -1130,7 +1195,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.edit_text(reply, reply_markup=reply_markup)
     else:
         # Default: 9Router (cepat & hemat kuota)
-        msg = await update.message.reply_text("⚡ [9Router] Mengetik...")
+        msg = await update.message.reply_text("📐 [HABIBIE] Mengetik...")
         reply = await asyncio.to_thread(call_9router, update.message.text)
         # Jika 9Router gagal (misal koneksi jaringan putus), fallback ke agy
         if reply.startswith("⚠️"):
@@ -1655,16 +1720,18 @@ async def agents_status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_icon = "🟢 Aktif" if tmux_active else "💤 Hibernasi (Auto-Sleep / Hemat RAM)"
 
     reply = (
-        f"🤖 *STATUS TIM ORKESTRASI 4 AGEN*\n\n"
+        f"🤖 *STATUS TIM AGEN AI HOMELAB*\n\n"
         f"• Sesi Tmux: `{status_icon}` (`agy_agents`)\n"
         f"• Service Systemd: `{svc_status}` (`agy-agents.service`)\n"
         f"• RAM Tersedia: `{mem_avail}` | Load CPU: `{load_str}`\n\n"
         f"👥 *Daftar Agen:*\n"
-        f"1. `LUHUT`   : DevOps & Monitor (Pane 0)\n"
-        f"2. `JOKOWI`  : Backend Engineer (Pane 1)\n"
-        f"3. `PRABOWO` : Frontend Engineer (Pane 2)\n"
-        f"4. `GIBRAN`  : QA & Code Auditor (Pane 3)\n\n"
-        f"💡 Beri tugas baru: `/task <deskripsi>`\n"
+        f"1. `LUHUT`   : Lead Orchestrator & Universal DevOps (Pane 0)\n"
+        f"2. `GIBRAN`  : Universal QA & Security Auditor (Pane 1)\n"
+        f"3. `JOKOWI`  : Polyglot Backend Engineer (Pane 2)\n"
+        f"4. `PRABOWO` : Polyglot Frontend Engineer (Pane 3)\n"
+        f"5. `HABIBIE` : Chief Architect, Strategic Planner & Homelab Advisor (Standalone / On-Demand)\n\n"
+        f"💡 Rancang fitur: `/plan <ide>`\n"
+        f"🚀 Beri tugas baru: `/task <deskripsi>`\n"
         f"📊 Cek Kanban: `/kanban`"
     )
     await update.message.reply_text(reply, parse_mode="Markdown")
@@ -1672,13 +1739,14 @@ async def agents_status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def post_init(application: Application):
     commands = [
         BotCommand("start", "Memulai bot dan melihat informasi"),
+        BotCommand("plan", "Rancang Implementation Plan teknis bersama HABIBIE"),
         BotCommand("engine", "Pilih otak chat default: 9Router / AGY / Selalu Tanya"),
         BotCommand("agy", "Tanya langsung ke otak AGY Antigravity"),
         BotCommand("9", "Tanya langsung ke otak 9Router"),
         BotCommand("task", "Kirim proyek/tugas baru ke tim orkestrasi 4 agen (agy)"),
         BotCommand("task9", "Opsi Darurat: AI Agent mandiri via 9Router"),
         BotCommand("kanban", "Lihat papan progres kanban agen secara real-time"),
-        BotCommand("agents", "Cek status kesehatan dan tim 4 agen AI"),
+        BotCommand("agents", "Cek status kesehatan dan tim agen AI"),
         BotCommand("briefing", "Ringkasan status server harian (Morning Briefing)"),
         BotCommand("incidents", "Cek riwayat insiden I/O, reset USB, atau freeze (24 jam)"),
         BotCommand("limit", "Cek sisa limit token & kuota AI"),
@@ -1705,6 +1773,7 @@ def main():
 
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start_cmd))
+    app.add_handler(CommandHandler(["plan", "arsitek", "rancang"], plan_cmd))
     app.add_handler(CommandHandler(["engine", "mode"], engine_cmd))
     app.add_handler(CommandHandler(["agy", "antigravity"], direct_agy_cmd))
     app.add_handler(CommandHandler(["9", "r9", "router9"], direct_9router_cmd))
