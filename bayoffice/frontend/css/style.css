@@ -600,10 +600,19 @@ body.dark-mode .nav-tab-btn .tab-icon-plans {
 /* Dedicated Kanban Board Layout */
 .kanban-dedicated-container {
   width: 100%;
+  overflow-x: auto;
+}
+
+.kanban-dedicated-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  min-width: 920px;
 }
 
 .kanban-dedicated-container .kanban-col-box {
-  min-height: 600px;
+  min-height: 540px;
   height: calc(100vh - 250px);
   max-height: calc(100vh - 250px) !important;
   display: flex;
@@ -611,10 +620,16 @@ body.dark-mode .nav-tab-btn .tab-icon-plans {
 }
 
 @media screen and (max-width: 900px) {
+  .kanban-dedicated-grid {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    gap: 14px;
+  }
+
   .kanban-dedicated-container .kanban-col-box {
-    min-height: 460px;
+    min-height: 420px;
     height: auto;
-    max-height: 580px !important;
+    max-height: 560px !important;
   }
 }
 

@@ -24,7 +24,10 @@ window.OfficeInsights = (function () {
   function update(taskList) {
     if (!section) return;
 
-    const tasks = taskList || (window.kanban && window.kanban.tasks) || [];
+    const tasks = taskList || 
+      (window.kanban && Array.isArray(window.kanban.tasks) && window.kanban.tasks.length > 0 ? window.kanban.tasks : null) || 
+      (window.latestKanbanData && Array.isArray(window.latestKanbanData.tasks) ? window.latestKanbanData.tasks : null) || 
+      [];
     const total = tasks.length;
     const isId = (window.I18n && window.I18n.currentLocale === 'id');
 

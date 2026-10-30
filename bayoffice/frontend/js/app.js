@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const soundFx = (typeof SoundFX === 'function') ? new SoundFX() : null;
   const canvas = new OfficeCanvas('officeCanvas');
   const kanban = new KanbanBoard('kanbanContainer');
+  window.kanban = kanban;
+  window.canvas = canvas;
+  window.soundFx = soundFx;
 
   // 1b. Canvas 2D Hit Detection Callback
   if (canvas) {
@@ -184,6 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload.type === 'sync') {
           window.latestAgentsData = payload.agents;
           window.latestSystemData = payload.system;
+          if (payload.kanban) {
+            window.latestKanbanData = payload.kanban;
+          }
 
           // Detect newly completed tasks for audio chime
           if (payload.kanban && Array.isArray(payload.kanban.tasks)) {
@@ -543,6 +549,17 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', (e) => {
       kanban.setSearch(e.target.value);
     });
+  }
+
+  // Sync state if form controls were restored by browser on page reload
+  if (periodFilterSelect && periodFilterSelect.value && periodFilterSelect.value !== 'ALL') {
+    kanban.setPeriodFilter(periodFilterSelect.value);
+  }
+  if (projectFilterSelect && projectFilterSelect.value && projectFilterSelect.value !== 'ALL') {
+    kanban.setProjectFilter(projectFilterSelect.value);
+  }
+  if (searchInput && searchInput.value) {
+    kanban.setSearch(searchInput.value);
   }
 
   // 6. Task Dispatcher Modal

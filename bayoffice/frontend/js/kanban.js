@@ -76,7 +76,6 @@ class KanbanBoard {
   }
 
   getReferenceNow() {
-    const clientNow = new Date();
     let maxTaskTime = 0;
     if (Array.isArray(this.tasks)) {
       for (const t of this.tasks) {
@@ -87,17 +86,13 @@ class KanbanBoard {
       }
     }
     if (maxTaskTime > 0) {
-      const maxDate = new Date(maxTaskTime);
-      // Jika jam server / task berbeda tahun dari jam browser client, samakan tahun & bulan ke task
-      if (maxDate.getFullYear() !== clientNow.getFullYear()) {
-        return maxDate;
-      }
+      return new Date(maxTaskTime);
     }
-    return clientNow;
+    return new Date();
   }
 
   isTaskInPeriod(task) {
-    if (this.selectedPeriod === 'ALL') return true;
+    if (this.selectedPeriod === 'ALL' || !this.selectedPeriod) return true;
 
     const taskDate = this.getTaskDate(task);
     if (!taskDate) return true;
@@ -230,7 +225,7 @@ class KanbanBoard {
     });
 
     let html = `
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px;">
+      <div class="kanban-dedicated-grid">
     `;
 
     this.columns.forEach(col => {
