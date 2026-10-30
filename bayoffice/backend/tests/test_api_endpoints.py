@@ -256,7 +256,7 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             self.assertEqual(create_res["schedule"]["project"], "none")
             self.assertEqual(create_res["schedule"]["category"], "reminder")
 
-            # 2. Test Dispatch Task routing to HABIBIE Standalone
+            # 2. Test Dispatch Task routing to HABIBIE Standalone (Reminder)
             with patch("subprocess.Popen") as mock_popen, patch("threading.Thread") as mock_thread:
                 task_res = service.dispatch_task_from_web(
                     instruction="cek cuaca karanganyar hari ini dan kirim ke telegram",
@@ -270,6 +270,19 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
                 self.assertEqual(task_res["category"], "Reminder")
                 self.assertEqual(task_res["project"], "general")
                 self.assertTrue(task_res["task_id"].startswith("TASK-REM-"))
+
+                # 3. Test Dispatch Task routing to HABIBIE Standalone (Universal / General)
+                task_gen_res = service.dispatch_task_from_web(
+                    instruction="cek suhu cpu dan load server sekarang",
+                    category_hint="general",
+                    project_hint="none",
+                    engine="agy"
+                )
+                self.assertTrue(task_gen_res["success"])
+                self.assertIn("HABIBIE", task_gen_res["target_agent"])
+                self.assertEqual(task_gen_res["category"], "Universal")
+                self.assertEqual(task_gen_res["project"], "general")
+                self.assertTrue(task_gen_res["task_id"].startswith("TASK-GEN-"))
 
         asyncio.run(run_sched_test())
 

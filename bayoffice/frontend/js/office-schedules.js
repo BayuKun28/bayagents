@@ -183,7 +183,7 @@ window.OfficeSchedules = (function () {
           <!-- Metadata Tags -->
           <div style="display:flex; gap:6px; flex-wrap:wrap; font-size:0.72rem;">
             <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">${(!s.project || s.project === 'none' || s.project === 'general') ? (window.I18n ? window.I18n.t('schedules.project_none') : '🌐 Umum / Homelab') : ('Project: ' + escapeHtml(s.project))}</span>
-            <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">${(s.category === 'reminder') ? (window.I18n ? window.I18n.t('schedules.cat_reminder') : '🔔 Reminder & Cuaca') : ('Category: ' + escapeHtml(s.category || 'auto'))}</span>
+            <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">${(s.category === 'general' || s.category === 'universal' || s.category === 'reminder') ? (window.I18n ? window.I18n.t('schedules.cat_general') : '🌐 Universal (HABIBIE)') : ('Category: ' + escapeHtml(s.category || 'auto'))}</span>
             <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">Engine: ${escapeHtml(s.engine || 'agy')}</span>
             ${s.model ? `<span class="neo-badge" style="background:#8B5CF6; color:#FFFFFF; font-weight:700;">Model: ${escapeHtml(s.model)}</span>` : ''}
             <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">${runsLabel}</span>

@@ -579,13 +579,24 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     has_code_keywords = any(k in instr_lower for k in fe_keywords + be_keywords)
 
     # 1. Deteksi Tugas Mandiri (HABIBIE - Standalone Execution tanpa bangunkan 4 agen di tmux)
-    if is_reminder or (is_none_project and not has_code_keywords) or category_hint in ["reminder", "homelab"]:
+    is_universal_cat = category_hint in ["general", "universal", "reminder", "homelab"]
+    if is_universal_cat or is_reminder or (is_none_project and not has_code_keywords):
         is_standalone = True
         project_id = "general" if is_none_project else project_raw
-        category = "Reminder" if is_reminder else ("Homelab Ops" if category_hint in ["ops", "homelab"] else "General")
+        if category_hint in ["general", "universal"]:
+            category = "Universal"
+            task_prefix = "TASK-GEN"
+        elif is_reminder or category_hint == "reminder":
+            category = "Reminder"
+            task_prefix = "TASK-REM"
+        elif category_hint in ["ops", "homelab"]:
+            category = "Homelab Ops"
+            task_prefix = "TASK-OPS"
+        else:
+            category = "Universal"
+            task_prefix = "TASK-GEN"
         target_agent = "HABIBIE"
-        task_prefix = "TASK-REM" if category == "Reminder" else "TASK-OPS"
-        skills = ["Chief Architect", "Homelab Advisor", "Automation"]
+        skills = ["Chief Architect", "Homelab Advisor", "Universal Automation"]
         target_dir = str(WORKSPACE_DIR)
     else:
         is_standalone = False
@@ -679,7 +690,36 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     if is_standalone or target_agent == "HABIBIE":
         def run_habibie_standalone_async():
             output_text = ""
-            # 1. Eksekusi via agy CLI jika engine == 'agy'
+            now_start_iso = datetime.now().astimezone().isoformat()
+
+            # 1. Update kanban status to In-Progress with started_at
+            try:
+                with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:
+                    for t in k_data.get("tasks", []):
+                        if isinstance(t, dict) and t.get("id") == task_id:
+                            t["status"] = "In-Progress"
+                            t["started_at"] = now_start_iso
+                            t["notes"] = f"HABIBIE sedang mengeksekusi tugas mandiri: {instruction[:90]}..."
+                            break
+            except Exception as e:
+                print(f"⚠️ Gagal memperbarui status In-Progress di kanban: {e}")
+
+            # 2. Log start event to habibie.log
+            try:
+                habibie_log_file = DATA_DIR / "habibie.log"
+                with open(habibie_log_file, "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [{task_id}] START (In-Progress): {instruction}\n")
+            except Exception:
+                pass
+
+            # 3. Notifikasi Mulai ke Telegram (Master Rule 4: Saat mulai pengerjaan In-Progress)
+            try:
+                start_msg = f"[HABIBIE]: 🚀 *Memulai Tugas Mandiri*\n📋 *ID:* `{task_id}`\n📌 *Instruksi:* \"{instruction[:90]}\"\n⏳ *Status:* Sedang diproses oleh HABIBIE..."
+                subprocess.Popen([TELEBOT_PYTHON, TELEBOT_SCRIPT, start_msg])
+            except Exception as e:
+                print(f"⚠️ Gagal kirim notifikasi mulai Telegram HABIBIE: {e}")
+
+            # 4. Eksekusi via agy CLI jika engine == 'agy'
             if engine == "agy":
                 try:
                     env = os.environ.copy()
@@ -690,7 +730,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
                         f"Kerjakan tugas mandiri berikut: '{instruction}'.\n\n"
                         f"ATURAN PELAPORAN:\n"
                         f"1. Berikan laporan hasil yang jelas, ringkas, informatif, dan gunakan emoji yang rapi.\n"
-                        f"2. Jika membutuhkan data eksternal (misal cuaca Karanganyar via wttr.in atau cek kesehatan sistem homelab), gunakan tool curl/bash untuk mengambil data akurat real-time.\n"
+                        f"2. Jika membutuhkan data eksternal (misal curl ke wttr.in untuk cuaca atau perintah inspeksi sistem Linux), jalankan tool bash yang diperlukan secara akurat real-time.\n"
                         f"3. Format teks harus rapi dan langsung siap disiarkan ke Telegram Mas Bay.\n"
                         f"4. Berikan sentuhan saran hangat dan solutif khas persona HABIBIE."
                     )
@@ -703,7 +743,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
                 except Exception as err:
                     print(f"⚠️ Standalone agy execution failed: {err}")
 
-            # 2. Fallback ke 9Router jika agy kosong atau engine == '9router'
+            # 5. Fallback ke 9Router jika agy kosong atau engine == '9router'
             if not output_text:
                 try:
                     import plans_manager
@@ -729,7 +769,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
                 except Exception as err:
                     print(f"⚠️ Standalone 9Router fallback failed: {err}")
 
-            # 3. Fallback jika instruksi cuaca dan AI offline
+            # 6. Fallback jika instruksi cuaca dan AI offline
             if not output_text:
                 if "cuaca" in instr_lower or "weather" in instr_lower:
                     try:
@@ -741,7 +781,15 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
                 if not output_text:
                     output_text = f"Tugas {task_id} telah selesai diproses oleh HABIBIE."
 
-            # 4. Siarkan hasil akhir ke Telegram Mas Bay
+            # 7. Catat selesai ke habibie.log
+            try:
+                habibie_log_file = DATA_DIR / "habibie.log"
+                with open(habibie_log_file, "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [{task_id}] DONE: {output_text[:120]}...\n")
+            except Exception:
+                pass
+
+            # 8. Siarkan hasil akhir ke Telegram Mas Bay
             try:
                 if not output_text.startswith("[HABIBIE]"):
                     full_msg = f"[HABIBIE]: 🔔 *Laporan Tugas Mandiri*\n📋 *ID:* `{task_id}`\n\n{output_text}"
@@ -751,7 +799,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
             except Exception as e:
                 print(f"⚠️ Gagal mengirim laporan Telegram HABIBIE: {e}")
 
-            # 5. Update kanban.json status: Done secara atomik
+            # 9. Update kanban.json status: Done secara atomik
             try:
                 now_done_iso = datetime.now().astimezone().isoformat()
                 with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:

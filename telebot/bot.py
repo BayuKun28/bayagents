@@ -1664,11 +1664,12 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     is_fe = any(k in instr_lower for k in fe_keywords)
     is_be = any(k in instr_lower for k in be_keywords)
 
-    if is_reminder or (is_none_proj_arg and not (is_fe or is_be)):
-        category = "Reminder" if is_reminder else "Homelab Ops"
+    is_general_or_reminder = is_reminder or (is_none_proj_arg and not (is_fe or is_be))
+    if is_general_or_reminder:
+        category = "Reminder" if is_reminder else "Universal"
         target_agent = "HABIBIE"
-        task_prefix = "TASK-REM" if category == "Reminder" else "TASK-OPS"
-        skills = ["Chief Architect", "Homelab Advisor", "Automation"]
+        task_prefix = "TASK-REM" if category == "Reminder" else "TASK-GEN"
+        skills = ["Chief Architect", "Homelab Advisor", "Universal Automation"]
         target_dir = str(WORKSPACE_DIR)
         is_standalone = True
         project_id = "general"
@@ -1750,6 +1751,12 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         def run_habibie_async():
             output_text = ""
+            try:
+                habibie_log_file = DATA_DIR / "habibie.log"
+                with open(habibie_log_file, "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [{task_id}] START (In-Progress): {instruction}\n")
+            except Exception:
+                pass
             try:
                 env = os.environ.copy()
                 env["HOME"] = str(Path.home())

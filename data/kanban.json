@@ -2100,21 +2100,6 @@
       }
     },
     {
-      "id": "TASK-OPS-12",
-      "project": "bayoffice",
-      "assignee": "LUHUT",
-      "title": "[Jadwal: SCHED-01] Lakukan verifikasi integritas database postgresql dan cek dis...",
-      "skills_required": [
-        "Lead Orchestrator",
-        "Task Delegation"
-      ],
-      "description": "[Jadwal: SCHED-01] Lakukan verifikasi integritas database postgresql dan cek disk space",
-      "status": "To-Do",
-      "target_dir": "/home/bay/bayoffice",
-      "created_at": "2026-10-30T02:00:00.267770+07:00",
-      "notes": "Tugas baru via BayOffice Web UI [Proyek: bayoffice | General]. Target pelaksana: LUHUT."
-    },
-    {
       "id": "TASK-OPS-13",
       "project": "bayoffice",
       "assignee": "LUHUT",
@@ -2225,6 +2210,44 @@
       "created_at": "2026-10-30T17:38:38.670927+07:00",
       "notes": "Tugas selesai dieksekusi secara mandiri oleh HABIBIE.",
       "completed_at": "2026-10-30T17:40:11.773081+07:00"
+    },
+    {
+      "id": "TASK-REM-07",
+      "project": "bayoffice",
+      "assignee": "HABIBIE",
+      "title": "[Jadwal: SCHED-02] cek cuaca karanganyar hari ini dan kirim ke telegram",
+      "skills_required": [
+        "Chief Architect",
+        "Homelab Advisor",
+        "Automation"
+      ],
+      "description": "[Jadwal: SCHED-02] cek cuaca karanganyar hari ini dan kirim ke telegram",
+      "status": "Done",
+      "target_dir": "/home/bay",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "created_at": "2026-10-30T18:33:43.750921+07:00",
+      "notes": "Tugas selesai dieksekusi secara mandiri oleh HABIBIE.",
+      "completed_at": "2026-10-30T18:35:56.142918+07:00"
+    },
+    {
+      "id": "TASK-REM-08",
+      "project": "general",
+      "assignee": "HABIBIE",
+      "title": "[Jadwal: SCHED-01] Cek suhu cpu dan loadnya, beserta penggunaan ram sekarang uru...",
+      "skills_required": [
+        "Chief Architect",
+        "Homelab Advisor",
+        "Automation"
+      ],
+      "description": "[Jadwal: SCHED-01] Cek suhu cpu dan loadnya, beserta penggunaan ram sekarang urutkan 5 teratas usage paling tinggi",
+      "status": "Done",
+      "target_dir": "/home/bay",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-low",
+      "created_at": "2026-10-30T18:42:04.465458+07:00",
+      "notes": "Tugas selesai dieksekusi secara mandiri oleh HABIBIE.",
+      "completed_at": "2026-10-30T18:42:25.808561+07:00"
     }
   ]
 }
