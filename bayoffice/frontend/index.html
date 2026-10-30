@@ -5,123 +5,161 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261030_03">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261030_04">
 </head>
 <body style="padding-bottom: 60px;">
 
-  <!-- TOP HEADER / NAVBAR (DESKTOP COMMAND CENTER & MOBILE APP BAR) -->
+  <!-- TOP HEADER / NAVBAR (2-ROW COMMAND CENTER) -->
   <header class="topbar-header">
-    <div class="topbar-container">
-      
-      <!-- 1. Brand & Workspace Scope (Kiri) -->
-      <div class="topbar-brand">
-        <div class="topbar-logo-box">
-          <i data-lucide="building-2" class="lucide-lg"></i>
-        </div>
-        <div class="brand-text-block">
-          <div class="brand-title-row">
-            <h1 class="topbar-title">BayOffice</h1>
-            <span class="brand-badge-version">v2.3</span>
+    
+    <!-- BARIS 1: PRIMARY APP BAR (Brand + Workspace Modes + Actions) -->
+    <div class="topbar-primary-row">
+      <div class="topbar-row-container">
+        
+        <!-- 1. Brand & Workspace Scope (Kiri) -->
+        <div class="topbar-brand">
+          <div class="topbar-logo-box">
+            <i data-lucide="building-2" class="lucide-lg"></i>
           </div>
-          <p class="topbar-subtitle">
-            <span class="homelab-dot"></span> <span data-i18n="app.subtitle">Multi-Agent Workspace • Port 8888</span>
-          </p>
+          <div class="brand-text-block">
+            <div class="brand-title-row">
+              <h1 class="topbar-title">BayOffice</h1>
+              <span class="brand-badge-version">v2.3</span>
+            </div>
+            <p class="topbar-subtitle">
+              <span class="homelab-dot"></span> <span data-i18n="app.subtitle">Multi-Agent Workspace • Port 8888</span>
+            </p>
+          </div>
         </div>
+
+        <!-- 2. Workspace Navigation Switcher (Tengah-Kiri) -->
+        <nav class="topbar-nav-tabs" aria-label="Workspace Modes">
+          <button id="navOfficeBtn" class="nav-tab-btn active" data-view="office" data-i18n-title="nav.workspace" title="Live Office & Kanban">
+            <i data-lucide="layout-dashboard" class="lucide-sm"></i>
+            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.workspace">Live Office & Kanban</span>
+            <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.workspace_short">Office</span>
+          </button>
+          <button id="navPlansBtn" class="nav-tab-btn" data-view="plans" data-i18n-title="nav.plans_studio" title="Plans Studio (HABIBIE)">
+            <i data-lucide="compass" class="lucide-sm tab-icon-plans" style="color: #8B5CF6;"></i>
+            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.plans_studio">Plans Studio (HABIBIE)</span>
+            <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.plans_studio_short">Plans</span>
+            <span id="navPlansCountBadge" class="nav-count-badge" style="display: none;">0</span>
+          </button>
+        </nav>
+
+        <!-- 3. Action Controls (Kanan) -->
+        <div class="topbar-actions">
+          <!-- Hero Primary CTA: New Task -->
+          <button id="openTaskBtn" class="neo-btn neo-btn-primary topbar-btn btn-task" data-i18n-title="actions.new_task" title="New Task">
+            <i data-lucide="plus-circle" class="lucide-sm"></i>
+            <span class="btn-label-desktop" data-i18n="actions.new_task">New Task</span>
+            <span class="btn-label-mobile" data-i18n="actions.new_task_short">Task</span>
+          </button>
+
+          <!-- Ops Hub Dropdown (Scheduled Tasks & Terminal Logs) -->
+          <div class="dropdown-wrapper" id="opsDropdownWrapper">
+            <button id="opsDropdownBtn" class="neo-btn neo-btn-secondary topbar-btn btn-ops" aria-expanded="false" data-i18n-title="actions.ops_hub_title" title="Operations & Agent Tools">
+              <i data-lucide="layers" class="lucide-sm"></i>
+              <span class="btn-label-desktop btn-label-ops" data-i18n="actions.ops_hub">Ops Hub</span>
+              <i data-lucide="chevron-down" class="lucide-xs chevron-icon"></i>
+            </button>
+            <div id="opsDropdownMenu" class="neo-dropdown-menu" style="display: none;">
+              <button id="openSchedulesBtn" class="dropdown-item">
+                <i data-lucide="clock" class="lucide-sm" style="color: #0284C7;"></i>
+                <div class="item-text">
+                  <span class="item-title" data-i18n="actions.schedules">Scheduled Tasks</span>
+                  <span class="item-desc" data-i18n="actions.schedules_desc">Autonomous cron routines</span>
+                </div>
+              </button>
+              <button id="openLogsBtn" class="dropdown-item">
+                <i data-lucide="terminal" class="lucide-sm" style="color: #10B981;"></i>
+                <div class="item-text">
+                  <span class="item-title" data-i18n="actions.logs">Terminal Logs</span>
+                  <span class="item-desc" data-i18n="actions.logs_desc">Live agent console streams</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Preferences Pod (Segmented Pill: Audio, Theme, Lang) -->
+          <div class="segmented-pod" id="preferencesPod">
+            <button id="audioToggleBtn" class="pod-btn btn-audio" data-i18n-title="actions.audio_toggle" title="Toggle 8-Bit Audio Effects" aria-label="Audio Effects">
+              <span id="audioIcon" style="display: flex; align-items: center;"><i data-lucide="volume-2" class="lucide-sm"></i></span>
+            </button>
+            <button id="darkModeToggle" class="pod-btn btn-theme" data-i18n-title="actions.theme_dark" title="Switch to Dark Mode">
+              <span id="darkModeIcon" style="display: flex; align-items: center;"><i data-lucide="moon" class="lucide-sm"></i></span>
+            </button>
+            <button id="langToggle" class="pod-btn btn-lang" data-i18n-title="actions.lang_toggle" title="Switch Language (EN / ID)" aria-label="Switch Language">
+              <span id="langLabel" style="font-weight: 800; font-size: 0.74rem;">EN</span>
+            </button>
+          </div>
+
+          <!-- Logout Action -->
+          <button id="logoutBtn" class="neo-btn neo-btn-secondary topbar-btn btn-logout" data-i18n-title="actions.logout_title" title="Log out of session">
+            <i data-lucide="log-out" class="lucide-sm"></i>
+            <span class="btn-label-desktop btn-label-logout" data-i18n="actions.logout">Logout</span>
+          </button>
+        </div>
+
       </div>
+    </div>
 
-      <!-- 2. Workspace Navigation Switcher (Office vs Plans Studio) -->
-      <nav class="topbar-nav-tabs" aria-label="Workspace Modes">
-        <button id="navOfficeBtn" class="nav-tab-btn active" data-view="office" data-i18n-title="nav.workspace" title="Live Office & Kanban">
-          <i data-lucide="layout-dashboard" class="lucide-sm"></i>
-          <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.workspace">Live Office & Kanban</span>
-          <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.workspace_short">Office</span>
-        </button>
-        <button id="navPlansBtn" class="nav-tab-btn" data-view="plans" data-i18n-title="nav.plans_studio" title="Plans Studio (HABIBIE)">
-          <i data-lucide="compass" class="lucide-sm tab-icon-plans" style="color: #8B5CF6;"></i>
-          <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.plans_studio">Plans Studio (HABIBIE)</span>
-          <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.plans_studio_short">Plans</span>
-          <span id="navPlansCountBadge" class="nav-count-badge" style="display: none;">0</span>
-        </button>
-      </nav>
+    <!-- BARIS 2: SERVER HEALTH GUARDIAN SUB-BAR -->
+    <div class="topbar-guardian-subbar">
+      <div class="topbar-guardian-container">
+        
+        <!-- Left: Clickable Server Health Guardian Telemetry Deck -->
+        <div id="telemetryDeck" class="telemetry-deck guardian-deck" data-i18n-title="health.modal_title" title="Open Server Health Guardian Diagnostics">
+          <div class="guardian-deck-badge">
+            <i data-lucide="shield-check" class="lucide-xs"></i>
+            <span class="guardian-badge-text" data-i18n="health.bar_title">HEALTH GUARDIAN</span>
+          </div>
 
-      <!-- 3. Command Center Telemetry Hub (Tengah di Desktop, Baris 2 di Mobile) -->
-      <div class="topbar-telemetry">
-        <div id="telemetryDeck" class="telemetry-deck" data-i18n-title="health.modal_title" title="Open Server Health Guardian">
+          <div class="telemetry-divider"></div>
+
           <span id="tmuxBadge" class="neo-badge badge-todo telemetry-badge">
             <span class="status-dot dot-sleep"></span>
             <span class="desk-txt" data-i18n="telemetry.loading">LOADING STATUS...</span>
             <span class="mob-txt" data-i18n="telemetry.loading_short">LOADING</span>
           </span>
+
           <div class="telemetry-divider"></div>
+
           <div class="telemetry-chip">
             <i data-lucide="hard-drive" class="lucide-sm chip-icon-ram"></i>
             <span class="chip-label" data-i18n="telemetry.ram">RAM:</span>
             <span id="ramMetric" class="chip-val chip-val-ram">-</span>
           </div>
+
           <div class="telemetry-divider"></div>
+
           <div class="telemetry-chip">
             <i data-lucide="cpu" class="lucide-sm chip-icon-cpu"></i>
             <span class="chip-label" data-i18n="telemetry.cpu">CPU:</span>
             <span id="cpuMetric" class="chip-val chip-val-cpu">-</span>
           </div>
-        </div>
-      </div>
 
-      <!-- 4. Action Controls (Kanan di Desktop, Kanan Atas di Mobile) -->
-      <div class="topbar-actions">
-        <!-- Hero Primary CTA: New Task -->
-        <button id="openTaskBtn" class="neo-btn neo-btn-primary topbar-btn btn-task" data-i18n-title="actions.new_task" title="New Task">
-          <i data-lucide="plus-circle" class="lucide-sm"></i>
-          <span class="btn-label-desktop" data-i18n="actions.new_task">New Task</span>
-          <span class="btn-label-mobile" data-i18n="actions.new_task_short">Task</span>
-        </button>
+          <div class="telemetry-divider guardian-hint-divider"></div>
 
-        <!-- Ops Hub Dropdown (Scheduled Tasks & Terminal Logs) -->
-        <div class="dropdown-wrapper" id="opsDropdownWrapper">
-          <button id="opsDropdownBtn" class="neo-btn neo-btn-secondary topbar-btn btn-ops" aria-expanded="false" data-i18n-title="actions.ops_hub_title" title="Operations & Agent Tools">
-            <i data-lucide="layers" class="lucide-sm"></i>
-            <span class="btn-label-desktop btn-label-ops" data-i18n="actions.ops_hub">Ops Hub</span>
-            <i data-lucide="chevron-down" class="lucide-xs chevron-icon"></i>
-          </button>
-          <div id="opsDropdownMenu" class="neo-dropdown-menu" style="display: none;">
-            <button id="openSchedulesBtn" class="dropdown-item">
-              <i data-lucide="clock" class="lucide-sm" style="color: #0284C7;"></i>
-              <div class="item-text">
-                <span class="item-title" data-i18n="actions.schedules">Scheduled Tasks</span>
-                <span class="item-desc" data-i18n="actions.schedules_desc">Autonomous cron routines</span>
-              </div>
-            </button>
-            <button id="openLogsBtn" class="dropdown-item">
-              <i data-lucide="terminal" class="lucide-sm" style="color: #10B981;"></i>
-              <div class="item-text">
-                <span class="item-title" data-i18n="actions.logs">Terminal Logs</span>
-                <span class="item-desc" data-i18n="actions.logs_desc">Live agent console streams</span>
-              </div>
-            </button>
+          <div class="guardian-click-hint">
+            <i data-lucide="activity" class="lucide-xs"></i>
+            <span data-i18n="health.click_hint">Open Diagnostics</span>
           </div>
         </div>
 
-        <!-- Quick Preferences Pod (Segmented Pill: Audio, Theme, Lang) -->
-        <div class="segmented-pod" id="preferencesPod">
-          <button id="audioToggleBtn" class="pod-btn btn-audio" data-i18n-title="actions.audio_toggle" title="Toggle 8-Bit Audio Effects" aria-label="Audio Effects">
-            <span id="audioIcon" style="display: flex; align-items: center;"><i data-lucide="volume-2" class="lucide-sm"></i></span>
-          </button>
-          <button id="darkModeToggle" class="pod-btn btn-theme" data-i18n-title="actions.theme_dark" title="Switch to Dark Mode">
-            <span id="darkModeIcon" style="display: flex; align-items: center;"><i data-lucide="moon" class="lucide-sm"></i></span>
-          </button>
-          <button id="langToggle" class="pod-btn btn-lang" data-i18n-title="actions.lang_toggle" title="Switch Language (EN / ID)" aria-label="Switch Language">
-            <span id="langLabel" style="font-weight: 800; font-size: 0.74rem;">EN</span>
-          </button>
+        <!-- Right: Server Environment Quick Info -->
+        <div class="guardian-env-info">
+          <span class="homelab-dot"></span>
+          <span class="env-info-host">Host: 192.168.100.145:8888</span>
+          <span class="env-info-divider">•</span>
+          <span class="env-info-detail">FastCGI PHP 8.4</span>
+          <span class="env-info-divider">•</span>
+          <span class="env-info-detail">PostgreSQL Active</span>
         </div>
 
-        <!-- Logout Action -->
-        <button id="logoutBtn" class="neo-btn neo-btn-secondary topbar-btn btn-logout" data-i18n-title="actions.logout_title" title="Log out of session">
-          <i data-lucide="log-out" class="lucide-sm"></i>
-          <span class="btn-label-desktop btn-label-logout" data-i18n="actions.logout">Logout</span>
-        </button>
       </div>
-
     </div>
+
   </header>
 
   <!-- MAIN CONTAINER -->

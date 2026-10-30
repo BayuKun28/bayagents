@@ -443,15 +443,58 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 /* ==========================================================
    TOPBAR REDESIGN (COMMAND CENTER DESKTOP + MOBILE APP BAR)
    ========================================================== */
+/* ==========================================================
+   2-ROW COMMAND CENTER TOPBAR (DESKTOP & LAPTOP)
+   Row 1: Brand + Workspace Modes Switcher + Actions
+   Row 2: Dedicated Server Health Guardian & System Telemetry Sub-Bar
+   ========================================================== */
 .topbar-header {
   background: var(--bg-card);
   border-bottom: 3px solid var(--border-color);
-  padding: 12px 24px;
+  padding: 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
   transition: background-color 0.2s ease, border-color 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.topbar-primary-row {
+  width: 100%;
+  padding: 10px 24px;
+  box-sizing: border-box;
+}
+
+.topbar-row-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* BARIS 2: SERVER HEALTH GUARDIAN SUB-BAR */
+.topbar-guardian-subbar {
+  width: 100%;
+  background: var(--bg-main);
+  border-top: 1.5px solid var(--border-color);
+  padding: 5px 24px;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.topbar-guardian-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -625,14 +668,76 @@ body.dark-mode .nav-tab-btn.active {
 .telemetry-deck {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  box-shadow: 3px 3px 0px var(--shadow-color);
+  box-shadow: 2px 2px 0px var(--shadow-color);
   border-radius: 30px;
-  padding: 5px 16px;
+  padding: 4px 14px;
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   transition: all 0.15s ease;
   box-sizing: border-box;
+  cursor: pointer;
+}
+
+.guardian-deck:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--shadow-color);
+  background: var(--bg-card);
+}
+
+.guardian-deck:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px var(--shadow-color);
+}
+
+.guardian-deck-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #2563EB;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+body.dark-mode .guardian-deck-badge {
+  color: #60A5FA;
+}
+
+.guardian-click-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748B;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.guardian-deck:hover .guardian-click-hint {
+  color: #2563EB;
+}
+
+body.dark-mode .guardian-deck:hover .guardian-click-hint {
+  color: #60A5FA;
+}
+
+.guardian-env-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748B;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.env-info-divider {
+  color: #94A3B8;
+  font-weight: 400;
 }
 
 .telemetry-badge {
@@ -860,18 +965,24 @@ body.dark-mode .pod-btn:active {
 
 /* ==========================================================
    RESPONSIVE TOPBAR (LAPTOP & NOTEBOOK: 900px - 1366px)
-   Anti-Collision & Clean Neobrutalist UI/UX
+   Anti-Collision 2-Row Architecture
    ========================================================== */
 @media screen and (max-width: 1366px) {
-  .topbar-header {
-    padding: 10px 16px;
+  .topbar-primary-row {
+    padding: 8px 18px;
   }
 
-  .topbar-container {
-    gap: 10px;
+  .topbar-guardian-subbar {
+    padding: 4px 18px;
   }
 
-  /* Shorten Tab labels (Office / Plans) on Laptop */
+  .topbar-subtitle {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 1140px) {
+  /* Switch to compact tab labels on smaller laptop screens */
   .nav-tab-text-full {
     display: none !important;
   }
@@ -880,33 +991,19 @@ body.dark-mode .pod-btn:active {
     display: inline !important;
   }
 
-  .topbar-subtitle {
-    display: none !important;
-  }
-
+  .topbar-btn.btn-ops .btn-label-desktop,
   .topbar-btn.btn-logout .btn-label-desktop {
     display: none !important;
   }
 
+  .topbar-btn.btn-ops,
   .topbar-btn.btn-logout {
-    padding: 8px 10px;
-    min-width: 36px;
-    justify-content: center;
+    padding: 7px 10px;
   }
 
-  .telemetry-deck {
-    padding: 4px 12px;
-    gap: 10px;
-  }
-}
-
-@media screen and (max-width: 1140px) {
-  .topbar-btn.btn-ops .btn-label-desktop {
+  .env-info-detail,
+  .env-info-divider {
     display: none !important;
-  }
-
-  .topbar-btn.btn-ops {
-    padding: 8px 10px;
   }
 
   .chip-label {
@@ -928,11 +1025,11 @@ body.dark-mode .pod-btn:active {
    RESPONSIVE TOPBAR (TABLET & MOBILE APP BAR: < 900px)
    ========================================================== */
 @media screen and (max-width: 899px) {
-  .topbar-header {
+  .topbar-primary-row {
     padding: 8px 12px;
   }
 
-  .topbar-container {
+  .topbar-row-container {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
@@ -1061,27 +1158,21 @@ body.dark-mode .pod-btn:active {
     display: inline !important;
   }
 
-  /* Baris 3 Full-Width: Telemetry Hub Strip */
-  .desk-txt {
+  /* Baris 2 / Sub-bar: Server Health Guardian Telemetry Strip */
+  .topbar-guardian-subbar {
+    padding: 4px 12px;
+  }
+
+  .topbar-guardian-container {
+    width: 100%;
+    display: flex;
+  }
+
+  .guardian-env-info {
     display: none !important;
   }
 
-  .mob-txt {
-    display: inline !important;
-  }
-
-  .topbar-telemetry {
-    grid-column: 1 / -1;
-    order: 4;
-    width: 100%;
-    display: flex;
-    justify-content: stretch;
-    padding: 2px 0;
-    min-width: 0;
-    box-sizing: border-box;
-  }
-
-  .telemetry-deck {
+  .guardian-deck {
     width: 100% !important;
     border-radius: 8px;
     padding: 4px 8px !important;
@@ -1094,6 +1185,20 @@ body.dark-mode .pod-btn:active {
     box-sizing: border-box;
     white-space: nowrap;
     overflow-x: auto;
+  }
+
+  .guardian-deck-badge,
+  .guardian-click-hint,
+  .guardian-hint-divider {
+    display: none !important;
+  }
+
+  .desk-txt {
+    display: none !important;
+  }
+
+  .mob-txt {
+    display: inline !important;
   }
 
   .telemetry-badge {

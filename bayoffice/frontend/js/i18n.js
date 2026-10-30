@@ -184,6 +184,8 @@
       health: {
         modal_title: 'Server Health Guardian',
         modal_subtitle: 'Debian Linux • AMD E2-9000 Homelab (192.168.100.145)',
+        bar_title: 'HEALTH GUARDIAN',
+        click_hint: 'Open Diagnostics',
         ram_label: 'Physical RAM',
         swap_label: 'Swap / ZRAM Health',
         cpu_temp_label: 'APU Temp',
@@ -477,6 +479,8 @@
       health: {
         modal_title: 'Server Health Guardian',
         modal_subtitle: 'Debian Linux • AMD E2-9000 Homelab (192.168.100.145)',
+        bar_title: 'HEALTH GUARDIAN',
+        click_hint: 'Buka Diagnostik',
         ram_label: 'RAM Fisik',
         swap_label: 'Kesehatan Swap / ZRAM',
         cpu_temp_label: 'Suhu APU',
