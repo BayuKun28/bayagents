@@ -22,6 +22,7 @@ WIB_TZ = timezone(timedelta(hours=7))
 BACKEND_DIR = Path(__file__).resolve().parent
 BAYAGENTS_DIR = BACKEND_DIR.parent.parent
 PLANS_DIR = BAYAGENTS_DIR / "data" / "plans"
+HABIBIE_LOG_FILE = BAYAGENTS_DIR / "data" / "habibie.log"
 CONFIGS_DIR = BAYAGENTS_DIR / "configs"
 HABIBIE_CONFIG = CONFIGS_DIR / "habibie.yaml"
 
@@ -32,6 +33,17 @@ ROUTER9_API_KEY = os.environ.get("ROUTER9_API_KEY", "")
 
 def _get_local_now() -> datetime:
     return datetime.now(WIB_TZ)
+
+
+def log_habibie_activity(message: str) -> None:
+    """Mencatat log aktivitas Chief Architect HABIBIE ke data/habibie.log."""
+    try:
+        now_str = _get_local_now().strftime("%Y-%m-%d %H:%M:%S WIB")
+        HABIBIE_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(HABIBIE_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"[{now_str}] {message}\n")
+    except Exception:
+        pass
 
 
 def _ensure_plans_dir():
@@ -326,6 +338,7 @@ def generate_plan_ai(idea: str,
         author="HABIBIE",
         status="Draft"
     )
+    log_habibie_activity(f"DRAFTED PLAN: [{saved['id']}] '{title}' untuk proyek '{project}' (engine: {engine})")
     saved["content"] = plan_markdown
     saved["plan"] = {
         "id": saved["id"],
@@ -372,6 +385,8 @@ def dispatch_plan_to_kanban(plan_id: str, dispatch_fn) -> Dict[str, Any]:
         dispatched_task_id=task_id
     )
 
+    log_habibie_activity(f"DISPATCHED PLAN: [{plan['id']}] '{plan['title']}' didelegasikan ke Kanban sebagai task '{task_id}' ({project})")
+
     return {
         "success": True,
         "plan_id": plan["id"],
@@ -392,6 +407,7 @@ def delete_plan(plan_id: str) -> Dict[str, Any]:
         target = PLANS_DIR / filename
         if target.exists():
             target.unlink()
+            log_habibie_activity(f"DELETED PLAN: [{plan_id}] '{plan.get('title', plan_id)}' telah dihapus dari direktori plans")
             return {"success": True, "message": f"Plan '{plan_id}' berhasil dihapus."}
 
     return {"success": False, "error": "File plan tidak dapat dihapus."}

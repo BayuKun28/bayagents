@@ -52,7 +52,8 @@ AGENT_PANES = {
     "LUHUT": f"{TMUX_SESSION_NAME}:0.0",
     "GIBRAN": f"{TMUX_SESSION_NAME}:0.1",
     "JOKOWI": f"{TMUX_SESSION_NAME}:0.2",
-    "PRABOWO": f"{TMUX_SESSION_NAME}:0.3"
+    "PRABOWO": f"{TMUX_SESSION_NAME}:0.3",
+    "HABIBIE": "ARCHITECT / STANDALONE"
 }
 
 def get_kanban_data() -> Dict[str, Any]:
@@ -298,12 +299,73 @@ def get_expanded_system_metrics() -> Dict[str, Any]:
     return metrics
 
 def get_agent_logs(agent_name: str, lines: int = 120) -> Dict[str, Any]:
-    """Membaca riwayat terminal terakhir dari panel tmux agen."""
+    """Membaca riwayat terminal terakhir dari panel tmux agen atau log HABIBIE."""
     agent_name = agent_name.upper().strip()
     if agent_name not in AGENT_PANES:
-        return {"success": False, "error": f"Agen '{agent_name}' tidak dikenal. Pilihan: LUHUT, GIBRAN, JOKOWI, PRABOWO"}
+        return {"success": False, "error": f"Agen '{agent_name}' tidak dikenal. Pilihan: LUHUT, GIBRAN, JOKOWI, PRABOWO, HABIBIE"}
 
     pane = AGENT_PANES[agent_name]
+
+    # Khusus HABIBIE: Chief Architect (Standalone & Plans Studio On-Demand)
+    if agent_name == "HABIBIE":
+        plans_summary = []
+        try:
+            import plans_manager
+            plans = plans_manager.list_plans()
+            for p in plans[:8]:
+                status_symbol = "✓" if str(p.get("status", "")).lower() == "dispatched" else "✎"
+                plans_summary.append(f"  [{status_symbol}] {p.get('id')}: {p.get('title')} [{p.get('project', 'general')}] - Status: {p.get('status')}")
+        except Exception as e:
+            plans_summary.append(f"  (Gagal memuat blueprint: {e})")
+
+        habibie_log_file = DATA_DIR / "habibie.log"
+        habibie_events = []
+        if habibie_log_file.exists():
+            try:
+                with open(habibie_log_file, "r", encoding="utf-8") as f:
+                    habibie_events = [line.strip() for line in f.readlines() if line.strip()][-lines:]
+            except Exception:
+                pass
+
+        log_lines = [
+            "================================================================================",
+            " 🏛️  HABIBIE - CHIEF ARCHITECT & STRATEGIC ADVISOR",
+            " Mode     : STANDALONE / ON-DEMAND (Direct Telegram & Plans Studio)",
+            " Role     : Chief Architect, Homelab System Advisor & Strategic Planner",
+            " Engine   : 9Router AI (gemini-free-smart) & Antigravity CLI",
+            " Location : ARCHITECT STUDIO (Bebas dari beban RAM tmux 4 agen)",
+            " Status   : READY / STANDBY AKTIF (Melayani Mas Bay 24/7)",
+            "================================================================================",
+            "",
+            "📋 [BLUEPRINT ARSITEKTUR & IMPLEMENTATION PLANS TERBARU]:"
+        ]
+        if plans_summary:
+            log_lines.extend(plans_summary)
+        else:
+            log_lines.append("  (Belum ada blueprint arsitektur yang dirancang)")
+
+        log_lines.extend([
+            "",
+            "📜 [RIWAYAT AKTIVITAS & CONSOLE LOGS]:"
+        ])
+
+        if habibie_events:
+            log_lines.extend([f"  {ev}" for ev in habibie_events])
+        else:
+            log_lines.append("  [INFO] HABIBIE on-demand worker aktif.")
+            log_lines.append("  [INFO] Menangani advisory Telegram langsung dan perancangan di Plans Studio.")
+            log_lines.append("  [INFO] Gunakan '+ Draft Architecture Plan' di Plans Studio atau chat Telegram untuk berinteraksi.")
+
+        log_lines.append("")
+        log_lines.append("================================================================================")
+
+        return {
+            "success": True,
+            "agent": "HABIBIE",
+            "pane": "ARCHITECT / ON-DEMAND",
+            "active": True,
+            "logs": "\n".join(log_lines)
+        }
     res_tmux = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
     if res_tmux.returncode != 0:
         return {

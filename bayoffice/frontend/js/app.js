@@ -1086,6 +1086,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (logTimestamp) {
           logTimestamp.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
         }
+        const logSourceNotice = document.getElementById('logSourceNotice');
+        if (logSourceNotice) {
+          logSourceNotice.textContent = (agentName === 'HABIBIE')
+            ? 'Source: Standalone on-demand & plans studio'
+            : 'Source: tmux capture-pane (agy_agents)';
+        }
         // Auto scroll to bottom of logs
         terminalLogContent.scrollTop = terminalLogContent.scrollHeight;
       } else {
