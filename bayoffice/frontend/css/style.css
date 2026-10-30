@@ -1997,18 +1997,20 @@ body.dark-mode #studioPlansListContainer::-webkit-scrollbar-thumb {
 }
 
 @media screen and (max-width: 768px) {
+  .kanban-toolbar-tools-row {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
   .kanban-toolbar-search-box {
     width: 100%;
     margin-left: 0 !important;
+    margin-top: 4px;
   }
   .kanban-toolbar-search-box > div {
     width: 100%;
   }
   .kanban-toolbar-search-box input {
     width: 100% !important;
-  }
-  .kanban-toolbar-controls {
-    width: 100%;
   }
 }
 
