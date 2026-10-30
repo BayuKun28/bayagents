@@ -577,6 +577,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const instruction = document.getElementById('taskInstruction').value.trim();
       const category = document.getElementById('taskCategory').value;
       const engine = document.getElementById('taskEngine') ? document.getElementById('taskEngine').value : 'agy';
+      const taskAgyModel = document.getElementById('taskAgyModel');
+      const model = (engine === 'agy' && taskAgyModel) ? taskAgyModel.value : null;
       let project = taskProjectSelect ? taskProjectSelect.value : 'auto';
 
       if (project === '__custom__') {
@@ -599,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instruction, category, project, engine })
+          body: JSON.stringify({ instruction, category, project, engine, model })
         });
 
         const data = await res.json();
@@ -1028,9 +1030,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 12. Task Engine Selector Listener
   const taskEngineSelect = document.getElementById('taskEngine');
+  const taskAgyModelContainer = document.getElementById('taskAgyModelContainer');
   const engineDesc = document.getElementById('engineDesc');
   if (taskEngineSelect && engineDesc) {
     taskEngineSelect.addEventListener('change', () => {
+      const isAgy = taskEngineSelect.value === 'agy';
+      if (taskAgyModelContainer) {
+        taskAgyModelContainer.style.display = isAgy ? 'block' : 'none';
+      }
       if (taskEngineSelect.value === '9router') {
         engineDesc.innerHTML = window.I18n ? window.I18n.t('modal_task.engine_9router_desc') : '<b>9Router:</b> Virtual Squad...';
       } else {

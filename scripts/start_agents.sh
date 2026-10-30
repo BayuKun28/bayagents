@@ -39,21 +39,26 @@ fi
 # Jika session belum ada, buat tmux session dengan 4 pane agen
 if ! tmux has-session -t "$SESSION" 2>/dev/null; then
     echo "Memulai sesi orkestrasi 4 agen AI (Mode Fast-Track & Passive Standby)..."
+    MODEL_FLAG=""
+    if [ -n "$AGY_MODEL" ]; then
+        MODEL_FLAG="--model $AGY_MODEL"
+    fi
+
     # Pane 0: LUHUT (DevOps & Lead Orchestrator)
-    tmux new-session -d -s "$SESSION" "cd $WORK_DIR && agy --dangerously-skip-permissions -i \"$LUHUT_PROMPT\""
+    tmux new-session -d -s "$SESSION" "cd $WORK_DIR && agy $MODEL_FLAG --dangerously-skip-permissions -i \"$LUHUT_PROMPT\""
     
     # Beri jeda 0.5 detik agar server tmux dan window 0 terbentuk stabil
     sleep 0.5
 
     # Pane 1: JOKOWI (Backend Engineer)
-    tmux split-window -h -t "$SESSION" "cd $WORK_DIR && agy --dangerously-skip-permissions -i 'Nama kamu JOKOWI. Baca $CONFIGS_DIR/jokowi.yaml. Laporkan kesiapan singkat lalu BERHENTI MEMANGGIL TOOL (STANDBY PASIF). Tunggu tugas dari LUHUT via tmux send-keys.'"
+    tmux split-window -h -t "$SESSION" "cd $WORK_DIR && agy $MODEL_FLAG --dangerously-skip-permissions -i 'Nama kamu JOKOWI. Baca $CONFIGS_DIR/jokowi.yaml. Laporkan kesiapan singkat lalu BERHENTI MEMANGGIL TOOL (STANDBY PASIF). Tunggu tugas dari LUHUT via tmux send-keys.'"
     
     # Pane 2: PRABOWO (Frontend Engineer)
-    tmux split-window -v -t "$SESSION" "cd $WORK_DIR && agy --dangerously-skip-permissions -i 'Nama kamu PRABOWO. Baca $CONFIGS_DIR/prabowo.yaml. Laporkan kesiapan singkat lalu BERHENTI MEMANGGIL TOOL (STANDBY PASIF). Tunggu tugas dari LUHUT via tmux send-keys.'"
+    tmux split-window -v -t "$SESSION" "cd $WORK_DIR && agy $MODEL_FLAG --dangerously-skip-permissions -i 'Nama kamu PRABOWO. Baca $CONFIGS_DIR/prabowo.yaml. Laporkan kesiapan singkat lalu BERHENTI MEMANGGIL TOOL (STANDBY PASIF). Tunggu tugas dari LUHUT via tmux send-keys.'"
     
     # Pane 3: GIBRAN (QA & Code Auditor)
     tmux select-pane -t "$SESSION:0.0"
-    tmux split-window -v -t "$SESSION" "cd $WORK_DIR && agy --dangerously-skip-permissions -i 'Nama kamu GIBRAN. Baca $CONFIGS_DIR/gibran.yaml. Laporkan kesiapan singkat lalu BERHENTI MEMANGGIL TOOL (STANDBY PASIF). Tunggu tugas dari PRABOWO/JOKOWI via tmux send-keys.'"
+    tmux split-window -v -t "$SESSION" "cd $WORK_DIR && agy $MODEL_FLAG --dangerously-skip-permissions -i 'Nama kamu GIBRAN. Baca $CONFIGS_DIR/gibran.yaml. Laporkan kesiapan singkat lalu BERHENTI MEMANGGIL TOOL (STANDBY PASIF). Tunggu tugas dari PRABOWO/JOKOWI via tmux send-keys.'"
 fi
 
 # Jika dijalankan interaktif dari terminal (TTY) dan bukan mode daemon, attach ke tmux

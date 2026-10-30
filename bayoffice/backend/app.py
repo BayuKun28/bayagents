@@ -101,6 +101,7 @@ class TaskCreateRequest(BaseModel):
     category: Optional[str] = "auto"
     project: Optional[str] = "auto"
     engine: Optional[str] = "agy"
+    model: Optional[str] = None
 
 class TaskStatusUpdateRequest(BaseModel):
     status: str
@@ -136,7 +137,8 @@ class ScheduleToggleRequest(BaseModel):
 class PlanGenerateRequest(BaseModel):
     idea: str
     project: Optional[str] = "bayoffice"
-    engine: Optional[str] = "9router"
+    engine: Optional[str] = "agy"
+    model: Optional[str] = None
 
 # ==========================================================
 # PAGE ROUTES
@@ -237,10 +239,21 @@ async def api_sync(user: str = Depends(require_auth)):
         "schedules": service.get_schedules_summary()
     }
 
+@app.get("/api/agy/models")
+async def api_get_agy_models(user: str = Depends(require_auth)):
+    """Mengambil daftar model yang didukung Antigravity CLI."""
+    return {"models": service.get_agy_models()}
+
 @app.post("/api/tasks")
 async def api_create_task(data: TaskCreateRequest, user: str = Depends(require_auth)):
     """Menerbitkan tugas baru ke kanban & tmux atau 9Router."""
-    result = service.dispatch_task_from_web(data.instruction, data.category, data.project, data.engine or "agy")
+    result = service.dispatch_task_from_web(
+        instruction=data.instruction,
+        category_hint=data.category,
+        project_hint=data.project,
+        engine=data.engine or "agy",
+        model=data.model
+    )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Gagal mengirim tugas"))
     return result
@@ -400,7 +413,12 @@ async def api_get_plan_detail(plan_id: str, user: str = Depends(require_auth)):
 @app.post("/api/plans/generate")
 async def api_generate_plan(data: PlanGenerateRequest, user: str = Depends(require_auth)):
     """Meminta HABIBIE merancang implementation plan baru."""
-    result = service.generate_plan_ai(data.idea, data.project or "bayoffice", data.engine or "9router")
+    result = service.generate_plan_ai(
+        idea=data.idea,
+        project=data.project or "bayoffice",
+        engine=data.engine or "agy",
+        model=data.model
+    )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Gagal merancang plan"))
     return result

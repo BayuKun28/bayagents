@@ -624,9 +624,22 @@
                   AI Brain / Reasoning Engine
                 </label>
                 <select id="studioPlanEngineSelect" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; outline: none; cursor: pointer; background: var(--bg-card);">
+                  <option value="agy" selected>🧠 AGY CLI (Antigravity Standalone) — Deep Reasoning</option>
                   <option value="9router">⚡ 9Router (gemini-free-smart) — Fast & Free</option>
-                  <option value="agy">🧠 AGY CLI (Antigravity Standalone) — Deep Reasoning</option>
                 </select>
+                <div id="studioAgyModelContainer" style="margin-top: 8px;">
+                  <label style="display: block; font-weight: 700; font-size: 0.78rem; margin-bottom: 4px; color: #8B5CF6;" for="studioPlanAgyModel" data-i18n="plans.model_label">
+                    Reasoning Model (AGY)
+                  </label>
+                  <select id="studioPlanAgyModel" class="neo-box-sm" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; font-weight: 700; outline: none; cursor: pointer; background: var(--bg-card);">
+                    <option value="gemini-3.8-flash-high" selected>Gemini 3.8 Flash (High) — Recommended / Fast</option>
+                    <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Thinking) — Deep Reasoning</option>
+                    <option value="claude-opus-4-6-thinking">Claude Opus 4.6 (Thinking) — Complex Architecture</option>
+                    <option value="gemini-3.8-flash-medium">Gemini 3.8 Flash (Medium) — Balanced</option>
+                    <option value="gemini-3.8-flash-low">Gemini 3.8 Flash (Low) — Lightweight</option>
+                    <option value="gpt-oss-120b-medium">GPT-OSS 120B (Medium) — Open Source</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -657,6 +670,7 @@
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
               <span id="studioViewerPlanId" class="neo-badge" style="background: #18181B; color: #FFFFFF; font-weight: 800; font-size: 0.75rem;">-</span>
               <span id="studioViewerPlanProject" class="neo-badge badge-progress" style="font-size: 0.72rem;">-</span>
+              <span id="studioViewerPlanModel" class="neo-badge" style="background: #8B5CF6; color: #FFFFFF; font-size: 0.72rem; display: none;">-</span>
               <span id="studioViewerPlanStatus" class="neo-badge badge-todo" style="font-size: 0.72rem;">-</span>
               <span id="studioViewerPlanDate" style="font-size: 0.72rem; color: #64748B; font-weight: 600; margin-left: 4px;">-</span>
             </div>
@@ -756,6 +770,19 @@
               <option value="agy" data-i18n="modal_task.engine_agy_option">🧠 Antigravity (agy) — 4-Agent Team Tmux Session (Default)</option>
               <option value="9router" data-i18n="modal_task.engine_9router_option">⚡ 9Router (gemini-free-smart) — Server 146 (Fast & Quota-Saver)</option>
             </select>
+            <div id="taskAgyModelContainer" style="margin-top: 10px;">
+              <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;" for="taskAgyModel" data-i18n="modal_task.model_label">
+                Reasoning Model (AGY)
+              </label>
+              <select id="taskAgyModel" class="neo-box-sm" style="width: 100%; padding: 9px 12px; font-family: inherit; font-size: 0.88rem; outline: none; background: var(--bg-card); cursor: pointer;">
+                <option value="gemini-3.8-flash-high" selected>Gemini 3.8 Flash (High) — Recommended / Fast</option>
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Thinking) — Deep Reasoning</option>
+                <option value="claude-opus-4-6-thinking">Claude Opus 4.6 (Thinking) — Complex Architecture</option>
+                <option value="gemini-3.8-flash-medium">Gemini 3.8 Flash (Medium) — Balanced</option>
+                <option value="gemini-3.8-flash-low">Gemini 3.8 Flash (Low) — Lightweight</option>
+                <option value="gpt-oss-120b-medium">GPT-OSS 120B (Medium) — Open Source</option>
+              </select>
+            </div>
             <div id="engineNotice" class="neo-box-sm" style="margin-top: 8px; padding: 10px 12px; font-size: 0.78rem; line-height: 1.4; background: var(--bg-base); display: flex; align-items: center; gap: 8px;">
               <i data-lucide="cpu" class="lucide-sm" style="flex-shrink: 0; color: #2563EB;"></i>
               <span id="engineDesc" data-i18n-html="modal_task.engine_agy_desc"><b>Antigravity:</b> Interactive Tmux session with Google Antigravity (Luhut, Jokowi, Prabowo, Gibran).</span>

@@ -36,14 +36,18 @@ TMUX_SESSION_NAME = os.getenv("TMUX_SESSION_NAME", "agy_agents")
 TELEBOT_VENV_PYTHON = TELEBOT_DIR / ".venv" / "bin" / "python"
 TELEBOT_PYTHON = str(TELEBOT_VENV_PYTHON) if TELEBOT_VENV_PYTHON.exists() else "python3"
 
-def launch_agents_daemon(task_summary: str = ""):
+def launch_agents_daemon(task_summary: str = "", model: str = ""):
     """Menjalankan launcher agen di cgroup independen (session.slice) via systemd-run agar tidak mati saat bayoffice direstart."""
     cmd = [
         "sudo", "systemd-run",
         "--slice=session.slice",
         "--uid=bay", "--gid=bay",
-        str(START_AGENTS_SCRIPT), "daemon"
     ]
+    if model:
+        cmd.append(f"--setenv=AGY_MODEL={model}")
+    cmd.extend([
+        str(START_AGENTS_SCRIPT), "daemon"
+    ])
     if task_summary:
         cmd.append(task_summary)
     subprocess.Popen(cmd)
@@ -510,7 +514,7 @@ def export_kanban_csv() -> str:
             ])
     return output.getvalue()
 
-def dispatch_task_from_web(instruction: str, category_hint: str = "auto", project_hint: str = "auto", engine: str = "agy") -> Dict[str, Any]:
+def dispatch_task_from_web(instruction: str, category_hint: str = "auto", project_hint: str = "auto", engine: str = "agy", model: Optional[str] = None) -> Dict[str, Any]:
     """Mengeksekusi penugasan baru dari Web UI persis seperti /task di Telegram."""
     instruction = instruction.strip()
     if not instruction:
@@ -597,6 +601,8 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
             "description": instruction,
             "status": "To-Do",
             "target_dir": target_dir,
+            "engine": engine,
+            "model": model if engine == "agy" else None,
             "created_at": now_iso,
             "notes": f"Tugas baru via BayOffice Web UI [Proyek: {project_id} | {category}]. Target pelaksana: {target_agent}."
         }
@@ -657,7 +663,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
     if res.returncode != 0:
         task_summary = f"{task_id} [Proyek: {project_id}] ({category}): {instruction}"
-        launch_agents_daemon(task_summary)
+        launch_agents_daemon(task_summary, model=model or "")
     else:
         try:
             if target_agent == "PRABOWO":
@@ -667,8 +673,9 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
             else:
                 delegation_hint = f"Dekomposisi tugas proyek {project_id} ke PRABOWO atau JOKOWI"
 
+            model_note = f" (Model AGY: {model})" if model else ""
             prompt_to_luhut = (
-                f"Tugas baru [Proyek: {project_id}]: '{instruction}'. Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
+                f"Tugas baru [Proyek: {project_id}{model_note}]: '{instruction}'. Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
                 f"ATURAN FAST-TRACK: {delegation_hint} via tmux send-keys, laporkan ke Telegram via python3 {TELEBOT_SCRIPT} '[LUHUT]: ...', "
                 f"lalu MASUK STANDBY PASIF. DILARANG audit kode atau loop checking!"
             )
@@ -681,7 +688,8 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
 
     # Siarkan notifikasi ke Telegram
     try:
-        msg = f"[BayOffice]: 💻 Tugas baru *{task_id}* [Proyek: `{project_id}` | {category}] via Web: \"{instruction[:70]}...\". Target: `{target_agent}`."
+        model_tag = f" ({model})" if (engine == "agy" and model) else ""
+        msg = f"[BayOffice]: 💻 Tugas baru *{task_id}* [Proyek: `{project_id}` | {category}] via Web ({engine}{model_tag}): \"{instruction[:70]}...\". Target: `{target_agent}`."
         subprocess.Popen([TELEBOT_PYTHON, TELEBOT_SCRIPT, msg])
     except Exception:
         pass
@@ -693,6 +701,8 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
         "category": category,
         "target_agent": target_agent,
         "target_dir": target_dir,
+        "engine": engine,
+        "model": model if engine == "agy" else None,
         "message": f"Tugas {task_id} [Proyek: {project_id}] berhasil diterbitkan dan diteruskan ke tim agen."
     }
 
@@ -747,12 +757,23 @@ def get_plan_detail(plan_id: str) -> Optional[Dict[str, Any]]:
     """Mengambil detail dokumen implementation plan."""
     return plans_manager.get_plan(plan_id)
 
-def generate_plan_ai(idea: str, project: str = "bayoffice", engine: str = "9router") -> Dict[str, Any]:
+def generate_plan_ai(idea: str, project: str = "bayoffice", engine: str = "agy", model: Optional[str] = None) -> Dict[str, Any]:
     """Meminta HABIBIE menyusun implementation plan teknis."""
     clean_project = (project or "bayoffice").strip()
     if clean_project:
         register_project_if_new(clean_project)
-    return plans_manager.generate_plan_ai(idea=idea, project=clean_project, engine=engine)
+    return plans_manager.generate_plan_ai(idea=idea, project=clean_project, engine=engine, model=model)
+
+def get_agy_models() -> List[Dict[str, Any]]:
+    """Mengembalikan daftar reasoning model Antigravity yang tersedia."""
+    return [
+        {"id": "gemini-3.8-flash-high", "name": "Gemini 3.8 Flash (High)", "desc": "Recommended / Fast", "default": True},
+        {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6 (Thinking)", "desc": "Deep Reasoning", "default": False},
+        {"id": "claude-opus-4-6-thinking", "name": "Claude Opus 4.6 (Thinking)", "desc": "Complex Architecture", "default": False},
+        {"id": "gemini-3.8-flash-medium", "name": "Gemini 3.8 Flash (Medium)", "desc": "Balanced", "default": False},
+        {"id": "gemini-3.8-flash-low", "name": "Gemini 3.8 Flash (Low)", "desc": "Lightweight", "default": False},
+        {"id": "gpt-oss-120b-medium", "name": "GPT-OSS 120B (Medium)", "desc": "Open Source", "default": False},
+    ]
 
 def dispatch_plan_to_kanban(plan_id: str) -> Dict[str, Any]:
     """Mendelegasikan implementation plan ke tim agen di Kanban."""

@@ -179,6 +179,8 @@ def get_plan(plan_id: str) -> Optional[Dict[str, Any]]:
             "project": meta.get("project", "bayoffice"),
             "author": meta.get("author", "HABIBIE"),
             "status": meta.get("status", "Draft"),
+            "engine": meta.get("engine", "agy"),
+            "model": meta.get("model"),
             "created_at": meta.get("created_at"),
             "updated_at": meta.get("updated_at"),
             "dispatched_task_id": meta.get("dispatched_task_id"),
@@ -196,7 +198,9 @@ def save_plan(title: str,
               author: str = "HABIBIE",
               status: str = "Draft",
               plan_id: Optional[str] = None,
-              dispatched_task_id: Optional[str] = None) -> Dict[str, Any]:
+              dispatched_task_id: Optional[str] = None,
+              engine: Optional[str] = None,
+              model: Optional[str] = None) -> Dict[str, Any]:
     """Menyimpan atau memperbarui dokumen plan ke data/plans/."""
     _ensure_plans_dir()
     now_dt = _get_local_now()
@@ -238,6 +242,10 @@ def save_plan(title: str,
         "status": status or "Draft",
         "dispatched_task_id": dispatched_task_id
     }
+    if engine:
+        meta["engine"] = engine
+    if model:
+        meta["model"] = model
 
     full_text = _render_frontmatter(meta, content.strip())
     file_path.write_text(full_text, encoding="utf-8")
@@ -249,6 +257,8 @@ def save_plan(title: str,
         "title": title,
         "project": meta["project"],
         "status": meta["status"],
+        "engine": meta.get("engine"),
+        "model": meta.get("model"),
         "created_at": now_iso,
         "file_path": str(file_path)
     }
@@ -256,7 +266,8 @@ def save_plan(title: str,
 
 def generate_plan_ai(idea: str,
                      project: str = "bayoffice",
-                     engine: str = "9router") -> Dict[str, Any]:
+                     engine: str = "agy",
+                     model: Optional[str] = None) -> Dict[str, Any]:
     """Meminta HABIBIE merancang Implementation Plan teknis secara AI."""
     idea = idea.strip()
     if not idea:
@@ -284,20 +295,22 @@ def generate_plan_ai(idea: str,
     )
 
     plan_markdown = ""
-    # Panggil 9Router atau fallback ke agy
+    # Panggil AGY CLI atau fallback ke 9Router
     if engine == "agy":
         try:
             env = os.environ.copy()
             env["HOME"] = str(Path.home())
             env["PATH"] = f"{Path.home()}/.gemini/antigravity-cli/bin:{Path.home()}/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
             cmd = ["agy", "-p", f"{habibie_sys}{plan_prompt}", "--dangerously-skip-permissions"]
+            if model and model.strip():
+                cmd.extend(["--model", model.strip()])
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
             plan_markdown = res.stdout.strip()
         except Exception as e:
             print(f"⚠️ AGY CLI error saat generate plan: {e}")
 
     if not plan_markdown:
-        # Default: 9Router proxy server 146
+        # Default fallback: 9Router proxy server 146
         headers = {
             "Authorization": f"Bearer {ROUTER9_API_KEY}",
             "Content-Type": "application/json"
@@ -336,9 +349,12 @@ def generate_plan_ai(idea: str,
         content=plan_markdown,
         project=project,
         author="HABIBIE",
-        status="Draft"
+        status="Draft",
+        engine=engine,
+        model=model if engine == "agy" else None
     )
-    log_habibie_activity(f"DRAFTED PLAN: [{saved['id']}] '{title}' untuk proyek '{project}' (engine: {engine})")
+    model_tag = f", model: {model}" if (engine == "agy" and model) else ""
+    log_habibie_activity(f"DRAFTED PLAN: [{saved['id']}] '{title}' untuk proyek '{project}' (engine: {engine}{model_tag})")
     saved["content"] = plan_markdown
     saved["plan"] = {
         "id": saved["id"],
@@ -346,6 +362,8 @@ def generate_plan_ai(idea: str,
         "title": saved["title"],
         "project": saved["project"],
         "status": saved["status"],
+        "engine": saved.get("engine", engine),
+        "model": saved.get("model", model if engine == "agy" else None),
         "created_at": saved["created_at"],
         "content": plan_markdown
     }
@@ -366,7 +384,8 @@ def dispatch_plan_to_kanban(plan_id: str, dispatch_fn) -> Dict[str, Any]:
         instruction=instruction,
         category_hint="auto",
         project_hint=project,
-        engine="agy"
+        engine=plan.get("engine", "agy"),
+        model=plan.get("model")
     )
 
     if not res.get("success"):

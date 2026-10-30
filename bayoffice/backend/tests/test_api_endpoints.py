@@ -140,6 +140,49 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             if os.path.exists(temp_proj_file.name):
                 os.unlink(temp_proj_file.name)
 
+    def test_agy_models_and_plan_model_selection(self):
+        import asyncio
+        from unittest.mock import patch
+
+        async def run_test():
+            # 1. GET /api/agy/models
+            models_res = await app.api_get_agy_models(user=self.test_user)
+            self.assertIn("models", models_res)
+            self.assertTrue(len(models_res["models"]) >= 4)
+            model_ids = [m["id"] for m in models_res["models"]]
+            self.assertIn("gemini-3.8-flash-high", model_ids)
+            self.assertIn("claude-sonnet-4-6", model_ids)
+
+            # 2. POST /api/plans/generate with AGY engine and custom model
+            with patch("plans_manager.generate_plan_ai") as mock_plan:
+                mock_plan.return_value = {
+                    "success": True,
+                    "id": "PLAN-20261030-05",
+                    "title": "Sonnet Architecture Blueprint",
+                    "project": "bayoffice",
+                    "engine": "agy",
+                    "model": "claude-sonnet-4-6",
+                    "status": "Draft"
+                }
+
+                plan_req = app.PlanGenerateRequest(
+                    idea="Refactor authentication session storage",
+                    project="bayoffice",
+                    engine="agy",
+                    model="claude-sonnet-4-6"
+                )
+
+                res = await app.api_generate_plan(plan_req, user=self.test_user)
+                self.assertTrue(res["success"])
+                mock_plan.assert_called_once_with(
+                    idea="Refactor authentication session storage",
+                    project="bayoffice",
+                    engine="agy",
+                    model="claude-sonnet-4-6"
+                )
+
+        asyncio.run(run_test())
+
 
 if __name__ == "__main__":
     unittest.main()

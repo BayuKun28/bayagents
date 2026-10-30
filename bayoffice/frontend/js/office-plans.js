@@ -26,6 +26,9 @@ window.OfficePlans = (function () {
   let studioCustomProjectContainer;
   let studioCustomProjectInput;
   let studioPlanEngineSelect;
+  let studioAgyModelContainer;
+  let studioPlanAgyModel;
+  let studioViewerPlanModel;
   let studioSubmitPlanBtn;
   let studioSubmitPlanBtnText;
   let studioSearchInput;
@@ -349,6 +352,18 @@ window.OfficePlans = (function () {
       if (studioViewerPlanId) studioViewerPlanId.textContent = plan.id;
       if (studioViewerPlanProject) studioViewerPlanProject.textContent = plan.project || 'general';
 
+      if (studioViewerPlanModel) {
+        if (plan.model) {
+          studioViewerPlanModel.style.display = 'inline-block';
+          studioViewerPlanModel.textContent = plan.model;
+        } else if (plan.engine) {
+          studioViewerPlanModel.style.display = 'inline-block';
+          studioViewerPlanModel.textContent = plan.engine.toUpperCase();
+        } else {
+          studioViewerPlanModel.style.display = 'none';
+        }
+      }
+
       const isDispatched = plan.status === 'dispatched';
       if (studioViewerPlanStatus) {
         studioViewerPlanStatus.className = 'neo-badge ' + (isDispatched ? 'badge-done' : 'badge-todo');
@@ -404,6 +419,12 @@ window.OfficePlans = (function () {
     if (studioPlanProjectSelect && studioPlanProjectSelect.value === '__custom__') {
       studioPlanProjectSelect.value = studioPlanProjectSelect.options[0]?.value || 'bayoffice';
     }
+    if (studioPlanEngineSelect) {
+      studioPlanEngineSelect.value = 'agy';
+    }
+    if (studioAgyModelContainer) {
+      studioAgyModelContainer.style.display = 'block';
+    }
     if (studioToggleNewPlanText) {
       studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
     }
@@ -451,6 +472,9 @@ window.OfficePlans = (function () {
     studioCustomProjectContainer = document.getElementById('studioCustomProjectContainer');
     studioCustomProjectInput = document.getElementById('studioCustomProjectInput');
     studioPlanEngineSelect = document.getElementById('studioPlanEngineSelect');
+    studioAgyModelContainer = document.getElementById('studioAgyModelContainer');
+    studioPlanAgyModel = document.getElementById('studioPlanAgyModel');
+    studioViewerPlanModel = document.getElementById('studioViewerPlanModel');
     studioSubmitPlanBtn = document.getElementById('studioSubmitPlanBtn');
     studioSubmitPlanBtnText = document.getElementById('studioSubmitPlanBtnText');
     studioSearchInput = document.getElementById('studioSearchInput');
@@ -466,6 +490,15 @@ window.OfficePlans = (function () {
         }
         if (isCustom && studioCustomProjectInput) {
           studioCustomProjectInput.focus();
+        }
+      });
+    }
+
+    if (studioPlanEngineSelect) {
+      studioPlanEngineSelect.addEventListener('change', () => {
+        const isAgy = studioPlanEngineSelect.value === 'agy';
+        if (studioAgyModelContainer) {
+          studioAgyModelContainer.style.display = isAgy ? 'block' : 'none';
         }
       });
     }
@@ -501,7 +534,8 @@ window.OfficePlans = (function () {
         e.preventDefault();
         const idea = studioPlanIdeaInput ? studioPlanIdeaInput.value.trim() : '';
         let project = studioPlanProjectSelect ? studioPlanProjectSelect.value : 'infobay';
-        const engine = studioPlanEngineSelect ? studioPlanEngineSelect.value : '9router';
+        const engine = studioPlanEngineSelect ? studioPlanEngineSelect.value : 'agy';
+        const model = (engine === 'agy' && studioPlanAgyModel) ? studioPlanAgyModel.value : null;
 
         if (!idea) return;
 
@@ -525,7 +559,7 @@ window.OfficePlans = (function () {
           const res = await fetch('/api/plans/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idea, project, engine })
+            body: JSON.stringify({ idea, project, engine, model })
           });
           const resJson = await res.json();
           if (res.ok && resJson.success) {
