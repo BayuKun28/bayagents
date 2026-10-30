@@ -27,7 +27,7 @@ HABIBIE_CONFIG = CONFIGS_DIR / "habibie.yaml"
 
 ROUTER9_BASE_URL = os.environ.get("ROUTER9_BASE_URL", "http://192.168.100.146:20128/v1")
 ROUTER9_MODEL = os.environ.get("ROUTER9_MODEL", "gemini-free-smart")
-ROUTER9_API_KEY = os.environ.get("ROUTER9_API_KEY", "sk-acb6c8a9df3a47ab-ir5af0-4c0da6b8")
+ROUTER9_API_KEY = os.environ.get("ROUTER9_API_KEY", "")
 
 
 def _get_local_now() -> datetime:

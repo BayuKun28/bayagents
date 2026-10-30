@@ -22,11 +22,17 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import service
 import scheduler
 
-SECRET_KEY = os.getenv("BAYOFFICE_SECRET_KEY", os.getenv("SECRET_KEY", "bayoffice_secure_key_2026"))
+SECRET_KEY = os.getenv("BAYOFFICE_SECRET_KEY", os.getenv("SECRET_KEY", ""))
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "bay")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "193328")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 COOKIE_NAME = "bayoffice_session"
 SESSION_MAX_AGE = 86400 * 7  # 7 hari
+
+if not SECRET_KEY:
+    SECRET_KEY = "bayoffice_fallback_ephemeral_key_" + os.urandom(8).hex()
+
+if not ADMIN_PASSWORD:
+    raise RuntimeError("ADMIN_PASSWORD wajib didefinisikan dalam file .env!")
 
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 

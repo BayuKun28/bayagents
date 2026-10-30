@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
 
+from storage import atomic_read_json, atomic_write_json
+
 CURRENT_DIR = Path(__file__).resolve().parent
 BAYOFFICE_DIR = CURRENT_DIR.parent
 ROOT_BAYAGENTS = BAYOFFICE_DIR.parent
@@ -54,13 +56,12 @@ AGENT_PANES = {
 }
 
 def get_kanban_data() -> Dict[str, Any]:
-    """Membaca isi kanban.json dengan aman."""
+    """Membaca isi kanban.json dengan aman menggunakan atomic reader."""
     if not os.path.exists(KANBAN_PATH):
         return {"tasks": [], "mtime": 0}
     try:
         mtime = os.path.getmtime(KANBAN_PATH)
-        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
         data["mtime"] = mtime
         return data
     except Exception as e:
@@ -196,8 +197,7 @@ def register_project_if_new(project_id: str, project_name: str = None) -> None:
     if not clean_id or not os.path.exists(path):
         return
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            registry = json.load(f)
+        registry = atomic_read_json(path, default={"projects": {}})
         projects = registry.get("projects", {})
         if clean_id not in projects:
             root_dir = str(WORKSPACE_DIR / clean_id)
@@ -217,21 +217,13 @@ def register_project_if_new(project_id: str, project_name: str = None) -> None:
                 "rules_file": f"{root_dir}/RULES.md" if os.path.exists(f"{root_dir}/RULES.md") else str(WORKSPACE_DIR / "GEMINI.md")
             }
             registry["projects"] = projects
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(registry, f, indent=2)
+            atomic_write_json(path, registry)
     except Exception as e:
         print(f"Error registering project {clean_id}: {e}")
 
 def get_projects_registry() -> Dict[str, Any]:
     """Membaca daftar proyek dari projects.json."""
-    path = PROJECTS_PATH
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"projects": {}}
+    return atomic_read_json(PROJECTS_PATH, default={"projects": {}})
 
 def get_expanded_system_metrics() -> Dict[str, Any]:
     """Membaca metrik mendalam (RAM, CPU, Suhu APU, Swap, Disk, Services) tanpa overhead."""
@@ -342,8 +334,7 @@ def delete_task(task_id: str) -> Dict[str, Any]:
     """Menghapus tugas dari kanban.json."""
     task_id = task_id.strip()
     try:
-        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
-            k_data = json.load(f)
+        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
         tasks = k_data.get("tasks", [])
         found = False
         new_tasks = []
@@ -357,8 +348,7 @@ def delete_task(task_id: str) -> Dict[str, Any]:
         if not found:
             return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
         k_data["tasks"] = new_tasks
-        with open(KANBAN_PATH, "w", encoding="utf-8") as f:
-            json.dump(k_data, f, indent=2, ensure_ascii=False)
+        atomic_write_json(KANBAN_PATH, k_data)
         return {"success": True, "message": f"Tugas {task_id} berhasil dihapus", "task": deleted_task}
     except Exception as e:
         return {"success": False, "error": f"Gagal menghapus tugas: {e}"}
@@ -375,8 +365,7 @@ def update_task_status(task_id: str, new_status: str, notes: Optional[str] = Non
         return {"success": False, "error": f"Status tidak valid: {new_status}"}
 
     try:
-        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
-            k_data = json.load(f)
+        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
         found = False
         target_t = None
         for t in k_data.get("tasks", []):
@@ -391,8 +380,7 @@ def update_task_status(task_id: str, new_status: str, notes: Optional[str] = Non
                 break
         if not found:
             return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
-        with open(KANBAN_PATH, "w", encoding="utf-8") as f:
-            json.dump(k_data, f, indent=2, ensure_ascii=False)
+        atomic_write_json(KANBAN_PATH, k_data)
         return {"success": True, "message": f"Status {task_id} diperbarui menjadi {normalized_status}", "task": target_t}
     except Exception as e:
         return {"success": False, "error": f"Gagal memperbarui status: {e}"}
@@ -400,8 +388,7 @@ def update_task_status(task_id: str, new_status: str, notes: Optional[str] = Non
 def retry_task(task_id: str) -> Dict[str, Any]:
     """Menjalankan ulang (retry) tugas yang ada ke agen terkait."""
     try:
-        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
-            k_data = json.load(f)
+        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
         found = False
         target_t = None
         for t in k_data.get("tasks", []):
@@ -413,8 +400,7 @@ def retry_task(task_id: str) -> Dict[str, Any]:
                 break
         if not found:
             return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
-        with open(KANBAN_PATH, "w", encoding="utf-8") as f:
-            json.dump(k_data, f, indent=2, ensure_ascii=False)
+        atomic_write_json(KANBAN_PATH, k_data)
 
         assignee = target_t.get("assignee", "LUHUT")
         pane = AGENT_PANES.get(assignee, f"{TMUX_SESSION_NAME}:0.0")
@@ -527,8 +513,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     task_id = f"{task_prefix}-01"
     now_iso = datetime.now().astimezone().isoformat()
     try:
-        with open(KANBAN_PATH, "r", encoding="utf-8") as f:
-            k_data = json.load(f)
+        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
 
         existing_nums = []
         for t in k_data.get("tasks", []):
@@ -554,8 +539,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
             "notes": f"Tugas baru via BayOffice Web UI [Proyek: {project_id} | {category}]. Target pelaksana: {target_agent}."
         }
         k_data.setdefault("tasks", []).append(new_task_entry)
-        with open(KANBAN_PATH, "w", encoding="utf-8") as f:
-            json.dump(k_data, f, indent=2, ensure_ascii=False)
+        atomic_write_json(KANBAN_PATH, k_data)
     except Exception as e:
         return {"success": False, "error": f"Gagal menulis ke kanban.json: {e}"}
 

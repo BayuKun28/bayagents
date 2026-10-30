@@ -5,6 +5,7 @@ import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
+from storage import atomic_read_json, atomic_write_json
 
 # Path Konfigurasi
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -190,24 +191,21 @@ def calculate_next_run(schedule_type: str,
 
 
 def _load_schedules_unlocked() -> Dict[str, Any]:
-    """Membaca file schedules.json tanpa lock internal."""
+    """Membaca file schedules.json secara atomik dan aman."""
+    initial_data = {
+        "version": "1.0",
+        "updated_at": _get_local_now().isoformat(),
+        "schedules": []
+    }
     if not SCHEDULES_PATH.exists():
-        initial_data = {
-            "version": "1.0",
-            "updated_at": _get_local_now().isoformat(),
-            "schedules": []
-        }
         try:
-            SCHEDULES_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(SCHEDULES_PATH, "w", encoding="utf-8") as f:
-                json.dump(initial_data, f, indent=2, ensure_ascii=False)
+            atomic_write_json(SCHEDULES_PATH, initial_data)
         except Exception:
             pass
         return initial_data
 
     try:
-        with open(SCHEDULES_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = atomic_read_json(SCHEDULES_PATH, default=initial_data)
         if "schedules" not in data:
             data["schedules"] = []
         return data
@@ -219,12 +217,7 @@ def _save_schedules_unlocked(data: Dict[str, Any]) -> bool:
     """Menyimpan data schedules ke schedules.json secara atomik."""
     try:
         data["updated_at"] = _get_local_now().isoformat()
-        SCHEDULES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        tmp_path = SCHEDULES_PATH.with_suffix(".tmp")
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        tmp_path.replace(SCHEDULES_PATH)
-        return True
+        return atomic_write_json(SCHEDULES_PATH, data)
     except Exception as e:
         print(f"Error saving schedules.json: {e}")
         return False

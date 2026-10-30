@@ -31,12 +31,34 @@ WORKSPACE_DIR = Path(os.getenv("WORKSPACE_DIR", str(Path.home())))
 DATA_DIR = Path(os.getenv("DATA_DIR", str(BAYAGENTS_DIR / "data")))
 SCRIPTS_DIR = Path(os.getenv("SCRIPTS_DIR", str(BAYAGENTS_DIR / "scripts")))
 
-# Import plans_manager dari bayoffice/backend
+# Import plans_manager & atomic storage engine dari bayoffice/backend
 sys.path.append(str(ROOT_BAYAGENTS / "bayoffice" / "backend"))
 try:
     import plans_manager
 except Exception as _e:
     plans_manager = None
+
+try:
+    from storage import atomic_read_json, atomic_write_json
+except Exception as _e:
+    atomic_read_json = None
+    atomic_write_json = None
+
+def read_json_safe(filepath, default=None):
+    if atomic_read_json:
+        return atomic_read_json(filepath, default=default)
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+def write_json_safe(filepath, data):
+    if atomic_write_json:
+        return atomic_write_json(filepath, data)
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    return True
 
 # Cooldown alert watchdog (2 jam) agar tidak berulang kali spam
 ALERT_COOLDOWNS = {}
@@ -45,8 +67,10 @@ ALERT_COOLDOWN_SECONDS = 7200
 # ==========================================
 # KONFIGURASI DARI .ENV / DEFAULT
 # ==========================================
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8899183243:AAGIXvdrOZcdKpD942mubV05Xsws4tsDNSg")
-ALLOWED_USER_ID = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "675312281"))
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+if not BOT_TOKEN:
+    raise RuntimeError("TELEGRAM_BOT_TOKEN wajib didefinisikan dalam file .env!")
+ALLOWED_USER_ID = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
 CURRENT_MODEL = os.getenv("CURRENT_MODEL", "gemini-3.8-flash-medium")
 TMUX_SESSION_NAME = os.getenv("TMUX_SESSION_NAME", "agy_agents")
 
@@ -85,7 +109,7 @@ def set_current_engine(engine_name: str) -> None:
 # ==========================================
 ROUTER9_BASE_URL = os.environ.get("ROUTER9_BASE_URL", "http://192.168.100.146:20128/v1")
 ROUTER9_MODEL = os.environ.get("ROUTER9_MODEL", "gemini-free-smart")
-ROUTER9_API_KEY = os.environ.get("ROUTER9_API_KEY", "sk-acb6c8a9df3a47ab-ir5af0-4c0da6b8")
+ROUTER9_API_KEY = os.environ.get("ROUTER9_API_KEY", "")
 
 # Buffer memori riwayat chat multi-turn agar obrolan nyambung dengan konteks sebelumnya
 ROUTER9_CHAT_HISTORY = []
@@ -1261,8 +1285,7 @@ def get_kanban_summary(show_all: bool = False) -> str:
         return "⚠️ File `kanban.json` tidak ditemukan di direktori kerja."
 
     try:
-        with open(KANBAN_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = read_json_safe(KANBAN_FILE, default={}) or {}
     except Exception as e:
         return f"⚠️ Gagal membaca `kanban.json`: {e}"
 
@@ -1380,8 +1403,7 @@ async def orchestrator_sleep_job(context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        with open(KANBAN_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = read_json_safe(KANBAN_FILE, default={}) or {}
     except Exception:
         return
 
@@ -1460,9 +1482,8 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     known_projects = ["infobay", "bayoffice"]
     try:
         if os.path.exists(PROJECTS_FILE):
-            with open(PROJECTS_FILE, "r", encoding="utf-8") as f:
-                p_reg = json.load(f)
-                known_projects = list(p_reg.get("projects", {}).keys())
+            p_reg = read_json_safe(PROJECTS_FILE, default={}) or {}
+            known_projects = list(p_reg.get("projects", {}).keys())
     except Exception:
         pass
 
@@ -1526,8 +1547,7 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     task_id = "TASK-01"
     try:
         if os.path.exists(KANBAN_FILE):
-            with open(KANBAN_FILE, "r", encoding="utf-8") as f:
-                k_data = json.load(f)
+            k_data = read_json_safe(KANBAN_FILE, default={"tasks": []}) or {"tasks": []}
 
             existing_nums = []
             for t in k_data.get("tasks", []):
@@ -1554,8 +1574,7 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "notes": f"Tugas baru via Telegram /task [Proyek: {project_id} | {category}]. Target pelaksana: {target_agent}."
             }
             k_data.setdefault("tasks", []).append(new_task_entry)
-            with open(KANBAN_FILE, "w", encoding="utf-8") as f:
-                json.dump(k_data, f, indent=2, ensure_ascii=False)
+            write_json_safe(KANBAN_FILE, k_data)
     except Exception as e:
         print(f"Error logging to kanban: {e}")
 
@@ -1631,9 +1650,8 @@ async def task9_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     known_projects = ["infobay", "bayoffice"]
     try:
         if os.path.exists(PROJECTS_FILE):
-            with open(PROJECTS_FILE, "r", encoding="utf-8") as f:
-                p_reg = json.load(f)
-                known_projects = list(p_reg.get("projects", {}).keys())
+            p_reg = read_json_safe(PROJECTS_FILE, default={}) or {}
+            known_projects = list(p_reg.get("projects", {}).keys())
     except Exception:
         pass
 
