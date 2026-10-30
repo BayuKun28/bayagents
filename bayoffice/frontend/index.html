@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261030_04">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261030_05">
 </head>
 <body style="padding-bottom: 60px;">
 
@@ -32,22 +32,7 @@
           </div>
         </div>
 
-        <!-- 2. Workspace Navigation Switcher (Tengah-Kiri) -->
-        <nav class="topbar-nav-tabs" aria-label="Workspace Modes">
-          <button id="navOfficeBtn" class="nav-tab-btn active" data-view="office" data-i18n-title="nav.workspace" title="Live Office & Kanban">
-            <i data-lucide="layout-dashboard" class="lucide-sm"></i>
-            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.workspace">Live Office & Kanban</span>
-            <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.workspace_short">Office</span>
-          </button>
-          <button id="navPlansBtn" class="nav-tab-btn" data-view="plans" data-i18n-title="nav.plans_studio" title="Plans Studio (HABIBIE)">
-            <i data-lucide="compass" class="lucide-sm tab-icon-plans" style="color: #8B5CF6;"></i>
-            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.plans_studio">Plans Studio (HABIBIE)</span>
-            <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.plans_studio_short">Plans</span>
-            <span id="navPlansCountBadge" class="nav-count-badge" style="display: none;">0</span>
-          </button>
-        </nav>
-
-        <!-- 3. Action Controls (Kanan) -->
+        <!-- 2. Action Controls (Kanan) -->
         <div class="topbar-actions">
           <!-- Hero Primary CTA: New Task -->
           <button id="openTaskBtn" class="neo-btn neo-btn-primary topbar-btn btn-task" data-i18n-title="actions.new_task" title="New Task">
@@ -104,19 +89,12 @@
       </div>
     </div>
 
-    <!-- BARIS 2: SERVER HEALTH GUARDIAN SUB-BAR -->
+    <!-- BARIS 2: TELEMETRY (KIRI) & WORKSPACE NAVIGATION TABS (KANAN) -->
     <div class="topbar-guardian-subbar">
       <div class="topbar-guardian-container">
         
-        <!-- Left: Clickable Server Health Guardian Telemetry Deck -->
-        <div id="telemetryDeck" class="telemetry-deck guardian-deck" data-i18n-title="health.modal_title" title="Open Server Health Guardian Diagnostics">
-          <div class="guardian-deck-badge">
-            <i data-lucide="shield-check" class="lucide-xs"></i>
-            <span class="guardian-badge-text" data-i18n="health.bar_title">HEALTH GUARDIAN</span>
-          </div>
-
-          <div class="telemetry-divider"></div>
-
+        <!-- Left: Clickable Server Health Telemetry Deck -->
+        <div id="telemetryDeck" class="telemetry-deck guardian-deck" data-i18n-title="health.modal_title" title="Open Server Diagnostics">
           <span id="tmuxBadge" class="neo-badge badge-todo telemetry-badge">
             <span class="status-dot dot-sleep"></span>
             <span class="desk-txt" data-i18n="telemetry.loading">LOADING STATUS...</span>
@@ -138,24 +116,22 @@
             <span class="chip-label" data-i18n="telemetry.cpu">CPU:</span>
             <span id="cpuMetric" class="chip-val chip-val-cpu">-</span>
           </div>
-
-          <div class="telemetry-divider guardian-hint-divider"></div>
-
-          <div class="guardian-click-hint">
-            <i data-lucide="activity" class="lucide-xs"></i>
-            <span data-i18n="health.click_hint">Open Diagnostics</span>
-          </div>
         </div>
 
-        <!-- Right: Server Environment Quick Info -->
-        <div class="guardian-env-info">
-          <span class="homelab-dot"></span>
-          <span class="env-info-host">Host: 192.168.100.145:8888</span>
-          <span class="env-info-divider">•</span>
-          <span class="env-info-detail">FastCGI PHP 8.4</span>
-          <span class="env-info-divider">•</span>
-          <span class="env-info-detail">PostgreSQL Active</span>
-        </div>
+        <!-- Right: Workspace Navigation Switcher Tabs (Live Office & Kanban | Plans Studio) -->
+        <nav class="topbar-nav-tabs" aria-label="Workspace Modes">
+          <button id="navOfficeBtn" class="nav-tab-btn active" data-view="office" data-i18n-title="nav.workspace" title="Live Office & Kanban">
+            <i data-lucide="layout-dashboard" class="lucide-sm"></i>
+            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.workspace">Live Office & Kanban</span>
+            <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.workspace_short">Office</span>
+          </button>
+          <button id="navPlansBtn" class="nav-tab-btn" data-view="plans" data-i18n-title="nav.plans_studio" title="Plans Studio (HABIBIE)">
+            <i data-lucide="compass" class="lucide-sm tab-icon-plans" style="color: #8B5CF6;"></i>
+            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.plans_studio">Plans Studio (HABIBIE)</span>
+            <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.plans_studio_short">Plans</span>
+            <span id="navPlansCountBadge" class="nav-count-badge" style="display: none;">0</span>
+          </button>
+        </nav>
 
       </div>
     </div>

@@ -6,6 +6,8 @@
   --bg-card: #FFFFFF;
   --border-color: #1A1A1A;
   --shadow-color: #1A1A1A;
+  --text-color: #1A1A1A;
+  --text-muted: #64748B;
   --yellow: #FFDE59;
   --neo-mint: #98D8AA;
   --coral: #FF6B6B;
@@ -227,6 +229,8 @@ body.dark-mode {
   --bg-card: #181E26;
   --border-color: #333F50;
   --shadow-color: #000000;
+  --text-color: #F8FAFC;
+  --text-muted: #94A3B8;
   background-color: var(--bg-main);
   color: #E6EDF3;
 }
@@ -669,14 +673,16 @@ body.dark-mode .nav-tab-btn.active {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   box-shadow: 2px 2px 0px var(--shadow-color);
-  border-radius: 30px;
-  padding: 4px 14px;
+  border-radius: 8px;
+  padding: 4px 10px;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   transition: all 0.15s ease;
   box-sizing: border-box;
   cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
 }
 
 .guardian-deck:hover {
@@ -690,61 +696,11 @@ body.dark-mode .nav-tab-btn.active {
   box-shadow: 0px 0px 0px var(--shadow-color);
 }
 
-.guardian-deck-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: #2563EB;
-  letter-spacing: 0.3px;
-  flex-shrink: 0;
-}
-
-body.dark-mode .guardian-deck-badge {
-  color: #60A5FA;
-}
-
-.guardian-click-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #64748B;
-  transition: color 0.15s ease;
-  flex-shrink: 0;
-}
-
-.guardian-deck:hover .guardian-click-hint {
-  color: #2563EB;
-}
-
-body.dark-mode .guardian-deck:hover .guardian-click-hint {
-  color: #60A5FA;
-}
-
-.guardian-env-info {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #64748B;
-  font-family: var(--font-mono);
-  white-space: nowrap;
-}
-
-.env-info-divider {
-  color: #94A3B8;
-  font-weight: 400;
-}
-
 .telemetry-badge {
   font-size: 0.72rem !important;
   font-weight: 800 !important;
   padding: 3px 10px !important;
-  border-radius: 20px !important;
+  border-radius: 6px !important;
   letter-spacing: 0.3px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -755,6 +711,10 @@ body.dark-mode .guardian-deck:hover .guardian-click-hint {
   height: 16px;
   background: #CBD5E1;
   flex-shrink: 0;
+}
+
+body.dark-mode .telemetry-divider {
+  background: #333F50;
 }
 
 .telemetry-chip {
@@ -870,6 +830,12 @@ body.dark-mode .guardian-deck:hover .guardian-click-hint {
   gap: 4px;
 }
 
+body.dark-mode .neo-dropdown-menu {
+  background: #181E26 !important;
+  border-color: #333F50 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -882,6 +848,7 @@ body.dark-mode .guardian-deck:hover .guardian-click-hint {
   text-align: left;
   width: 100%;
   box-sizing: border-box;
+  color: var(--text-color);
   transition: all 0.12s ease;
 }
 
@@ -900,12 +867,32 @@ body.dark-mode .guardian-deck:hover .guardian-click-hint {
   font-size: 0.84rem;
   font-weight: 800;
   color: var(--text-color);
+  transition: color 0.15s ease;
 }
 
 .dropdown-item .item-desc {
-  font-size: 0.7rem;
-  color: #64748B;
+  font-size: 0.72rem;
+  color: var(--text-muted);
   margin-top: 1px;
+  transition: color 0.15s ease;
+}
+
+/* Explicit Dark Mode Overrides for Ops Hub Dropdown */
+body.dark-mode .dropdown-item {
+  color: #F8FAFC !important;
+}
+
+body.dark-mode .dropdown-item .item-title {
+  color: #F8FAFC !important;
+}
+
+body.dark-mode .dropdown-item .item-desc {
+  color: #94A3B8 !important;
+}
+
+body.dark-mode .dropdown-item:hover {
+  background: #232B38 !important;
+  border-color: #475569 !important;
 }
 
 /* Quick Preferences Pod (Segmented Pill) */
@@ -999,11 +986,6 @@ body.dark-mode .pod-btn:active {
   .topbar-btn.btn-ops,
   .topbar-btn.btn-logout {
     padding: 7px 10px;
-  }
-
-  .env-info-detail,
-  .env-info-divider {
-    display: none !important;
   }
 
   .chip-label {
@@ -1133,10 +1115,27 @@ body.dark-mode .pod-btn:active {
     display: inline;
   }
 
-  /* Baris 2 Full-Width: Workspace Navigation Switcher */
+  .nav-tab-text-full {
+    display: none !important;
+  }
+
+  .nav-tab-text-short {
+    display: inline !important;
+  }
+
+  /* Baris 2: Sub-bar (Workspace Navigation Tabs + Telemetry Deck) */
+  .topbar-guardian-subbar {
+    padding: 6px 12px;
+  }
+
+  .topbar-guardian-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 6px;
+  }
+
   .topbar-nav-tabs {
-    grid-column: 1 / -1;
-    order: 3;
     width: 100%;
     display: flex;
     justify-content: stretch;
@@ -1150,47 +1149,19 @@ body.dark-mode .pod-btn:active {
     font-size: 0.78rem;
   }
 
-  .nav-tab-text-full {
-    display: none !important;
-  }
-
-  .nav-tab-text-short {
-    display: inline !important;
-  }
-
-  /* Baris 2 / Sub-bar: Server Health Guardian Telemetry Strip */
-  .topbar-guardian-subbar {
-    padding: 4px 12px;
-  }
-
-  .topbar-guardian-container {
-    width: 100%;
-    display: flex;
-  }
-
-  .guardian-env-info {
-    display: none !important;
-  }
-
   .guardian-deck {
     width: 100% !important;
     border-radius: 8px;
     padding: 4px 8px !important;
     gap: 6px;
     display: flex !important;
-    justify-content: space-between !important;
+    justify-content: space-around !important;
     align-items: center !important;
     box-shadow: 2px 2px 0px var(--shadow-color);
     border-width: 2px;
     box-sizing: border-box;
     white-space: nowrap;
     overflow-x: auto;
-  }
-
-  .guardian-deck-badge,
-  .guardian-click-hint,
-  .guardian-hint-divider {
-    display: none !important;
   }
 
   .desk-txt {
