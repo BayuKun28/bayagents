@@ -22,12 +22,23 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
         self.temp_file.close()
         self.orig_path = scheduler.SCHEDULES_PATH
         scheduler.SCHEDULES_PATH = Path(self.temp_file.name)
+        
+        # Isolasi KANBAN_PATH agar test tidak mencemari data/kanban.json nyata
+        self.orig_kanban_path = service.KANBAN_PATH
+        self.temp_kanban = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+        self.temp_kanban.write(b'{"tasks": []}')
+        self.temp_kanban.close()
+        service.KANBAN_PATH = self.temp_kanban.name
+        
         self.test_user = "admin_tester"
 
     def tearDown(self):
         scheduler.SCHEDULES_PATH = self.orig_path
         if os.path.exists(self.temp_file.name):
             os.unlink(self.temp_file.name)
+        service.KANBAN_PATH = self.orig_kanban_path
+        if os.path.exists(self.temp_kanban.name):
+            os.unlink(self.temp_kanban.name)
 
     async def _run_async(self, coro):
         return await coro

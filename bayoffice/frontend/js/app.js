@@ -214,9 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
               navKanbanCountBadge.style.display = tasks.length > 0 ? 'inline-block' : 'none';
             }
             if (kanbanTotalTasksBadge) {
-              const inProg = tasks.filter(t => (t.status || '').toLowerCase() === 'in-progress').length;
-              const qa = tasks.filter(t => (t.status || '').toLowerCase() === 'qa-review').length;
-              const done = tasks.filter(t => (t.status || '').toLowerCase() === 'done').length;
+              const inProg = tasks.filter(t => kanban.normalizeStatus(t.status) === 'In-Progress').length;
+              const qa = tasks.filter(t => kanban.normalizeStatus(t.status) === 'QA-Review').length;
+              const done = tasks.filter(t => kanban.normalizeStatus(t.status) === 'Done').length;
               kanbanTotalTasksBadge.textContent = `TOTAL: ${tasks.length} • PROG: ${inProg} • QA: ${qa} • DONE: ${done}`;
             }
           }
@@ -424,6 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const projects = data.projects || {};
 
       const allProjectsText = window.I18n ? window.I18n.t('kanban.all_projects') : 'All Projects';
+      const noneProjectText = window.I18n ? window.I18n.t('modal_task.project_none') : '🌐 Umum / Homelab (Tanpa Proyek)';
       const autoDetectText = window.I18n ? window.I18n.t('modal_task.project_auto') : 'Auto Detect Project';
       const customProjectText = window.I18n ? window.I18n.t('modal_task.project_custom') : 'New Project / Custom Folder...';
 
@@ -431,6 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (projectFilterSelect) {
         const cur = projectFilterSelect.value;
         let optHtml = `<option value="ALL">${allProjectsText}</option>`;
+        optHtml += `<option value="general">🌐 Umum / Homelab</option>`;
         for (const [pId, pData] of Object.entries(projects)) {
           optHtml += `<option value="${pId}">${pData.name || pId}</option>`;
         }
@@ -442,6 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (taskProjectSelect) {
         let cur = taskProjectSelect.value;
         let modalHtml = `<option value="auto">${autoDetectText}</option>`;
+        modalHtml += `<option value="none">${noneProjectText}</option>`;
         for (const [pId, pData] of Object.entries(projects)) {
           modalHtml += `<option value="${pId}">${pData.name || pId}</option>`;
         }

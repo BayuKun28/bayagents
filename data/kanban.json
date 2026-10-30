@@ -2151,24 +2151,6 @@
       "completed_at": "2026-10-30T16:49:39.298678+07:00"
     },
     {
-      "id": "TASK-REM-01",
-      "project": "general",
-      "assignee": "HABIBIE",
-      "title": "cek cuaca karanganyar hari ini dan kirim ke telegram",
-      "skills_required": [
-        "Chief Architect",
-        "Homelab Advisor",
-        "Automation"
-      ],
-      "description": "cek cuaca karanganyar hari ini dan kirim ke telegram",
-      "status": "In-Progress",
-      "target_dir": "/home/bay",
-      "engine": "agy",
-      "model": "gemini-3.8-flash-high",
-      "created_at": "2026-10-30T16:59:58.187523+07:00",
-      "notes": "Tugas baru via BayOffice Web UI [Proyek: general | Reminder]. Target pelaksana: HABIBIE."
-    },
-    {
       "id": "TASK-REM-02",
       "project": "general",
       "assignee": "HABIBIE",
@@ -2226,22 +2208,23 @@
       "completed_at": "2026-10-30T17:10:50.222518+07:00"
     },
     {
-      "id": "TASK-REM-05",
-      "project": "general",
+      "id": "TASK-REM-06",
+      "project": "bayoffice",
       "assignee": "HABIBIE",
-      "title": "cek cuaca karanganyar hari ini dan kirim ke telegram",
+      "title": "[Jadwal: SCHED-02] cek cuaca karanganyar hari ini dan kirim ke telegram",
       "skills_required": [
         "Chief Architect",
         "Homelab Advisor",
         "Automation"
       ],
-      "description": "cek cuaca karanganyar hari ini dan kirim ke telegram",
-      "status": "In-Progress",
+      "description": "[Jadwal: SCHED-02] cek cuaca karanganyar hari ini dan kirim ke telegram",
+      "status": "Done",
       "target_dir": "/home/bay",
       "engine": "agy",
       "model": "gemini-3.8-flash-high",
-      "created_at": "2026-10-30T17:11:46.628985+07:00",
-      "notes": "Tugas baru via BayOffice Web UI [Proyek: general | Reminder]. Target pelaksana: HABIBIE."
+      "created_at": "2026-10-30T17:38:38.670927+07:00",
+      "notes": "Tugas selesai dieksekusi secara mandiri oleh HABIBIE.",
+      "completed_at": "2026-10-30T17:40:11.773081+07:00"
     }
   ]
 }

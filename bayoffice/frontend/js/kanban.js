@@ -9,7 +9,7 @@ class KanbanBoard {
     this.tasks = [];
     this.selectedAssignee = 'ALL';
     this.selectedProject = 'ALL';
-    this.selectedPeriod = 'THIS_MONTH';
+    this.selectedPeriod = 'ALL';
     this.customStartDate = null;
     this.customEndDate = null;
     this.searchQuery = '';
@@ -54,7 +54,7 @@ class KanbanBoard {
   }
 
   setPeriodFilter(period) {
-    this.selectedPeriod = period || 'THIS_MONTH';
+    this.selectedPeriod = period || 'ALL';
     this.render();
   }
 
@@ -75,13 +75,34 @@ class KanbanBoard {
     return new Date('2026-10-25T08:00:00+07:00');
   }
 
+  getReferenceNow() {
+    const clientNow = new Date();
+    let maxTaskTime = 0;
+    if (Array.isArray(this.tasks)) {
+      for (const t of this.tasks) {
+        const d = this.getTaskDate(t);
+        if (d && d.getTime() > maxTaskTime) {
+          maxTaskTime = d.getTime();
+        }
+      }
+    }
+    if (maxTaskTime > 0) {
+      const maxDate = new Date(maxTaskTime);
+      // Jika jam server / task berbeda tahun dari jam browser client, samakan tahun & bulan ke task
+      if (maxDate.getFullYear() !== clientNow.getFullYear()) {
+        return maxDate;
+      }
+    }
+    return clientNow;
+  }
+
   isTaskInPeriod(task) {
     if (this.selectedPeriod === 'ALL') return true;
 
     const taskDate = this.getTaskDate(task);
     if (!taskDate) return true;
 
-    const now = new Date();
+    const now = this.getReferenceNow();
 
     if (this.selectedPeriod === 'THIS_MONTH') {
       return taskDate.getFullYear() === now.getFullYear() &&
@@ -144,7 +165,12 @@ class KanbanBoard {
       // Filter project
       if (this.selectedProject !== 'ALL') {
         const p = (t.project || 'infobay').toLowerCase();
-        if (p !== this.selectedProject.toLowerCase()) return false;
+        const sel = this.selectedProject.toLowerCase();
+        if (sel === 'none' || sel === 'general') {
+          if (p !== 'none' && p !== 'general') return false;
+        } else if (p !== sel) {
+          return false;
+        }
       }
 
       // Filter date period (Default: THIS_MONTH)

@@ -397,6 +397,7 @@
             <label for="projectFilterSelect" style="font-size: 0.76rem; font-weight: 800; color: #64748B;">PROJECT:</label>
             <select id="projectFilterSelect" class="neo-box-sm" style="padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer;">
               <option value="ALL" data-i18n="kanban.all_projects">All Projects</option>
+              <option value="general">🌐 Umum / Homelab</option>
               <option value="infobay">infobay</option>
               <option value="bayoffice">bayoffice</option>
             </select>
@@ -406,11 +407,11 @@
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <label for="periodFilterSelect" style="font-size: 0.76rem; font-weight: 800; color: #64748B;">PERIOD:</label>
             <select id="periodFilterSelect" class="neo-box-sm" style="padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer;">
-              <option value="THIS_MONTH" selected data-i18n="kanban.period_this_month">This Month</option>
+              <option value="ALL" selected data-i18n="kanban.period_all">All Time</option>
+              <option value="THIS_MONTH" data-i18n="kanban.period_this_month">This Month</option>
               <option value="TODAY" data-i18n="kanban.period_today">Today</option>
               <option value="THIS_WEEK" data-i18n="kanban.period_this_week">This Week</option>
               <option value="LAST_MONTH" data-i18n="kanban.period_last_month">Last Month</option>
-              <option value="ALL" data-i18n="kanban.period_all">All Time</option>
               <option value="CUSTOM" data-i18n="kanban.period_custom">Custom Range...</option>
             </select>
 
@@ -428,6 +429,7 @@
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="JOKOWI" style="padding: 5px 10px; font-size: 0.75rem;">JOKOWI</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="PRABOWO" style="padding: 5px 10px; font-size: 0.75rem;">PRABOWO</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="GIBRAN" style="padding: 5px 10px; font-size: 0.75rem;">GIBRAN</button>
+            <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="HABIBIE" style="padding: 5px 10px; font-size: 0.75rem;">HABIBIE</button>
           </div>
         </div>
 
@@ -1422,14 +1424,14 @@
 
   <!-- SCRIPTS -->
   <script src="/static/js/lucide.min.js"></script>
-  <script src="/static/js/i18n.js?v=20261030_04"></script>
+  <script src="/static/js/i18n.js?v=20261030_05"></script>
   <script src="/static/js/sound-fx.js?v=20261030_03"></script>
   <script src="/static/js/office-canvas.js?v=20261030_03"></script>
-  <script src="/static/js/kanban.js?v=20261030_04"></script>
+  <script src="/static/js/kanban.js?v=20261030_05"></script>
   <script src="/static/js/office-health.js?v=20261030_01"></script>
   <script src="/static/js/office-insights.js?v=20261030_01"></script>
-  <script src="/static/js/office-schedules.js?v=20261030_01"></script>
+  <script src="/static/js/office-schedules.js?v=20261030_02"></script>
   <script src="/static/js/office-plans.js?v=20261030_01"></script>
-  <script src="/static/js/app.js?v=20261030_07"></script>
+  <script src="/static/js/app.js?v=20261030_08"></script>
 </body>
 </html>
