@@ -1627,8 +1627,13 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pass
 
     first_arg = raw_args[0].lower().strip()
+    is_none_proj_arg = first_arg in ["umum", "general", "homelab", "none"]
+
     if first_arg in known_projects:
         project_id = first_arg
+        instruction = " ".join(raw_args[1:]).strip()
+    elif is_none_proj_arg:
+        project_id = "general"
         instruction = " ".join(raw_args[1:]).strip()
     else:
         # Cek apakah ada kata kunci nama proyek di teks
@@ -1650,40 +1655,52 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 2. Klasifikasi Cerdas & Tentukan Target Direktori Berdasarkan Proyek
     instr_lower = instruction.lower()
+    reminder_keywords = ["cuaca", "weather", "reminder", "pengingat", "wttr", "suhu", "jadwal", "prakiraan"]
+    is_reminder = any(k in instr_lower for k in reminder_keywords)
+
     fe_keywords = ["frontend", "ui", "tampilan", "footer", "header", "navbar", "css", "button", "tombol", "halaman", "porto", "komponen", "vite", "react", "styling", "warna", "fab", "canvas"]
     be_keywords = ["backend", "api", "database", "migrasi", "seeder", "laravel", "controller", "tabel", "model", "sanctum", "endpoint", "query", "postgresql", "pgsql", "fastapi"]
 
     is_fe = any(k in instr_lower for k in fe_keywords)
     is_be = any(k in instr_lower for k in be_keywords)
 
-    project_root = str(WORKSPACE_DIR / project_id)
-
-    if is_fe and not is_be:
-        category = "Frontend"
-        target_agent = "PRABOWO"
-        task_prefix = "TASK-FE"
-        skills = ["Frontend Engineering", "UI/UX"]
-        target_dir = os.path.join(project_root, "frontend") if os.path.exists(os.path.join(project_root, "frontend")) else project_root
-    elif is_be and not is_fe:
-        category = "Backend"
-        target_agent = "JOKOWI"
-        task_prefix = "TASK-BE"
-        skills = ["Backend Engineering", "API & Database"]
-        target_dir = os.path.join(project_root, "backend") if os.path.exists(os.path.join(project_root, "backend")) else project_root
-    elif is_fe and is_be:
-        category = "Fullstack"
-        target_agent = "LUHUT"
-        task_prefix = "TASK-FS"
-        skills = ["Fullstack", "Lead Orchestrator"]
-        target_dir = project_root
+    if is_reminder or (is_none_proj_arg and not (is_fe or is_be)):
+        category = "Reminder" if is_reminder else "Homelab Ops"
+        target_agent = "HABIBIE"
+        task_prefix = "TASK-REM" if category == "Reminder" else "TASK-OPS"
+        skills = ["Chief Architect", "Homelab Advisor", "Automation"]
+        target_dir = str(WORKSPACE_DIR)
+        is_standalone = True
+        project_id = "general"
     else:
-        category = "General"
-        target_agent = "LUHUT"
-        task_prefix = "TASK-OPS"
-        skills = ["Lead Orchestrator", "Task Delegation"]
-        target_dir = project_root
+        is_standalone = False
+        project_root = str(WORKSPACE_DIR / project_id)
+        if is_fe and not is_be:
+            category = "Frontend"
+            target_agent = "PRABOWO"
+            task_prefix = "TASK-FE"
+            skills = ["Frontend Engineering", "UI/UX"]
+            target_dir = os.path.join(project_root, "frontend") if os.path.exists(os.path.join(project_root, "frontend")) else project_root
+        elif is_be and not is_fe:
+            category = "Backend"
+            target_agent = "JOKOWI"
+            task_prefix = "TASK-BE"
+            skills = ["Backend Engineering", "API & Database"]
+            target_dir = os.path.join(project_root, "backend") if os.path.exists(os.path.join(project_root, "backend")) else project_root
+        elif is_fe and is_be:
+            category = "Fullstack"
+            target_agent = "LUHUT"
+            task_prefix = "TASK-FS"
+            skills = ["Fullstack", "Lead Orchestrator"]
+            target_dir = project_root
+        else:
+            category = "General"
+            target_agent = "LUHUT"
+            task_prefix = "TASK-OPS"
+            skills = ["Lead Orchestrator", "Task Delegation"]
+            target_dir = project_root
 
-    task_id = "TASK-01"
+    task_id = f"{task_prefix}-01"
     try:
         if os.path.exists(KANBAN_FILE):
             k_data = read_json_safe(KANBAN_FILE, default={"tasks": []}) or {"tasks": []}
@@ -1707,7 +1724,7 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "title": (instruction[:80] + "...") if len(instruction) > 80 else instruction,
                 "skills_required": skills,
                 "description": instruction,
-                "status": "To-Do",
+                "status": "In-Progress" if is_standalone else "To-Do",
                 "target_dir": target_dir,
                 "engine": "agy",
                 "model": CURRENT_MODEL,
@@ -1719,13 +1736,90 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(f"Error logging to kanban: {e}")
 
-    # 3. Pastikan sesi tmux berjalan (Auto-Wakeup dengan Direct Task Injection)
+    # 3. Jalur Eksekusi: Standalone (HABIBIE) atau 4-Agent Tmux Session
+    if is_standalone:
+        reply = (
+            "🚀 *[TUGAS MANDIRI DIALIRKAN KE HABIBIE]*\n\n"
+            f"📋 *ID Tugas:* `{task_id}` ({category})\n"
+            f"📁 *Proyek:* `{project_id}`\n"
+            f"👤 *Target Pelaksana:* `HABIBIE (Standalone Execution)`\n"
+            f"🧠 *Engine & Model:* `AGY` (`{CURRENT_MODEL}`)\n\n"
+            "💡 *Catatan:* Dijalankan di latar belakang tanpa membangunkan sesi 4 agen (hemat ~1.5 GB RAM). Laporan hasil akan segera dikirimkan ke chat ini."
+        )
+        await update.message.reply_text(reply, parse_mode="Markdown")
+
+        def run_habibie_async():
+            output_text = ""
+            try:
+                env = os.environ.copy()
+                env["HOME"] = str(Path.home())
+                env["PATH"] = f"{Path.home()}/.gemini/antigravity-cli/bin:{Path.home()}/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
+                habibie_prompt = (
+                    f"Kamu adalah HABIBIE, Chief Architect & Homelab System Advisor. "
+                    f"Kerjakan tugas mandiri berikut: '{instruction}'.\n\n"
+                    f"ATURAN: Berikan laporan hasil yang jelas, ringkas, informatif, dan gunakan emoji yang rapi. "
+                    f"Jika membutuhkan cuaca Karanganyar, gunakan tool curl ke wttr.in jika perlu. "
+                    f"Format laporan akhir harus rapi dan langsung siap disiarkan ke Telegram Mas Bay."
+                )
+                cmd = ["agy", "-p", habibie_prompt, "--dangerously-skip-permissions", "--model", CURRENT_MODEL]
+                res = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
+                if res.returncode == 0 and res.stdout.strip():
+                    output_text = res.stdout.strip()
+            except Exception as err:
+                print(f"⚠️ Standalone agy execution failed in bot.py: {err}")
+
+            if not output_text:
+                try:
+                    output_text = call_9router(f"Kerjakan tugas mandiri berikut dan berikan laporan ringkas ber-emoji: {instruction}")
+                except Exception:
+                    pass
+
+            if not output_text and is_reminder:
+                try:
+                    w_res = subprocess.run(["curl", "-s", "wttr.in/Karanganyar?format=%l:+%c+%t,+%w,+%p,+%h"], capture_output=True, text=True, timeout=10)
+                    if w_res.returncode == 0 and w_res.stdout.strip():
+                        output_text = f"🌤️ *Laporan Cuaca Karanganyar:*\n`{w_res.stdout.strip()}`"
+                except Exception:
+                    pass
+
+            if not output_text:
+                output_text = f"Tugas {task_id} telah selesai diproses oleh HABIBIE."
+
+            try:
+                full_msg = f"[HABIBIE]: 🔔 *Laporan Tugas Mandiri*\n📋 *ID:* `{task_id}`\n\n{output_text}" if not output_text.startswith("[HABIBIE]") else f"{output_text}\n\n📋 *ID Tugas:* `{task_id}`"
+                subprocess.Popen(["python3", BOT_SCRIPT, full_msg])
+            except Exception:
+                pass
+
+            try:
+                if os.path.exists(KANBAN_FILE):
+                    kd = read_json_safe(KANBAN_FILE, default={"tasks": []}) or {"tasks": []}
+                    for t in kd.get("tasks", []):
+                        if isinstance(t, dict) and t.get("id") == task_id:
+                            t["status"] = "Done"
+                            t["completed_at"] = datetime.now().astimezone().isoformat()
+                            t["notes"] = "Tugas selesai dieksekusi secara mandiri oleh HABIBIE."
+                            break
+                    write_json_safe(KANBAN_FILE, kd)
+            except Exception as e:
+                print(f"⚠️ Gagal update kanban Done di bot.py: {e}")
+
+        threading.Thread(target=run_habibie_async, daemon=True).start()
+        return
+
+    # Pastikan sesi tmux berjalan (Auto-Wakeup via systemd-run dengan KillMode=none)
     res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
     if res.returncode != 0:
         task_summary = f"{task_id} [Proyek: {project_id}] ({category}): {instruction}"
-        env = os.environ.copy()
-        env["AGY_MODEL"] = CURRENT_MODEL
-        subprocess.run([START_AGENTS_SCRIPT, "daemon", task_summary], capture_output=True, env=env)
+        cmd = [
+            "sudo", "systemd-run",
+            "-p", "KillMode=none",
+            "--slice=session.slice",
+            "--uid=bay", "--gid=bay",
+            f"--setenv=AGY_MODEL={CURRENT_MODEL}",
+            START_AGENTS_SCRIPT, "daemon", task_summary
+        ]
+        subprocess.Popen(cmd)
     else:
         try:
             if target_agent == "PRABOWO":

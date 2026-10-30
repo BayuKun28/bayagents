@@ -113,7 +113,7 @@ class TaskStatusUpdateRequest(BaseModel):
 class ScheduleCreateRequest(BaseModel):
     title: str
     instruction: str
-    project: Optional[str] = "bayoffice"
+    project: Optional[str] = "none"
     category: Optional[str] = "auto"
     engine: Optional[str] = "agy"
     model: Optional[str] = None

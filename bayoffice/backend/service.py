@@ -41,6 +41,7 @@ def launch_agents_daemon(task_summary: str = "", model: str = ""):
     """Menjalankan launcher agen di cgroup independen (session.slice) via systemd-run agar tidak mati saat bayoffice direstart."""
     cmd = [
         "sudo", "systemd-run",
+        "-p", "KillMode=none",
         "--slice=session.slice",
         "--uid=bay", "--gid=bay",
     ]
@@ -223,7 +224,7 @@ def register_project_if_new(project_id: str, project_name: str = None) -> None:
     """Mendaftarkan proyek baru ke projects.json secara otomatis jika belum ada."""
     path = PROJECTS_PATH
     clean_id = project_id.lower().strip().replace(" ", "-")
-    if not clean_id or not os.path.exists(path):
+    if not clean_id or clean_id in ["none", "general", "homelab"] or not os.path.exists(path):
         return
     try:
         registry = atomic_read_json(path, default={"projects": {}})
@@ -564,61 +565,80 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     if not instruction:
         return {"success": False, "error": "Instruksi tidak boleh kosong"}
 
-    # 1. Tentukan Proyek
     instr_lower = instruction.lower()
-    if project_hint and project_hint != "auto":
-        project_id = project_hint.lower().strip()
-    else:
-        if "bayoffice" in instr_lower or "canvas" in instr_lower or "8888" in instr_lower:
-            project_id = "bayoffice"
-        elif "infobay" in instr_lower or "portofolio" in instr_lower or "porto" in instr_lower:
-            project_id = "infobay"
-        else:
-            project_id = "infobay"
+    project_raw = (project_hint or "").lower().strip()
+    is_none_project = project_raw in ["none", "general", "homelab", ""]
+    reminder_keywords = ["cuaca", "weather", "reminder", "pengingat", "wttr", "suhu", "jadwal", "prakiraan"]
+    is_reminder = (
+        category_hint == "reminder" or
+        any(k in instr_lower for k in reminder_keywords)
+    )
 
-    project_root = str(WORKSPACE_DIR / project_id)
-    register_project_if_new(project_id)
-
-    # 2. Klasifikasi Keahlian & Target Direktori
     fe_keywords = ["frontend", "ui", "tampilan", "footer", "header", "navbar", "css", "button", "tombol", "halaman", "porto", "komponen", "vite", "react", "styling", "warna", "fab", "canvas"]
     be_keywords = ["backend", "api", "database", "migrasi", "seeder", "laravel", "controller", "tabel", "model", "sanctum", "endpoint", "query", "postgresql", "pgsql", "fastapi"]
+    has_code_keywords = any(k in instr_lower for k in fe_keywords + be_keywords)
 
-    if category_hint == "frontend":
-        is_fe, is_be = True, False
-    elif category_hint == "backend":
-        is_fe, is_be = False, True
-    elif category_hint == "fullstack":
-        is_fe, is_be = True, True
-    elif category_hint == "ops":
-        is_fe, is_be = False, False
+    # 1. Deteksi Tugas Mandiri (HABIBIE - Standalone Execution tanpa bangunkan 4 agen di tmux)
+    if is_reminder or (is_none_project and not has_code_keywords) or category_hint in ["reminder", "homelab"]:
+        is_standalone = True
+        project_id = "general" if is_none_project else project_raw
+        category = "Reminder" if is_reminder else ("Homelab Ops" if category_hint in ["ops", "homelab"] else "General")
+        target_agent = "HABIBIE"
+        task_prefix = "TASK-REM" if category == "Reminder" else "TASK-OPS"
+        skills = ["Chief Architect", "Homelab Advisor", "Automation"]
+        target_dir = str(WORKSPACE_DIR)
     else:
-        is_fe = any(k in instr_lower for k in fe_keywords)
-        is_be = any(k in instr_lower for k in be_keywords)
+        is_standalone = False
+        if project_hint and project_hint != "auto" and not is_none_project:
+            project_id = project_raw
+        else:
+            if "bayoffice" in instr_lower or "canvas" in instr_lower or "8888" in instr_lower:
+                project_id = "bayoffice"
+            elif "infobay" in instr_lower or "portofolio" in instr_lower or "porto" in instr_lower:
+                project_id = "infobay"
+            else:
+                project_id = "infobay"
 
-    if is_fe and not is_be:
-        category = "Frontend"
-        target_agent = "PRABOWO"
-        task_prefix = "TASK-FE"
-        skills = ["Frontend Engineering", "UI/UX"]
-        target_dir = os.path.join(project_root, "frontend") if os.path.exists(os.path.join(project_root, "frontend")) else project_root
-    elif is_be and not is_fe:
-        category = "Backend"
-        target_agent = "JOKOWI"
-        task_prefix = "TASK-BE"
-        skills = ["Backend Engineering", "API & Database"]
-        target_dir = os.path.join(project_root, "backend") if os.path.exists(os.path.join(project_root, "backend")) else project_root
-    elif is_fe and is_be:
-        category = "Fullstack"
-        target_agent = "LUHUT"
-        task_prefix = "TASK-FS"
-        skills = ["Fullstack", "Lead Orchestrator"]
-        target_dir = project_root
-    else:
-        category = "General"
-        target_agent = "LUHUT"
-        task_prefix = "TASK-OPS"
-        skills = ["Lead Orchestrator", "Task Delegation"]
-        target_dir = project_root
+        project_root = str(WORKSPACE_DIR / project_id)
+        register_project_if_new(project_id)
+
+        # Klasifikasi Keahlian & Target Direktori Software
+        if category_hint == "frontend":
+            is_fe, is_be = True, False
+        elif category_hint == "backend":
+            is_fe, is_be = False, True
+        elif category_hint == "fullstack":
+            is_fe, is_be = True, True
+        elif category_hint == "ops":
+            is_fe, is_be = False, False
+        else:
+            is_fe = any(k in instr_lower for k in fe_keywords)
+            is_be = any(k in instr_lower for k in be_keywords)
+
+        if is_fe and not is_be:
+            category = "Frontend"
+            target_agent = "PRABOWO"
+            task_prefix = "TASK-FE"
+            skills = ["Frontend Engineering", "UI/UX"]
+            target_dir = os.path.join(project_root, "frontend") if os.path.exists(os.path.join(project_root, "frontend")) else project_root
+        elif is_be and not is_fe:
+            category = "Backend"
+            target_agent = "JOKOWI"
+            task_prefix = "TASK-BE"
+            skills = ["Backend Engineering", "API & Database"]
+            target_dir = os.path.join(project_root, "backend") if os.path.exists(os.path.join(project_root, "backend")) else project_root
+        elif is_fe and is_be:
+            category = "Fullstack"
+            target_agent = "LUHUT"
+            task_prefix = "TASK-FS"
+            skills = ["Fullstack", "Lead Orchestrator"]
+            target_dir = project_root
+        else:
+            category = "General"
+            target_agent = "LUHUT"
+            task_prefix = "TASK-OPS"
+            skills = ["Lead Orchestrator", "Task Delegation"]
+            target_dir = project_root
 
     task_id = f"{task_prefix}-01"
     now_iso = datetime.now().astimezone().isoformat()
@@ -642,7 +662,7 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
                 "title": (instruction[:80] + "...") if len(instruction) > 80 else instruction,
                 "skills_required": skills,
                 "description": instruction,
-                "status": "To-Do",
+                "status": "In-Progress" if is_standalone else "To-Do",
                 "target_dir": target_dir,
                 "engine": engine,
                 "model": model if engine == "agy" else None,
@@ -653,10 +673,124 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     except Exception as e:
         return {"success": False, "error": f"Gagal menulis ke kanban.json: {e}"}
 
-    # Jika memilih Engine 9Router: Jalankan Virtual Squad via 9Router di latar belakang
+    # ==========================================================
+    # Jalur A: HABIBIE Standalone Execution (Hemat RAM, Non-Tmux)
+    # ==========================================================
+    if is_standalone or target_agent == "HABIBIE":
+        def run_habibie_standalone_async():
+            output_text = ""
+            # 1. Eksekusi via agy CLI jika engine == 'agy'
+            if engine == "agy":
+                try:
+                    env = os.environ.copy()
+                    env["HOME"] = str(Path.home())
+                    env["PATH"] = f"{Path.home()}/.gemini/antigravity-cli/bin:{Path.home()}/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
+                    habibie_prompt = (
+                        f"Kamu adalah HABIBIE, Chief Architect & Homelab System Advisor. "
+                        f"Kerjakan tugas mandiri berikut: '{instruction}'.\n\n"
+                        f"ATURAN PELAPORAN:\n"
+                        f"1. Berikan laporan hasil yang jelas, ringkas, informatif, dan gunakan emoji yang rapi.\n"
+                        f"2. Jika membutuhkan data eksternal (misal cuaca Karanganyar via wttr.in atau cek kesehatan sistem homelab), gunakan tool curl/bash untuk mengambil data akurat real-time.\n"
+                        f"3. Format teks harus rapi dan langsung siap disiarkan ke Telegram Mas Bay.\n"
+                        f"4. Berikan sentuhan saran hangat dan solutif khas persona HABIBIE."
+                    )
+                    cmd = ["agy", "-p", habibie_prompt, "--dangerously-skip-permissions"]
+                    if model and model.strip():
+                        cmd.extend(["--model", model.strip()])
+                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
+                    if res.returncode == 0 and res.stdout.strip():
+                        output_text = res.stdout.strip()
+                except Exception as err:
+                    print(f"⚠️ Standalone agy execution failed: {err}")
+
+            # 2. Fallback ke 9Router jika agy kosong atau engine == '9router'
+            if not output_text:
+                try:
+                    import plans_manager
+                    import httpx
+                    habibie_sys = plans_manager.load_habibie_system_prompt()
+                    headers = {
+                        "Authorization": f"Bearer {plans_manager.ROUTER9_API_KEY}",
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "model": plans_manager.ROUTER9_MODEL,
+                        "messages": [
+                            {"role": "system", "content": habibie_sys},
+                            {"role": "user", "content": f"Kerjakan tugas mandiri berikut dan berikan laporan ringkas, rapi, ber-emoji untuk Mas Bay: {instruction}"}
+                        ],
+                        "stream": False
+                    }
+                    with httpx.Client(timeout=45.0) as client:
+                        resp = client.post(f"{plans_manager.ROUTER9_BASE_URL}/chat/completions", headers=headers, json=payload)
+                        if resp.status_code == 200:
+                            d = resp.json()
+                            output_text = d["choices"][0]["message"]["content"].strip()
+                except Exception as err:
+                    print(f"⚠️ Standalone 9Router fallback failed: {err}")
+
+            # 3. Fallback jika instruksi cuaca dan AI offline
+            if not output_text:
+                if "cuaca" in instr_lower or "weather" in instr_lower:
+                    try:
+                        w_res = subprocess.run(["curl", "-s", "wttr.in/Karanganyar?format=%l:+%c+%t,+%w,+%p,+%h"], capture_output=True, text=True, timeout=10)
+                        if w_res.returncode == 0 and w_res.stdout.strip():
+                            output_text = f"🌤️ *Laporan Cuaca Karanganyar:*\n`{w_res.stdout.strip()}`"
+                    except Exception:
+                        pass
+                if not output_text:
+                    output_text = f"Tugas {task_id} telah selesai diproses oleh HABIBIE."
+
+            # 4. Siarkan hasil akhir ke Telegram Mas Bay
+            try:
+                if not output_text.startswith("[HABIBIE]"):
+                    full_msg = f"[HABIBIE]: 🔔 *Laporan Tugas Mandiri*\n📋 *ID:* `{task_id}`\n\n{output_text}"
+                else:
+                    full_msg = f"{output_text}\n\n📋 *ID Tugas:* `{task_id}`"
+                subprocess.Popen([TELEBOT_PYTHON, TELEBOT_SCRIPT, full_msg])
+            except Exception as e:
+                print(f"⚠️ Gagal mengirim laporan Telegram HABIBIE: {e}")
+
+            # 5. Update kanban.json status: Done secara atomik
+            try:
+                now_done_iso = datetime.now().astimezone().isoformat()
+                with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:
+                    for t in k_data.get("tasks", []):
+                        if isinstance(t, dict) and t.get("id") == task_id:
+                            t["status"] = "Done"
+                            t["completed_at"] = now_done_iso
+                            t["notes"] = f"Tugas selesai dieksekusi secara mandiri oleh HABIBIE."
+                            break
+            except Exception as e:
+                print(f"⚠️ Gagal memperbarui status Done di kanban: {e}")
+
+        threading.Thread(target=run_habibie_standalone_async, daemon=True).start()
+
+        # Notifikasi awal Telegram untuk task baru
+        try:
+            model_tag = f" ({model})" if (engine == "agy" and model) else ""
+            msg = f"[BayOffice]: 💻 Tugas baru *{task_id}* [Proyek: `{project_id}` | {category}] via Web ({engine}{model_tag}): \"{instruction[:70]}...\". Target: `HABIBIE (Standalone)`."
+            subprocess.Popen([TELEBOT_PYTHON, TELEBOT_SCRIPT, msg])
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "task_id": task_id,
+            "project": project_id,
+            "category": category,
+            "target_agent": "HABIBIE (Standalone)",
+            "target_dir": target_dir,
+            "engine": engine,
+            "model": model if engine == "agy" else None,
+            "message": f"Tugas {task_id} berhasil dialirkan ke HABIBIE (Standalone Execution)."
+        }
+
+    # ==========================================================
+    # Jalur B: Engine 9Router Virtual Squad (Server 146)
+    # ==========================================================
     if engine == "9router":
         try:
-            import threading
             import sys
             if str(TELEBOT_DIR) not in sys.path:
                 sys.path.insert(0, str(TELEBOT_DIR))
@@ -701,7 +835,9 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
         except Exception as e:
             return {"success": False, "error": f"Gagal menjalankan 9Router Virtual Squad: {e}"}
 
-    # Default: Engine Antigravity (agy) -> Bangunkan atau suntikkan ke tmux
+    # ==========================================================
+    # Jalur C: Default Antigravity (agy) 4-Agent Team via Tmux
+    # ==========================================================
     res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
     if res.returncode != 0:
         task_summary = f"{task_id} [Proyek: {project_id}] ({category}): {instruction}"

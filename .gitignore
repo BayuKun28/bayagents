@@ -33,6 +33,8 @@ __pycache__/
 *.sock
 *.tmp
 *.bak
+*.lock
+**/*.lock
 
 # --- Operating System & Editor Artifacts ---
 .DS_Store

@@ -10,6 +10,7 @@ if str(BACKEND_DIR) not in sys.path:
 
 import app
 import scheduler
+import service
 from app import ScheduleCreateRequest, ScheduleUpdateRequest, ScheduleToggleRequest
 
 
@@ -222,6 +223,44 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             self.assertTrue(success_res.get("success"))
 
         asyncio.run(run_auth_test())
+
+    def test_general_schedule_and_habibie_standalone_dispatch(self):
+        import asyncio
+        from unittest.mock import patch
+
+        async def run_sched_test():
+            # 1. Test Schedule Creation with project='none' and category='reminder'
+            create_req = ScheduleCreateRequest(
+                title="Reminder Cuaca Harian",
+                instruction="Cek cuaca Karanganyar dan kabari Telegram",
+                project="none",
+                category="reminder",
+                engine="agy",
+                model="gemini-3.8-flash-high",
+                schedule_type="cron",
+                cron_expression="0 7 * * *"
+            )
+            create_res = await app.api_create_schedule(create_req, user=self.test_user)
+            self.assertTrue(create_res["success"])
+            self.assertEqual(create_res["schedule"]["project"], "none")
+            self.assertEqual(create_res["schedule"]["category"], "reminder")
+
+            # 2. Test Dispatch Task routing to HABIBIE Standalone
+            with patch("subprocess.Popen") as mock_popen, patch("threading.Thread") as mock_thread:
+                task_res = service.dispatch_task_from_web(
+                    instruction="cek cuaca karanganyar hari ini dan kirim ke telegram",
+                    category_hint="reminder",
+                    project_hint="none",
+                    engine="agy",
+                    model="gemini-3.8-flash-high"
+                )
+                self.assertTrue(task_res["success"])
+                self.assertIn("HABIBIE", task_res["target_agent"])
+                self.assertEqual(task_res["category"], "Reminder")
+                self.assertEqual(task_res["project"], "general")
+                self.assertTrue(task_res["task_id"].startswith("TASK-REM-"))
+
+        asyncio.run(run_sched_test())
 
 
 if __name__ == "__main__":

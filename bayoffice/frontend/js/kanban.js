@@ -183,6 +183,7 @@ class KanbanBoard {
     if (a === 'JOKOWI') return 'badge-jokowi';
     if (a === 'PRABOWO') return 'badge-prabowo';
     if (a === 'GIBRAN') return 'badge-gibran';
+    if (a === 'HABIBIE') return 'badge-habibie';
     return 'badge-todo';
   }
 
@@ -261,7 +262,7 @@ class KanbanBoard {
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <div style="display: flex; gap: 4px; align-items: center;">
                   <span class="neo-badge badge-task-id" style="font-size: 0.7rem;">${task.id || 'TASK'}</span>
-                  ${task.project ? `<span class="neo-badge badge-project" style="font-size: 0.65rem;">${this.escapeHtml(task.project)}</span>` : ''}
+                  ${task.project ? `<span class="neo-badge badge-project" style="font-size: 0.65rem;">${(task.project === 'none' || task.project === 'general') ? '🌐 Umum' : this.escapeHtml(task.project)}</span>` : ''}
                 </div>
                 <span class="neo-badge ${assigneeClass}" style="font-size: 0.7rem;">${task.assignee || 'AGENT'}</span>
               </div>

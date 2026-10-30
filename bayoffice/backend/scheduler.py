@@ -639,9 +639,10 @@ def _run_single_schedule(target_s: Dict[str, Any], dispatch_fn=None, is_manual: 
         import subprocess
         mode_str = "Manual Trigger" if is_manual else "Otomatis"
         status_emoji = "⏰" if success else "⚠️"
+        proj_str = "Umum / Homelab" if str(project).lower() in ["none", "general", "homelab", ""] else project
         tg_msg = (
             f"[BayOffice Scheduler]: {status_emoji} *{sched_id}* ({title})\n"
-            f"Mode: `{mode_str}` | Proyek: `{project}`\n"
+            f"Mode: `{mode_str}` | Proyek: `{proj_str}`\n"
             f"Hasil: Task `{task_id or 'N/A'}` - {result_msg[:100]}"
         )
         subprocess.Popen(["python3", TELEBOT_SCRIPT, tg_msg])

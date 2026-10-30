@@ -124,6 +124,7 @@ body {
 .badge-jokowi { background: #BAE6FD; color: #0369A1; }
 .badge-prabowo { background: #FED7AA; color: #C2410C; }
 .badge-gibran { background: #D1FAE5; color: #047857; }
+.badge-habibie { background: #EDE9FE; color: #6D28D9; }
 
 .badge-task-id {
   background: #1A1A1A;
@@ -380,6 +381,12 @@ body.dark-mode .badge-gibran {
   background: #064E3B !important; 
   color: #A7F3D0 !important; 
   border-color: #059669 !important; 
+}
+
+body.dark-mode .badge-habibie { 
+  background: #3B0764 !important; 
+  color: #DDD6FE !important; 
+  border-color: #8B5CF6 !important; 
 }
 
 /* High Contrast Header Metrics & Controls */

@@ -739,6 +739,7 @@
             </label>
             <select id="taskProject" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-family: inherit; font-size: 0.95rem; outline: none; background: var(--bg-card);">
               <option value="auto" data-i18n="modal_task.project_auto">Auto Detect Project</option>
+              <option value="none" data-i18n="modal_task.project_none">🌐 Umum / Homelab (Tanpa Proyek)</option>
               <option value="infobay">Infobay (Portfolio & Admin)</option>
               <option value="bayoffice">BayOffice (Virtual Office)</option>
               <option value="__custom__" data-i18n="modal_task.project_custom">New Project / Custom Folder...</option>
@@ -755,6 +756,7 @@
             </label>
             <select id="taskCategory" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-family: inherit; font-size: 0.95rem; outline: none; background: var(--bg-card);">
               <option value="auto" data-i18n="modal_task.cat_auto">Auto Detect Keywords</option>
+              <option value="reminder" data-i18n="modal_task.cat_reminder">🔔 Reminder & Cuaca (HABIBIE)</option>
               <option value="frontend" data-i18n="modal_task.cat_frontend">Frontend Engineer (PRABOWO)</option>
               <option value="backend" data-i18n="modal_task.cat_backend">Backend Engineer (JOKOWI)</option>
               <option value="fullstack" data-i18n="modal_task.cat_fullstack">Fullstack (LUHUT Orchestrator)</option>
@@ -1208,6 +1210,7 @@
             <div>
               <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;" data-i18n="schedules.project_label">Target Project</label>
               <select id="schedProject" class="neo-box-sm" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; outline: none; font-family: inherit;">
+                <option value="none" selected data-i18n="schedules.project_none">🌐 Umum / Homelab (Tanpa Proyek)</option>
                 <option value="bayoffice">BayOffice Virtual Workspace</option>
                 <option value="infobay">Infobay Portfolio & Admin</option>
               </select>
@@ -1215,6 +1218,7 @@
             <div>
               <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;" data-i18n="schedules.category_label">Agent Category</label>
               <select id="schedCategory" class="neo-box-sm" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; outline: none; font-family: inherit;">
+                <option value="reminder" data-i18n="schedules.cat_reminder">🔔 Reminder & Cuaca (HABIBIE)</option>
                 <option value="ops">DevOps & System (LUHUT)</option>
                 <option value="backend">Backend Engineer (JOKOWI)</option>
                 <option value="frontend">Frontend Engineer (PRABOWO)</option>
