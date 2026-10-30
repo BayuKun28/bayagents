@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261030_07">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261030_08">
 </head>
 <body style="padding-bottom: 60px;">
 
@@ -220,7 +220,7 @@
 
       <!-- Filter & Control Toolbar -->
       <div class="neo-box kanban-toolbar" style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div class="kanban-toolbar-controls" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 0;">
           <!-- Project Filter -->
           <div style="display: flex; align-items: center; gap: 6px;">
             <label for="projectFilterSelect" style="font-size: 0.76rem; font-weight: 800; color: #64748B;">PROJECT:</label>
@@ -258,29 +258,32 @@
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="PRABOWO" style="padding: 5px 10px; font-size: 0.75rem;">PRABOWO</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="GIBRAN" style="padding: 5px 10px; font-size: 0.75rem;">GIBRAN</button>
           </div>
+
+          <!-- Action Tools: Schedules, Insights, CSV, JSON -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button id="kanbanSchedulesBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.schedules_title" title="Manage Scheduled Tasks & Automation">
+              <i data-lucide="clock" class="lucide-sm"></i>
+              <span data-i18n="kanban.schedules_btn">Schedules</span>
+            </button>
+            <button id="openAnalyticsBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.insights_title" title="View Sprint Metrics & Analytics">
+              <i data-lucide="bar-chart-2" class="lucide-sm"></i>
+              <span data-i18n="kanban.insights_btn">Insights</span>
+            </button>
+            <button id="exportCsvBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_csv_title" title="Export Tasks to CSV">
+              <i data-lucide="download" class="lucide-sm"></i>
+              <span>CSV</span>
+            </button>
+            <button id="exportJsonBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_json_title" title="Export Tasks to JSON">
+              <i data-lucide="file-json" class="lucide-sm"></i>
+              <span>JSON</span>
+            </button>
+          </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button id="kanbanSchedulesBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.schedules_title" title="Manage Scheduled Tasks & Automation">
-            <i data-lucide="clock" class="lucide-sm"></i>
-            <span data-i18n="kanban.schedules_btn">Schedules</span>
-          </button>
-          <button id="openAnalyticsBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.insights_title" title="View Sprint Metrics & Analytics">
-            <i data-lucide="bar-chart-2" class="lucide-sm"></i>
-            <span data-i18n="kanban.insights_btn">Insights</span>
-          </button>
-          <button id="exportCsvBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_csv_title" title="Export Tasks to CSV">
-            <i data-lucide="download" class="lucide-sm"></i>
-            <span>CSV</span>
-          </button>
-          <button id="exportJsonBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_json_title" title="Export Tasks to JSON">
-            <i data-lucide="file-json" class="lucide-sm"></i>
-            <span>JSON</span>
-          </button>
-
-          <!-- Search Input (Pojok Paling Kanan) -->
-          <div style="position: relative; display: flex; align-items: center; margin-left: 6px;">
-            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Search tasks..." data-i18n-placeholder="kanban.search_placeholder" style="padding: 6px 12px 6px 30px; font-size: 0.82rem; font-family: inherit; width: 180px; outline: none;">
+        <!-- Search Input (Pojok Kanan Kontainer Toolbar) -->
+        <div class="kanban-toolbar-search-box" style="margin-left: auto; display: flex; align-items: center;">
+          <div style="position: relative; display: flex; align-items: center;">
+            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Search tasks..." data-i18n-placeholder="kanban.search_placeholder" style="padding: 6px 12px 6px 30px; font-size: 0.82rem; font-family: inherit; width: 190px; outline: none;">
             <i data-lucide="search" class="lucide-xs" style="position: absolute; left: 10px; color: #94A3B8;"></i>
           </div>
         </div>
@@ -315,9 +318,6 @@
       </div>
 
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <!-- Live Plans Statistics (Total Plans, Drafts, Dispatched to Kanban) -->
-        <span id="studioStatBadge" class="neo-badge" style="background: var(--bg-main); font-size: 0.72rem; font-weight: 800; padding: 5px 10px;">-</span>
-
         <!-- Tombol Buat Plan Baru (+ Draft Architecture Plan) -->
         <button id="studioToggleNewPlanBtn" class="neo-btn neo-btn-primary" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 800; background: #8B5CF6; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 6px;">
           <i data-lucide="sparkles" class="lucide-sm"></i>
@@ -340,6 +340,11 @@
         
         <!-- Search & Filter Controls -->
         <div style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Live Plans Statistics (Total Plans, Drafts, Dispatched to Kanban) -->
+          <div id="studioStatBadge" class="neo-box-sm studio-stat-badge" style="padding: 7px 8px; font-size: 0.72rem; font-weight: 800; font-family: var(--font-mono); text-align: center; background: var(--bg-main); width: 100%; box-sizing: border-box; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
+            -
+          </div>
+
           <!-- Search Input -->
           <div style="position: relative;">
             <input id="studioSearchInput" type="text" class="neo-box-sm" placeholder="Search blueprints..." data-i18n-placeholder="studio.search_placeholder" style="width: 100%; padding: 7px 10px 7px 32px; font-size: 0.8rem; outline: none; box-sizing: border-box;">
@@ -1196,6 +1201,6 @@
   <script src="/static/js/sound-fx.js?v=20261030_03"></script>
   <script src="/static/js/office-canvas.js?v=20261030_03"></script>
   <script src="/static/js/kanban.js?v=20261030_03"></script>
-  <script src="/static/js/app.js?v=20261030_03"></script>
+  <script src="/static/js/app.js?v=20261030_04"></script>
 </body>
 </html>

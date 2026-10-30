@@ -1797,46 +1797,68 @@ body.dark-mode .plan-badge-project {
   border-color: #475569 !important;
 }
 
-.plan-card.active {
-  background: var(--yellow) !important;
+.plan-id-text {
+  color: #8B5CF6;
+  font-weight: 800;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+body.dark-mode .plan-id-text {
+  color: #A78BFA;
+}
+
+/* Plan Card Active in BOTH Light Mode & Dark Mode: Signature Neo Yellow with Ultra-Crisp Dark Text */
+.plan-card.active,
+body.dark-mode .plan-card.active {
+  background: #FFDE59 !important;
   border-color: #1A1A1A !important;
+  box-shadow: 2px 2px 0px #1A1A1A !important;
   color: #1A1A1A !important;
 }
 
-.plan-card.active .plan-badge-project {
+.plan-card.active .plan-id-text,
+body.dark-mode .plan-card.active .plan-id-text {
+  color: #6D28D9 !important;
+  font-weight: 800 !important;
+}
+
+.plan-card.active .plan-title-text,
+body.dark-mode .plan-card.active .plan-title-text {
+  color: #1A1A1A !important;
+  font-weight: 800 !important;
+}
+
+.plan-card.active .plan-badge-project,
+body.dark-mode .plan-card.active .plan-badge-project {
+  background: #1A1A1A !important;
+  color: #FFDE59 !important;
+  border: 1px solid #1A1A1A !important;
+  font-weight: 800 !important;
+}
+
+.plan-card.active .plan-meta-text,
+body.dark-mode .plan-card.active .plan-meta-text,
+.plan-card.active .plan-meta-text span,
+body.dark-mode .plan-card.active .plan-meta-text span {
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+.plan-card.active .neo-badge.badge-done,
+body.dark-mode .plan-card.active .neo-badge.badge-done {
+  background: #059669 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #1A1A1A !important;
+  font-weight: 800 !important;
+}
+
+.plan-card.active .neo-badge.badge-todo,
+body.dark-mode .plan-card.active .neo-badge.badge-todo {
   background: #FFFFFF !important;
   color: #1A1A1A !important;
-  border-color: #1A1A1A !important;
-}
-
-.plan-card.active .plan-title-text {
-  color: #1A1A1A !important;
-}
-
-.plan-card.active .plan-meta-text {
-  color: #475569 !important;
-}
-
-/* Plan Card Active in Dark Mode: High-contrast Dark Slate with Purple Accent & Bright Cyan Project Badge */
-body.dark-mode .plan-card.active {
-  background: #1E293B !important;
-  border-color: #8B5CF6 !important;
-  box-shadow: 2px 2px 0px #8B5CF6 !important;
-  color: #F8FAFC !important;
-}
-
-body.dark-mode .plan-card.active .plan-badge-project {
-  background: #0F172A !important;
-  color: #38BDF8 !important;
-  border-color: #38BDF8 !important;
-}
-
-body.dark-mode .plan-card.active .plan-title-text {
-  color: #F8FAFC !important;
-}
-
-body.dark-mode .plan-card.active .plan-meta-text {
-  color: #94A3B8 !important;
+  border: 1px solid #1A1A1A !important;
+  font-weight: 800 !important;
 }
 
 .plan-markdown-body h1 {
@@ -1967,4 +1989,32 @@ body.dark-mode #studioPlansListContainer::-webkit-scrollbar-thumb {
     position: static !important;
     min-height: 500px !important;
   }
+}
+
+/* Kanban Toolbar Dedicated Corner Search */
+.kanban-toolbar-search-box {
+  margin-left: auto;
+}
+
+@media screen and (max-width: 768px) {
+  .kanban-toolbar-search-box {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  .kanban-toolbar-search-box > div {
+    width: 100%;
+  }
+  .kanban-toolbar-search-box input {
+    width: 100% !important;
+  }
+  .kanban-toolbar-controls {
+    width: 100%;
+  }
+}
+
+.studio-stat-badge {
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-color);
+  letter-spacing: -0.2px;
 }

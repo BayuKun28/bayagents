@@ -1014,6 +1014,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ? (window.I18n ? window.I18n.t('modal_task.engine_9router_desc') : '')
         : (window.I18n ? window.I18n.t('modal_task.engine_agy_desc') : '');
     }
+    // Update Plans Studio list & summary badge if plans loaded
+    if (typeof fetchStudioPlans === 'function') {
+      fetchStudioPlans(false);
+    }
     // Re-create icons
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
@@ -2178,9 +2182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const dispatched = loadedStudioPlans.filter(p => p.status === 'dispatched').length;
         const drafts = total - dispatched;
         const isId = (window.I18n && window.I18n.currentLocale === 'id');
-        studioStatBadge.textContent = isId
-          ? `Total Rencana: ${total} • Draf: ${drafts} • Dikirim ke Kanban: ${dispatched}`
-          : `Total Plans: ${total} • Drafts: ${drafts} • Dispatched to Kanban: ${dispatched}`;
+        studioStatBadge.innerHTML = isId
+          ? `<span style="color: #8B5CF6; font-weight: 800;">Total: ${total}</span> <span style="opacity: 0.4;">•</span> <span style="color: #0284C7; font-weight: 800;">Draf: ${drafts}</span> <span style="opacity: 0.4;">•</span> <span style="color: #10B981; font-weight: 800;">Kanban: ${dispatched}</span>`
+          : `<span style="color: #8B5CF6; font-weight: 800;">Total Plans: ${total}</span> <span style="opacity: 0.4;">•</span> <span style="color: #0284C7; font-weight: 800;">Drafts: ${drafts}</span> <span style="opacity: 0.4;">•</span> <span style="color: #10B981; font-weight: 800;">Kanban: ${dispatched}</span>`;
       }
 
       renderStudioPlansList();
@@ -2293,7 +2297,7 @@ document.addEventListener('DOMContentLoaded', () => {
       html += `
         <div class="plan-card ${isSelected ? 'active' : ''}" data-id="${p.id}">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-            <span style="font-weight:800; font-size:0.75rem; color:#8B5CF6;">${escapeHtml(p.id)}</span>
+            <span class="plan-id-text">${escapeHtml(p.id)}</span>
             <div style="display:flex; align-items:center; gap:4px;">
               <span class="neo-badge plan-badge-project" style="font-size:0.65rem;">${escapeHtml(p.project || 'general')}</span>
               <span class="neo-badge ${statusClass}" style="font-size:0.65rem;">${statusText}</span>
