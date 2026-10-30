@@ -38,6 +38,9 @@ class KanbanBoard {
   setTasks(tasks) {
     this.tasks = tasks || [];
     this.render();
+    if (typeof window.updateOfficeLiveInsights === 'function') {
+      window.updateOfficeLiveInsights(this.tasks);
+    }
   }
 
   setFilter(assignee) {

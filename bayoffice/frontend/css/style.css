@@ -2020,3 +2020,55 @@ body.dark-mode #studioPlansListContainer::-webkit-scrollbar-thumb {
   color: var(--text-color);
   letter-spacing: -0.2px;
 }
+
+/* ==========================================================
+   LIVE OFFICE SPRINT & SQUAD INSIGHTS
+   ========================================================== */
+#officeInsightsSection {
+  margin-top: 6px;
+}
+
+.insight-kpi-active {
+  background: #FEF3C7;
+  border: 2px solid #F59E0B !important;
+  color: #92400E;
+}
+
+body.dark-mode .insight-kpi-active {
+  background: #2D1A05 !important;
+  border-color: #D97706 !important;
+  color: #FCD34D !important;
+}
+
+.insight-kpi-done {
+  background: #DCFCE7;
+  border: 2px solid #10B981 !important;
+  color: #166534;
+}
+
+body.dark-mode .insight-kpi-done {
+  background: #062E1E !important;
+  border-color: #059669 !important;
+  color: #86EFAC !important;
+}
+
+.office-workload-row {
+  transition: all 0.12s ease;
+  border: 1px solid transparent;
+}
+
+.office-workload-row:hover {
+  background: var(--bg-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-mode .office-workload-row:hover {
+  background: #1F2937 !important;
+  border-color: #374151 !important;
+}
+
+@media screen and (max-width: 992px) {
+  .office-insights-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
