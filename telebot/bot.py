@@ -71,7 +71,6 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 if not BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN wajib didefinisikan dalam file .env!")
 ALLOWED_USER_ID = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
-CURRENT_MODEL = os.getenv("CURRENT_MODEL", "gemini-3.8-flash-medium")
 TMUX_SESSION_NAME = os.getenv("TMUX_SESSION_NAME", "agy_agents")
 
 # ==========================================
@@ -85,22 +84,64 @@ START_AGENTS_SCRIPT = str(SCRIPTS_DIR / "start_agents.sh")
 BOT_SCRIPT = str(TELEBOT_DIR / "bot.py")
 PENDING_CHAT_QUERIES = {}  # Cache query untuk tombol switch/reask {q_id: {"prompt": str, "time": float}}
 
+SUPPORTED_AGY_MODELS = [
+    ("gemini-3.8-flash-high", "Gemini 3.8 Flash (High)", "⚡ Rekomendasi / Cepat"),
+    ("claude-sonnet-4-6", "Claude Sonnet 4.6 (Thinking)", "🧠 Deep Reasoning"),
+    ("claude-opus-4-6-thinking", "Claude Opus 4.6 (Thinking)", "🏛️ Arsitektur Kompleks"),
+    ("gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)", "⚖️ Seimbang"),
+    ("gemini-3.8-flash-low", "Gemini 3.8 Flash (Low)", "🍃 Ringan"),
+    ("gpt-oss-120b-medium", "GPT-OSS 120B (Medium)", "🌐 Open Source")
+]
+
+def get_current_model() -> str:
+    """Membaca model AGY yang aktif dari engine_config.json atau environment."""
+    try:
+        if os.path.exists(ENGINE_CONFIG_FILE):
+            with open(ENGINE_CONFIG_FILE, "r") as f:
+                data = json.load(f)
+                val = data.get("current_model")
+                if val:
+                    return val
+    except Exception:
+        pass
+    return os.getenv("CURRENT_MODEL", "gemini-3.8-flash-high")
+
+def set_current_model(model_name: str) -> None:
+    """Menyimpan model AGY yang aktif secara persisten ke engine_config.json."""
+    global CURRENT_MODEL
+    CURRENT_MODEL = model_name
+    try:
+        data = {}
+        if os.path.exists(ENGINE_CONFIG_FILE):
+            with open(ENGINE_CONFIG_FILE, "r") as f:
+                data = json.load(f)
+        data["current_model"] = model_name
+        write_json_safe(ENGINE_CONFIG_FILE, data)
+    except Exception as e:
+        print(f"Error saving model config: {e}")
+
+CURRENT_MODEL = get_current_model()
+
 def get_current_engine() -> str:
     """Membaca engine default: '9router', 'agy', atau 'ask' (interactive)."""
     try:
         if os.path.exists(ENGINE_CONFIG_FILE):
             with open(ENGINE_CONFIG_FILE, "r") as f:
                 data = json.load(f)
-                return data.get("default_engine", "9router")
+                return data.get("default_engine", "agy")
     except Exception:
         pass
-    return "9router"
+    return "agy"
 
 def set_current_engine(engine_name: str) -> None:
     """Menyimpan engine default secara persisten."""
     try:
-        with open(ENGINE_CONFIG_FILE, "w") as f:
-            json.dump({"default_engine": engine_name}, f, indent=2)
+        data = {}
+        if os.path.exists(ENGINE_CONFIG_FILE):
+            with open(ENGINE_CONFIG_FILE, "r") as f:
+                data = json.load(f)
+        data["default_engine"] = engine_name
+        write_json_safe(ENGINE_CONFIG_FILE, data)
     except Exception as e:
         print(f"Error saving engine config: {e}")
 
@@ -294,25 +335,47 @@ def check_token_limit() -> str:
     except Exception as e:
         return f"⚠️ Gagal memeriksa limit token: {e}"
 
+def build_model_keyboard(current_model: str) -> InlineKeyboardMarkup:
+    """Membangun keyboard inline untuk pilihan model AGY."""
+    buttons = []
+    for m_id, m_name, m_tag in SUPPORTED_AGY_MODELS:
+        check = " ✅" if m_id == current_model else ""
+        buttons.append([InlineKeyboardButton(f"{m_name} ({m_tag}){check}", callback_data=f"model_set:{m_id}")])
+    return InlineKeyboardMarkup(buttons)
+
 # Perintah untuk mengganti model lewat Telegram
 async def set_model_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global CURRENT_MODEL
     if update.effective_user.id != ALLOWED_USER_ID:
         return
-    if not context.args:
-        await update.message.reply_text(
-            f"Model saat ini: `{CURRENT_MODEL}`\n\n"
-            "Pilihan yang tersedia:\n"
-            "• `gemini-3.8-flash-high`\n"
-            "• `gemini-3.8-flash-medium`\n"
-            "• `gemini-3.8-flash-low`\n"
-            "• `claude-sonnet-4-6`\n\n"
-            "Cara pakai: `/model gemini-3.8-flash-high`"
-        )
+
+    if context.args:
+        chosen = context.args[0].lower().strip()
+        matched_id = None
+        for m_id, _, _ in SUPPORTED_AGY_MODELS:
+            if chosen == m_id.lower() or chosen in m_id.lower():
+                matched_id = m_id
+                break
+        if not matched_id:
+            matched_id = chosen
+
+        set_current_model(matched_id)
+        await update.message.reply_text(f"✅ Model Antigravity (AGY) berhasil diubah ke: `{matched_id}`", parse_mode="Markdown")
         return
 
-    CURRENT_MODEL = context.args[0]
-    await update.message.reply_text(f"✅ Model bot berhasil diubah ke: `{CURRENT_MODEL}`")
+    cur = get_current_model()
+    reply_markup = build_model_keyboard(cur)
+    msg_text = (
+        f"🧠 *PENGATURAN MODEL ANTIGRAVITY (AGY)*\n\n"
+        f"• Model Aktif: `{cur}`\n\n"
+        f"Pilih reasoning model yang diinginkan untuk sesi tim agen & HABIBIE:\n"
+        f"1. ⚡ *Gemini 3.8 Flash (High)*: Rekomendasi utama, cepat & bernalar tinggi.\n"
+        f"2. 🧠 *Claude Sonnet 4.6 (Thinking)*: Khusus arsitektur mendalam & coding teliti.\n"
+        f"3. 🏛️ *Claude Opus 4.6 (Thinking)*: Problem arsitektur kompleks berskala besar.\n"
+        f"4. ⚖️ *Gemini 3.8 Flash (Medium/Low)*: Varian hemat & ringan.\n"
+        f"5. 🌐 *GPT-OSS 120B*: Alternatif open-weight model.\n\n"
+        f"💡 Klik tombol di bawah untuk langsung mengganti model:"
+    )
+    await update.message.reply_text(msg_text, reply_markup=reply_markup, parse_mode="Markdown")
 
 def cleanup_pending_queries():
     now = time.time()
@@ -460,6 +523,28 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
             f"💡 *Jalan Pintas Cepat (Tanpa Ganti Mode):*\n"
             f"• `/agy <pesan>` ➔ Langsung dijawab oleh AGY\n"
             f"• `/9 <pesan>` ➔ Langsung dijawab oleh 9Router"
+        )
+        try:
+            await query.edit_message_text(msg_text, reply_markup=reply_markup, parse_mode="Markdown")
+        except Exception:
+            pass
+        return
+
+    # 1b. Ganti Model AGY: model_set:<model_id>
+    if data.startswith("model_set:"):
+        chosen = data.split(":", 1)[1]
+        set_current_model(chosen)
+        reply_markup = build_model_keyboard(chosen)
+        msg_text = (
+            f"🧠 *PENGATURAN MODEL ANTIGRAVITY (AGY)*\n\n"
+            f"• Model Aktif: `{chosen}` ✅\n\n"
+            f"Pilih reasoning model yang diinginkan untuk sesi tim agen & HABIBIE:\n"
+            f"1. ⚡ *Gemini 3.8 Flash (High)*: Rekomendasi utama, cepat & bernalar tinggi.\n"
+            f"2. 🧠 *Claude Sonnet 4.6 (Thinking)*: Khusus arsitektur mendalam & coding teliti.\n"
+            f"3. 🏛️ *Claude Opus 4.6 (Thinking)*: Problem arsitektur kompleks berskala besar.\n"
+            f"4. ⚖️ *Gemini 3.8 Flash (Medium/Low)*: Varian hemat & ringan.\n"
+            f"5. 🌐 *GPT-OSS 120B*: Alternatif open-weight model.\n\n"
+            f"💡 Klik tombol di bawah untuk langsung mengganti model:"
         )
         try:
             await query.edit_message_text(msg_text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -1113,7 +1198,9 @@ async def plan_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 content=reply,
                 project=proj,
                 author="HABIBIE",
-                status="Draft"
+                status="Draft",
+                engine=current_engine,
+                model=CURRENT_MODEL if current_engine == "agy" else None
             )
             saved_id = saved.get("id")
             saved_info = f"\n\n📄 *Dokumen Rencana:* `{saved_id}` (Tersimpan di `data/plans/` & siap dibaca di BayOffice)"
@@ -1570,6 +1657,8 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "description": instruction,
                 "status": "To-Do",
                 "target_dir": target_dir,
+                "engine": "agy",
+                "model": CURRENT_MODEL,
                 "created_at": now_iso,
                 "notes": f"Tugas baru via Telegram /task [Proyek: {project_id} | {category}]. Target pelaksana: {target_agent}."
             }
@@ -1582,7 +1671,9 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
     if res.returncode != 0:
         task_summary = f"{task_id} [Proyek: {project_id}] ({category}): {instruction}"
-        subprocess.run([START_AGENTS_SCRIPT, "daemon", task_summary], capture_output=True)
+        env = os.environ.copy()
+        env["AGY_MODEL"] = CURRENT_MODEL
+        subprocess.run([START_AGENTS_SCRIPT, "daemon", task_summary], capture_output=True, env=env)
     else:
         try:
             if target_agent == "PRABOWO":
@@ -1592,8 +1683,9 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 delegation_hint = f"Dekomposisi tugas pada proyek {project_id} ke PRABOWO atau JOKOWI"
 
+            model_note = f" (Model AGY: {CURRENT_MODEL})"
             prompt_to_luhut = (
-                f"Tugas baru [Proyek: {project_id}]: '{instruction}'. Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
+                f"Tugas baru [Proyek: {project_id}{model_note}]: '{instruction}'. Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
                 f"ATURAN FAST-TRACK: {delegation_hint} via tmux send-keys, laporkan ke Telegram via python3 {BOT_SCRIPT} '[LUHUT]: ...', "
                 f"lalu MASUK STANDBY PASIF. DILARANG audit kode atau loop checking!"
             )
@@ -1612,6 +1704,7 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📋 *ID Tugas:* `{task_id}` ({category})\n"
         f"📁 *Proyek:* `{project_id}`\n"
         f"👤 *Target Pelaksana:* `{target_agent}`\n"
+        f"🧠 *Engine & Model:* `AGY` (`{CURRENT_MODEL}`)\n"
         f"📂 *Direktori:* `{target_dir}`\n"
         f"📝 *Instruksi:* \"{preview}\"\n\n"
         "⚡ *Universal Multi-Project:* LUHUT langsung mendelegasikan ke pelaksana di direktori proyek terkait.\n"

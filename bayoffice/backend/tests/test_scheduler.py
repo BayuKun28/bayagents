@@ -174,7 +174,7 @@ class TestSchedulerCRUD(unittest.TestCase):
         sched_id = res["schedule"]["id"]
 
         # Mock dispatch function
-        def mock_dispatch(instruction, category_hint, project_hint, engine):
+        def mock_dispatch(instruction, category_hint, project_hint, engine, **kwargs):
             return {
                 "success": True,
                 "task_id": "TASK-OPS-99",

@@ -22,6 +22,8 @@ window.OfficeSchedules = (function () {
   let schedProject;
   let schedCategory;
   let schedEngine;
+  let schedAgyModelContainer;
+  let schedAgyModel;
   let schedTypeBtns;
   let cronTypeField;
   let schedCronExpr;
@@ -183,6 +185,7 @@ window.OfficeSchedules = (function () {
             <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">Project: ${escapeHtml(s.project || 'bayoffice')}</span>
             <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">Category: ${escapeHtml(s.category || 'auto')}</span>
             <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">Engine: ${escapeHtml(s.engine || 'agy')}</span>
+            ${s.model ? `<span class="neo-badge" style="background:#8B5CF6; color:#FFFFFF; font-weight:700;">Model: ${escapeHtml(s.model)}</span>` : ''}
             <span class="neo-badge" style="background:var(--bg-main); font-weight:700;">${runsLabel}</span>
           </div>
 
@@ -346,7 +349,18 @@ window.OfficeSchedules = (function () {
     schedProject = document.getElementById('schedProject');
     schedCategory = document.getElementById('schedCategory');
     schedEngine = document.getElementById('schedEngine');
+    schedAgyModelContainer = document.getElementById('schedAgyModelContainer');
+    schedAgyModel = document.getElementById('schedAgyModel');
     schedTypeBtns = document.querySelectorAll('.sched-type-btn');
+
+    if (schedEngine) {
+      schedEngine.addEventListener('change', () => {
+        const isAgy = schedEngine.value === 'agy';
+        if (schedAgyModelContainer) {
+          schedAgyModelContainer.style.display = isAgy ? 'block' : 'none';
+        }
+      });
+    }
     cronTypeField = document.getElementById('cronTypeField');
     schedCronExpr = document.getElementById('schedCronExpr');
     schedPresetBtns = document.querySelectorAll('.sched-preset-btn');
@@ -448,6 +462,7 @@ window.OfficeSchedules = (function () {
         const project = schedProject ? schedProject.value : 'bayoffice';
         const category = schedCategory ? schedCategory.value : 'auto';
         const engine = schedEngine ? schedEngine.value : 'agy';
+        const model = (engine === 'agy' && schedAgyModel) ? schedAgyModel.value : null;
 
         if (!title || !instruction) return;
 
@@ -457,6 +472,7 @@ window.OfficeSchedules = (function () {
           project,
           category,
           engine,
+          model,
           schedule_type: currentScheduleType
         };
 

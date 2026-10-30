@@ -356,6 +356,7 @@ def create_schedule(schedule_in: Dict[str, Any]) -> Dict[str, Any]:
             "project": schedule_in.get("project", "bayoffice") or "bayoffice",
             "category": schedule_in.get("category", "auto") or "auto",
             "engine": schedule_in.get("engine", "agy") or "agy",
+            "model": schedule_in.get("model") if (schedule_in.get("engine", "agy") == "agy") else None,
             "schedule_type": schedule_type,
             "cron_expression": cron_expr,
             "interval_minutes": interval_mins,
@@ -405,6 +406,8 @@ def update_schedule(schedule_id: str, updates: Dict[str, Any]) -> Dict[str, Any]
             target_s["category"] = str(updates["category"]).strip()
         if "engine" in updates and updates["engine"]:
             target_s["engine"] = str(updates["engine"]).strip()
+        if "model" in updates:
+            target_s["model"] = updates["model"]
 
         stype_changed = False
         if "schedule_type" in updates and updates["schedule_type"]:
@@ -552,6 +555,7 @@ def _run_single_schedule(target_s: Dict[str, Any], dispatch_fn=None, is_manual: 
     project = target_s.get("project", "bayoffice")
     category = target_s.get("category", "auto")
     engine = target_s.get("engine", "agy")
+    model = target_s.get("model")
     stype = target_s.get("schedule_type", "cron")
 
     # Jika dispatch_fn tidak diberikan, import service secara lazy
@@ -564,12 +568,40 @@ def _run_single_schedule(target_s: Dict[str, Any], dispatch_fn=None, is_manual: 
 
     # Format instruksi eksekusi
     full_instruction = f"[Jadwal: {sched_id}] {instruction}"
-    exec_result = dispatch_fn(
-        instruction=full_instruction,
-        category_hint=category,
-        project_hint=project,
-        engine=engine
-    )
+    try:
+        import inspect
+        sig = inspect.signature(dispatch_fn)
+        if "model" in sig.parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
+            exec_result = dispatch_fn(
+                instruction=full_instruction,
+                category_hint=category,
+                project_hint=project,
+                engine=engine,
+                model=model
+            )
+        else:
+            exec_result = dispatch_fn(
+                instruction=full_instruction,
+                category_hint=category,
+                project_hint=project,
+                engine=engine
+            )
+    except Exception:
+        try:
+            exec_result = dispatch_fn(
+                instruction=full_instruction,
+                category_hint=category,
+                project_hint=project,
+                engine=engine,
+                model=model
+            )
+        except TypeError:
+            exec_result = dispatch_fn(
+                instruction=full_instruction,
+                category_hint=category,
+                project_hint=project,
+                engine=engine
+            )
 
     now_iso = _get_local_now().isoformat()
     success = exec_result.get("success", False)

@@ -13,7 +13,10 @@ from pathlib import Path
 from typing import Any, Optional, Dict, Union
 
 
-def atomic_read_json(file_path: Union[str, Path], default: Any = None) -> Any:
+_DEFAULT_SENTINEL = object()
+
+
+def atomic_read_json(file_path: Union[str, Path], default: Any = _DEFAULT_SENTINEL) -> Any:
     """
     Membaca file JSON secara aman dengan shared lock (fcntl.LOCK_SH).
     Mengembalikan `default` jika file tidak ditemukan atau terjadi kesalahan parsing.
@@ -29,10 +32,10 @@ def atomic_read_json(file_path: Union[str, Path], default: Any = None) -> Any:
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
             return data
     except (FileNotFoundError, OSError):
-        return default if default is not None else {}
+        return default if default is not _DEFAULT_SENTINEL else {}
     except Exception:
         # Fallback jika file sedang dalam transisi atau corrupt
-        return default if default is not None else {}
+        return default if default is not _DEFAULT_SENTINEL else {}
 
 
 def atomic_write_json(file_path: Union[str, Path], data: Any, indent: int = 2) -> bool:

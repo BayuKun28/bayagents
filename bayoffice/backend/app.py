@@ -113,6 +113,7 @@ class ScheduleCreateRequest(BaseModel):
     project: Optional[str] = "bayoffice"
     category: Optional[str] = "auto"
     engine: Optional[str] = "agy"
+    model: Optional[str] = None
     schedule_type: str = "cron"  # "cron", "interval", "once"
     cron_expression: Optional[str] = None
     interval_minutes: Optional[int] = None
@@ -125,6 +126,7 @@ class ScheduleUpdateRequest(BaseModel):
     project: Optional[str] = None
     category: Optional[str] = None
     engine: Optional[str] = None
+    model: Optional[str] = None
     schedule_type: Optional[str] = None
     cron_expression: Optional[str] = None
     interval_minutes: Optional[int] = None

@@ -42,6 +42,7 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
                 project="bayoffice",
                 category="ops",
                 engine="agy",
+                model="claude-sonnet-4-6",
                 schedule_type="cron",
                 cron_expression="0 4 * * *"
             )
@@ -49,6 +50,7 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             self.assertTrue(create_res["success"])
             sched_id = create_res["schedule"]["id"]
             self.assertEqual(sched_id, "SCHED-01")
+            self.assertEqual(create_res["schedule"].get("model"), "claude-sonnet-4-6")
 
             # 2. GET /api/schedules
             list_res = await app.api_get_schedules(user=self.test_user)
@@ -60,12 +62,14 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             detail_res = await app.api_get_schedule_detail(sched_id, user=self.test_user)
             self.assertTrue(detail_res["success"])
             self.assertEqual(detail_res["schedule"]["title"], "API Test Schedule")
+            self.assertEqual(detail_res["schedule"].get("model"), "claude-sonnet-4-6")
 
             # 4. PATCH /api/schedules/{id}
-            update_req = ScheduleUpdateRequest(title="API Test Schedule Renamed")
+            update_req = ScheduleUpdateRequest(title="API Test Schedule Renamed", model="gemini-3.8-flash-high")
             patch_res = await app.api_update_schedule_patch(sched_id, update_req, user=self.test_user)
             self.assertTrue(patch_res["success"])
             self.assertEqual(patch_res["schedule"]["title"], "API Test Schedule Renamed")
+            self.assertEqual(patch_res["schedule"].get("model"), "gemini-3.8-flash-high")
 
             # 5. POST /api/schedules/{id}/toggle
             toggle_req = ScheduleToggleRequest(enabled=False)
