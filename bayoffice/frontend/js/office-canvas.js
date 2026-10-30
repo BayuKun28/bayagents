@@ -47,10 +47,11 @@ class OfficeCanvas {
       avatar_LUHUT: '/static/assets/avatars/luhut.jpg',
       avatar_JOKOWI: '/static/assets/avatars/jokowi.jpg',
       avatar_PRABOWO: '/static/assets/avatars/prabowo.jpg',
-      avatar_GIBRAN: '/static/assets/avatars/gibran.jpg'
+      avatar_GIBRAN: '/static/assets/avatars/gibran.jpg',
+      avatar_HABIBIE: '/static/assets/avatars/habibie.svg'
     });
     
-    // Posisi awal dan state agen
+    // Posisi awal dan state agen (Termasuk HABIBIE - Chief Architect)
     this.agents = {
       LUHUT: {
         name: 'LUHUT',
@@ -87,6 +88,15 @@ class OfficeCanvas {
         targetX: 770, targetY: 385,
         state: 'idle',
         bubble: 'Standby di kantin, siap audit QA.'
+      },
+      HABIBIE: {
+        name: 'HABIBIE',
+        role: 'Chief Architect',
+        color: '#8B5CF6',
+        x: 80, y: 155,
+        targetX: 80, targetY: 155,
+        state: 'idle',
+        bubble: 'Kalkulasi teknis matang sebelum baris kode pertama ditulis.'
       }
     };
 
@@ -174,7 +184,7 @@ class OfficeCanvas {
     // 1. Jika mode SLEEP (Auto-Sleep / Hemat RAM) -> Tersebar di Game Room dengan rotasi dinamis 15s
     if (state === 'sleeping') {
       const gameRoomSpots = this.getGameRoomSpots();
-      const agentNames = ['PRABOWO', 'JOKOWI', 'GIBRAN', 'LUHUT'];
+      const agentNames = ['PRABOWO', 'JOKOWI', 'GIBRAN', 'LUHUT', 'HABIBIE'];
       const idx = agentNames.indexOf(name);
       const rotationIndex = Math.floor(this.animationFrame / 900);
       const spotIdx = ((idx >= 0 ? idx : 0) + rotationIndex) % gameRoomSpots.length;
@@ -187,7 +197,8 @@ class OfficeCanvas {
         LUHUT:   { x: 220, y: 88 }, // Duduk di kursi eksekutif pimpinan
         JOKOWI:  { x: 540, y: 82 }, // Duduk di workstation backend
         PRABOWO: { x: 700, y: 82 }, // Duduk di workstation frontend
-        GIBRAN:  { x: 860, y: 82 }  // Duduk di workstation QA & Security
+        GIBRAN:  { x: 860, y: 82 }, // Duduk di workstation QA & Security
+        HABIBIE: { x: 80, y: 88 }   // Duduk di Architect Drafting Desk
       };
       return workDesks[name] || { x: 540, y: 82 };
     }
@@ -197,7 +208,8 @@ class OfficeCanvas {
       LUHUT:   { x: 345, y: 155 }, // Santai di Sofa Ruang Pimpinan
       JOKOWI:  { x: 670, y: 395 }, // Duduk santai di Meja Kafe 1 Kantin
       PRABOWO: { x: 205, y: 385 }, // Santai di Sofa Game Room
-      GIBRAN:  { x: 790, y: 395 }  // Duduk santai di Meja Kafe 2 Kantin
+      GIBRAN:  { x: 790, y: 395 }, // Duduk santai di Meja Kafe 2 Kantin
+      HABIBIE: { x: 80, y: 155 }   // Duduk santai di Studio Arsitek
     };
     return standbySpots[name] || { x: 480, y: 240 };
   }
@@ -206,7 +218,7 @@ class OfficeCanvas {
     // Rotasi spot Game Room setiap 15 detik (900 frame @ 60 FPS) secara halus
     const gameRoomSpots = this.getGameRoomSpots();
     const rotationIndex = Math.floor(this.animationFrame / 900);
-    const agentNames = ['PRABOWO', 'JOKOWI', 'GIBRAN', 'LUHUT'];
+    const agentNames = ['PRABOWO', 'JOKOWI', 'GIBRAN', 'LUHUT', 'HABIBIE'];
 
     agentNames.forEach((name, idx) => {
       const ag = this.agents[name];
@@ -358,6 +370,40 @@ class OfficeCanvas {
     if (this.images.plantSnake && this.images.plantSnake.complete) {
       ctx.drawImage(this.images.plantSnake, x + 16, y + 155, 24, 48);
     }
+
+    // 6b. Studio Arsitek HABIBIE (Architect's Drafting Table & Blueprints)
+    const draftX = x + 38;
+    const draftY = y + 102;
+    // Tilted drafting board (Royal Purple border & blueprint mat)
+    ctx.fillStyle = isDark ? '#2E1065' : '#4C1D95';
+    ctx.fillRect(draftX, draftY, 80, 52);
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(draftX, draftY, 80, 52);
+    // Blueprint on table
+    ctx.fillStyle = isDark ? '#3B0764' : '#EDE9FE';
+    ctx.fillRect(draftX + 8, draftY + 8, 64, 36);
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(draftX + 8, draftY + 8, 64, 36);
+    // Blueprint schematic lines
+    ctx.strokeStyle = '#A78BFA';
+    ctx.beginPath();
+    ctx.moveTo(draftX + 16, draftY + 16);
+    ctx.lineTo(draftX + 62, draftY + 16);
+    ctx.moveTo(draftX + 16, draftY + 24);
+    ctx.lineTo(draftX + 54, draftY + 24);
+    ctx.moveTo(draftX + 16, draftY + 32);
+    ctx.lineTo(draftX + 64, draftY + 32);
+    ctx.stroke();
+    // Architect Lamp
+    ctx.fillStyle = '#FFE600';
+    ctx.beginPath();
+    ctx.arc(draftX + 70, draftY + 12, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#09090B';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
     // 7. Area Meja Pimpinan (Executive Desk & Chair)
     const deskX = x + 155;

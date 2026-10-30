@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- Blueprint Grid Background Pattern -->
+    <pattern id="blueprintGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#A78BFA" stroke-width="0.75" stroke-opacity="0.3"/>
+    </pattern>
+    <linearGradient id="purpleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#4C1D95" />
+    </linearGradient>
+  </defs>
+
+  <!-- Circle Base & Background -->
+  <circle cx="100" cy="100" r="98" fill="url(#purpleBg)" stroke="#1E1B4B" stroke-width="4" />
+  <circle cx="100" cy="100" r="98" fill="url(#blueprintGrid)" />
+
+  <!-- Outer Blueprint Ring -->
+  <circle cx="100" cy="100" r="91" fill="none" stroke="#C4B5FD" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6" />
+
+  <!-- Body / Dark Formal Suit -->
+  <path d="M 36 195 C 40 150, 70 142, 100 142 C 130 142, 160 150, 164 195 Z" fill="#18181B" stroke="#09090B" stroke-width="3.5" />
+  
+  <!-- White Shirt Collar & Purple Tie -->
+  <polygon points="100,142 85,165 115,165" fill="#FFFFFF" stroke="#09090B" stroke-width="2" />
+  <polygon points="100,152 94,185 100,195 106,185" fill="#8B5CF6" stroke="#09090B" stroke-width="2" />
+  <!-- Tie Clip (Gold) -->
+  <line x1="95" y1="172" x2="105" y2="172" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round" />
+
+  <!-- Neck -->
+  <rect x="88" y="125" width="24" height="22" rx="4" fill="#FBBF24" stroke="#09090B" stroke-width="3" />
+
+  <!-- Head / Face -->
+  <ellipse cx="100" cy="98" rx="36" ry="42" fill="#FDE68A" stroke="#09090B" stroke-width="3.5" />
+
+  <!-- Hair / Classic Side-Parted Style -->
+  <path d="M 64 92 C 62 68, 80 50, 100 50 C 122 50, 138 66, 136 92 C 130 76, 122 66, 100 66 C 78 66, 68 76, 64 92 Z" fill="#1E293B" stroke="#09090B" stroke-width="3.5" />
+
+  <!-- Ears -->
+  <ellipse cx="64" cy="98" rx="6" ry="10" fill="#FDE68A" stroke="#09090B" stroke-width="3" />
+  <ellipse cx="136" cy="98" rx="6" ry="10" fill="#FDE68A" stroke="#09090B" stroke-width="3" />
+
+  <!-- Eyebrows -->
+  <path d="M 76 83 Q 86 79 93 83" fill="none" stroke="#09090B" stroke-width="3" stroke-linecap="round" />
+  <path d="M 107 83 Q 114 79 124 83" fill="none" stroke="#09090B" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Iconic Round Glasses (Black Frame with High-Tech Lenses) -->
+  <circle cx="84" cy="95" r="13" fill="#EDE9FE" fill-opacity="0.4" stroke="#09090B" stroke-width="3.5" />
+  <circle cx="116" cy="95" r="13" fill="#EDE9FE" fill-opacity="0.4" stroke="#09090B" stroke-width="3.5" />
+  <!-- Bridge of Glasses -->
+  <path d="M 97 93 Q 100 90 103 93" fill="none" stroke="#09090B" stroke-width="3.5" stroke-linecap="round" />
+  <!-- Glasses Temples -->
+  <line x1="71" y1="94" x2="64" y2="92" stroke="#09090B" stroke-width="3" stroke-linecap="round" />
+  <line x1="129" y1="94" x2="136" y2="92" stroke="#09090B" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Friendly Eyes behind glasses -->
+  <circle cx="85" cy="95" r="4.5" fill="#09090B" />
+  <circle cx="83.5" cy="93.5" r="1.5" fill="#FFFFFF" />
+  <circle cx="115" cy="95" r="4.5" fill="#09090B" />
+  <circle cx="113.5" cy="93.5" r="1.5" fill="#FFFFFF" />
+
+  <!-- Nose -->
+  <path d="M 100 95 L 98 107 L 102 107" fill="none" stroke="#09090B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Warm Smile -->
+  <path d="M 88 116 Q 100 125 112 116" fill="none" stroke="#09090B" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Signature Badge at Bottom Right: Compass / Architect Emblem -->
+  <g transform="translate(142, 142)">
+    <circle cx="18" cy="18" r="20" fill="#FFE600" stroke="#09090B" stroke-width="3" />
+    <!-- Drafting Compass Icon -->
+    <path d="M 18 6 L 18 10 M 18 10 L 10 28 M 18 10 L 26 28 M 12 22 L 24 22" fill="none" stroke="#09090B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

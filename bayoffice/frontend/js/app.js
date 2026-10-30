@@ -18,6 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (canvas) {
     canvas.onAgentClick = (agentName) => {
       if (soundFx) soundFx.playClick();
+
+      // Khusus klik Agen HABIBIE: Langsung alihkan ke Plans Studio
+      if (agentName === 'HABIBIE') {
+        switchWorkspaceView('plans');
+        return;
+      }
+
       // Filter kanban to agent
       const fBtns = document.querySelectorAll('.filter-btn');
       fBtns.forEach(b => {
@@ -181,35 +188,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const schedulesListContainer = document.getElementById('schedulesListContainer');
   let currentScheduleType = 'cron';
 
-  // Implementation Plans (HABIBIE) Modal DOM
+  // Workspace Navigation & Views
+  const navOfficeBtn = document.getElementById('navOfficeBtn');
+  const navPlansBtn = document.getElementById('navPlansBtn');
+  const navPlansCountBadge = document.getElementById('navPlansCountBadge');
+  const mainDashboardView = document.getElementById('mainDashboardView');
+  const plansStudioView = document.getElementById('plansStudioView');
+
+  // Ops Hub Dropdown DOM
+  const opsDropdownBtn = document.getElementById('opsDropdownBtn');
+  const opsDropdownMenu = document.getElementById('opsDropdownMenu');
+  const opsDropdownWrapper = document.getElementById('opsDropdownWrapper');
+
+  // Dedicated Plans Studio Workspace DOM
+  const studioBackToOfficeBtn = document.getElementById('studioBackToOfficeBtn');
+  const studioToggleNewPlanBtn = document.getElementById('studioToggleNewPlanBtn');
+  const studioToggleNewPlanText = document.getElementById('studioToggleNewPlanText');
+  const studioNewPlanFormContainer = document.getElementById('studioNewPlanFormContainer');
+  const studioNewPlanForm = document.getElementById('studioNewPlanForm');
+  const studioPlanIdeaInput = document.getElementById('studioPlanIdeaInput');
+  const studioPlanProjectSelect = document.getElementById('studioPlanProjectSelect');
+  const studioPlanEngineSelect = document.getElementById('studioPlanEngineSelect');
+  const studioCancelNewPlanBtn = document.getElementById('studioCancelNewPlanBtn');
+  const studioSubmitPlanBtn = document.getElementById('studioSubmitPlanBtn');
+  const studioSubmitPlanBtnText = document.getElementById('studioSubmitPlanBtnText');
+  const studioSearchInput = document.getElementById('studioSearchInput');
+  const studioFilterBtns = document.querySelectorAll('.studio-filter-btn');
+  const studioRefreshBtn = document.getElementById('studioRefreshBtn');
+  const studioStatBadge = document.getElementById('studioStatBadge');
+  const studioPlansListContainer = document.getElementById('studioPlansListContainer');
+  const studioViewerHeader = document.getElementById('studioViewerHeader');
+  const studioViewerPlanId = document.getElementById('studioViewerPlanId');
+  const studioViewerPlanProject = document.getElementById('studioViewerPlanProject');
+  const studioViewerPlanStatus = document.getElementById('studioViewerPlanStatus');
+  const studioViewerPlanDate = document.getElementById('studioViewerPlanDate');
+  const studioViewerPlanTitle = document.getElementById('studioViewerPlanTitle');
+  const studioViewerContent = document.getElementById('studioViewerContent');
+  const studioDispatchPlanBtn = document.getElementById('studioDispatchPlanBtn');
+  const studioCopyPlanBtn = document.getElementById('studioCopyPlanBtn');
+  const studioDeletePlanBtn = document.getElementById('studioDeletePlanBtn');
+
+  // Legacy/Modal DOM fallback references
   const openPlansBtn = document.getElementById('openPlansBtn');
   const kanbanPlansBtn = document.getElementById('kanbanPlansBtn');
   const plansModal = document.getElementById('plansModal');
   const closePlansModalBtn = document.getElementById('closePlansModalBtn');
-  const statPlansSummaryBadge = document.getElementById('statPlansSummaryBadge');
-  const toggleNewPlanBtn = document.getElementById('toggleNewPlanBtn');
-  const toggleNewPlanText = document.getElementById('toggleNewPlanText');
-  const refreshPlansBtn = document.getElementById('refreshPlansBtn');
-  const newPlanFormContainer = document.getElementById('newPlanFormContainer');
-  const newPlanForm = document.getElementById('newPlanForm');
-  const planIdeaInput = document.getElementById('planIdeaInput');
-  const planProjectSelect = document.getElementById('planProjectSelect');
-  const planEngineSelect = document.getElementById('planEngineSelect');
-  const cancelNewPlanBtn = document.getElementById('cancelNewPlanBtn');
-  const submitPlanBtn = document.getElementById('submitPlanBtn');
-  const submitPlanBtnText = document.getElementById('submitPlanBtnText');
-  const plansListContainer = document.getElementById('plansListContainer');
-  const planViewerHeader = document.getElementById('planViewerHeader');
-  const viewerPlanId = document.getElementById('viewerPlanId');
-  const viewerPlanProject = document.getElementById('viewerPlanProject');
-  const viewerPlanStatus = document.getElementById('viewerPlanStatus');
-  const viewerPlanTitle = document.getElementById('viewerPlanTitle');
-  const planViewerContent = document.getElementById('planViewerContent');
-  const dispatchPlanBtn = document.getElementById('dispatchPlanBtn');
-  const copyPlanBtn = document.getElementById('copyPlanBtn');
-  const deletePlanBtn = document.getElementById('deletePlanBtn');
-  let loadedPlans = [];
-  let currentSelectedPlan = null;
+
+  let loadedStudioPlans = [];
+  let currentSelectedStudioPlan = null;
+  let currentStudioFilter = 'ALL';
+  let studioSearchQuery = '';
 
   // Render icons initially
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -305,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!agents || !agentsGrid) return;
 
     let html = '';
-    const agentList = ['LUHUT', 'JOKOWI', 'PRABOWO', 'GIBRAN'];
+    const agentList = ['LUHUT', 'JOKOWI', 'PRABOWO', 'GIBRAN', 'HABIBIE'];
 
     const txtStandby = window.I18n ? window.I18n.t('agents.state_standby') : 'STANDBY';
     const txtSleep = window.I18n ? window.I18n.t('agents.state_sleep') : 'SLEEP';
@@ -314,6 +342,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultBubble = window.I18n ? window.I18n.t('agents.default_bubble') : 'Ready for duty.';
 
     agentList.forEach(name => {
+      // Khusus HABIBIE: Chief Architect On-Demand Card
+      if (name === 'HABIBIE') {
+        const habibieRole = window.I18n ? window.I18n.t('agents.role_habibie') : 'Chief Architect (On-Demand)';
+        const habibieBubble = window.I18n ? window.I18n.t('agents.habibie_bubble') : 'Kalkulasi teknis matang sebelum baris kode pertama ditulis.';
+        const openStudioText = window.I18n ? window.I18n.t('agents.open_studio') : 'Open Plans Studio';
+        html += `
+          <div class="neo-box-sm" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; border: 2px solid #8B5CF6;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="/static/assets/avatars/habibie.svg" alt="HABIBIE" 
+                     style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid #8B5CF6; object-fit: cover; box-shadow: 2px 2px 0px var(--shadow-color);" 
+                     onerror="this.src='/static/assets/avatars/habibie.jpg'">
+                <div>
+                  <div style="font-weight: 800; font-size: 0.95rem; color: #8B5CF6;">HABIBIE</div>
+                  <div style="font-size: 0.72rem; color: #64748B; font-weight: 600;">${habibieRole}</div>
+                </div>
+              </div>
+              <span class="neo-badge" style="background:#8B5CF6; color:#FFFFFF; font-size:0.68rem; font-weight:800;">STANDBY (0 MB)</span>
+            </div>
+            <div class="agent-bubble-box" style="font-size: 0.78rem; padding: 6px 10px; border-radius: 6px; min-height: 40px; display: flex; align-items: center; line-height: 1.35; border: 1px solid var(--border-color); background: rgba(139, 92, 246, 0.05);">
+              <i>${habibieBubble}</i>
+            </div>
+            <button class="neo-btn neo-btn-secondary habibie-open-studio-btn" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 700; width: 100%;">
+              <i data-lucide="compass" class="lucide-xs" style="color: #8B5CF6;"></i>
+              <span>${openStudioText}</span>
+            </button>
+          </div>
+        `;
+        return;
+      }
+
       const a = agents[name] || {};
       const state = a.state || 'idle';
       
@@ -348,6 +407,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     agentsGrid.innerHTML = html;
+
+    // Attach click listener ke tombol Buka Studio Rencana pada kartu HABIBIE
+    agentsGrid.querySelectorAll('.habibie-open-studio-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (soundFx) soundFx.playClick();
+        switchWorkspaceView('plans');
+      });
+    });
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   }
 
   // 4. Dynamic Project Registry Loader & Filters
@@ -1769,14 +1841,104 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================
-  // 19. Implementation Plans (HABIBIE) Manager & Markdown Reader
+  // 19. Dedicated Plans Studio & Ops Hub Controller
   // ==========================================================
 
+  // A. Workspace View Switcher (Live Office & Kanban <-> Plans Studio)
+  function switchWorkspaceView(viewName) {
+    if (soundFx) soundFx.playClick();
+    if (viewName === 'plans') {
+      if (navOfficeBtn) navOfficeBtn.classList.remove('active');
+      if (navPlansBtn) navPlansBtn.classList.add('active');
+      if (mainDashboardView) mainDashboardView.style.display = 'none';
+      if (plansStudioView) plansStudioView.style.display = 'block';
+      window.location.hash = 'plans';
+      fetchStudioPlans(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      if (navPlansBtn) navPlansBtn.classList.remove('active');
+      if (navOfficeBtn) navOfficeBtn.classList.add('active');
+      if (plansStudioView) plansStudioView.style.display = 'none';
+      if (mainDashboardView) mainDashboardView.style.display = 'flex';
+      if (window.location.hash === '#plans') {
+        history.replaceState(null, null, ' ');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  if (navOfficeBtn) {
+    navOfficeBtn.addEventListener('click', () => switchWorkspaceView('office'));
+  }
+
+  if (navPlansBtn) {
+    navPlansBtn.addEventListener('click', () => switchWorkspaceView('plans'));
+  }
+
+  if (studioBackToOfficeBtn) {
+    studioBackToOfficeBtn.addEventListener('click', () => switchWorkspaceView('office'));
+  }
+
+  if (kanbanPlansBtn) {
+    kanbanPlansBtn.addEventListener('click', () => switchWorkspaceView('plans'));
+  }
+
+  if (openPlansBtn) {
+    openPlansBtn.addEventListener('click', () => switchWorkspaceView('plans'));
+  }
+
+  // Handle URL hash on page load
+  if (window.location.hash === '#plans') {
+    switchWorkspaceView('plans');
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#plans') {
+      switchWorkspaceView('plans');
+    } else if (window.location.hash === '#office' || !window.location.hash) {
+      switchWorkspaceView('office');
+    }
+  });
+
+  // B. Ops Hub Dropdown Menu Handlers
+  if (opsDropdownBtn && opsDropdownMenu) {
+    opsDropdownBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = opsDropdownMenu.style.display !== 'none';
+      opsDropdownMenu.style.display = isVisible ? 'none' : 'flex';
+      opsDropdownBtn.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
+      if (soundFx) soundFx.playClick();
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    });
+
+    // Auto-close on click outside
+    document.addEventListener('click', (e) => {
+      if (opsDropdownWrapper && !opsDropdownWrapper.contains(e.target)) {
+        opsDropdownMenu.style.display = 'none';
+        opsDropdownBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && opsDropdownMenu.style.display !== 'none') {
+        opsDropdownMenu.style.display = 'none';
+        opsDropdownBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  // C. Markdown Parser Engine
   function renderMarkdownToHtml(md) {
     if (!md) return '';
     let text = String(md);
 
-    // 1. Remove YAML frontmatter if present (e.g. --- ... ---)
+    // 1. Remove YAML frontmatter if present (--- ... ---)
     text = text.replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]*/, '');
 
     // 2. Escape HTML
@@ -1800,10 +1962,10 @@ document.addEventListener('DOMContentLoaded', () => {
     text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
 
     // 6. Horizontal Rules (--- or ***)
-    text = text.replace(/^(?:---|\*\*\*|___)\s*$/gim, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:14px 0;">');
+    text = text.replace(/^(?:---|\*\*\*|___)\s*$/gim, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:16px 0;">');
 
     // 7. Blockquotes (> ...)
-    text = text.replace(/^>\s?(.*$)/gim, '<blockquote style="border-left:3px solid #8B5CF6; padding-left:10px; margin:8px 0; color:#64748B; font-style:italic;">$1</blockquote>');
+    text = text.replace(/^>\s?(.*$)/gim, '<blockquote style="border-left:3px solid #8B5CF6; padding-left:12px; margin:10px 0; color:#64748B; font-style:italic; background:rgba(139, 92, 246, 0.04); border-radius:0 4px 4px 0;">$1</blockquote>');
 
     // 8. Bold and Italic
     text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -1842,7 +2004,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inOl) processedLines.push('</ol>');
     text = processedLines.join('\n');
 
-    // 11. Paragraphs: convert double line breaks to br
+    // 11. Paragraphs: convert line breaks
     text = text.replace(/\n\n+/g, '<br><br>');
     text = text.replace(/\n/g, '<br>');
 
@@ -1858,12 +2020,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<div class="plan-markdown-body">${text}</div>`;
   }
 
-  async function fetchPlans(showLoading = false) {
-    if (showLoading && plansListContainer) {
-      plansListContainer.innerHTML = `
-        <div style="text-align: center; padding: 30px; color: #94A3B8; font-weight: 700;">
-          <i data-lucide="loader" class="lucide-md" style="margin-bottom: 6px; animation: spin 1s linear infinite;"></i>
-          <div>Loading plans...</div>
+  // D. Plans Studio Data Loader & Filtering
+  async function fetchStudioPlans(showLoading = false) {
+    if (showLoading && studioPlansListContainer) {
+      studioPlansListContainer.innerHTML = `
+        <div style="text-align: center; padding: 40px 10px; color: #94A3B8; font-weight: 700;">
+          <i data-lucide="loader" class="lucide-md" style="margin-bottom: 8px; animation: spin 1s linear infinite;"></i>
+          <div>Loading blueprints...</div>
         </div>
       `;
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -1875,46 +2038,55 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/plans');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      loadedPlans = data.plans || [];
+      loadedStudioPlans = data.plans || [];
 
-      // Update summary counter badge
-      if (statPlansSummaryBadge) {
-        const total = loadedPlans.length;
-        const dispatched = loadedPlans.filter(p => p.status === 'dispatched').length;
+      // Update Nav Count Badge
+      if (navPlansCountBadge) {
+        navPlansCountBadge.textContent = loadedStudioPlans.length;
+        navPlansCountBadge.style.display = loadedStudioPlans.length > 0 ? 'inline-block' : 'none';
+      }
+
+      // Update Studio Summary Badge
+      if (studioStatBadge) {
+        const total = loadedStudioPlans.length;
+        const dispatched = loadedStudioPlans.filter(p => p.status === 'dispatched').length;
         const drafts = total - dispatched;
-        statPlansSummaryBadge.textContent = window.I18n
+        studioStatBadge.textContent = window.I18n
           ? `${window.I18n.t('plans.total_plans')}: ${total} • ${window.I18n.t('plans.draft_plans')}: ${drafts} • ${window.I18n.t('plans.dispatched_plans')}: ${dispatched}`
           : `Total: ${total} • Drafts: ${drafts} • Dispatched: ${dispatched}`;
       }
 
-      renderPlansList(loadedPlans);
+      renderStudioPlansList();
 
-      // Auto-select active plan or default to first plan
-      if (loadedPlans.length > 0) {
-        const stillExists = currentSelectedPlan ? loadedPlans.find(p => p.id === currentSelectedPlan.id) : null;
+      // Auto-select plan
+      if (loadedStudioPlans.length > 0) {
+        const stillExists = currentSelectedStudioPlan ? loadedStudioPlans.find(p => p.id === currentSelectedStudioPlan.id) : null;
         if (stillExists) {
-          selectPlan(stillExists.id, false);
-        } else if (!currentSelectedPlan) {
-          selectPlan(loadedPlans[0].id, false);
+          selectStudioPlan(stillExists.id, false);
+        } else if (!currentSelectedStudioPlan) {
+          selectStudioPlan(loadedStudioPlans[0].id, false);
         }
       } else {
-        currentSelectedPlan = null;
-        if (planViewerHeader) planViewerHeader.style.display = 'none';
-        if (planViewerContent) {
-          planViewerContent.innerHTML = `
-            <div style="text-align: center; padding: 60px 20px; color: #64748B;">
-              <i data-lucide="compass" class="lucide-lg" style="margin-bottom: 8px; opacity: 0.5;"></i>
-              <p style="font-weight: 700; font-size: 0.9rem;">${window.I18n ? window.I18n.t('plans.no_plans') : 'No implementation plans found yet.'}</p>
+        currentSelectedStudioPlan = null;
+        if (studioViewerHeader) studioViewerHeader.style.display = 'none';
+        if (studioViewerContent) {
+          studioViewerContent.innerHTML = `
+            <div style="text-align: center; padding: 120px 20px; color: #64748B;">
+              <div style="width: 64px; height: 64px; border-radius: 50%; background: #EDE9FE; color: #8B5CF6; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; box-shadow: 3px 3px 0px var(--shadow-color);">
+                <i data-lucide="compass" class="lucide-lg"></i>
+              </div>
+              <h4 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;">${window.I18n ? window.I18n.t('studio.empty_title') : 'Select a Blueprint to Read'}</h4>
+              <p style="font-size: 0.85rem; max-width: 480px; margin: 0 auto; color: #64748B;">${window.I18n ? window.I18n.t('studio.empty_hint') : 'Select an architectural blueprint on the left or click "+ Draft Architecture Plan" to create one with HABIBIE.'}</p>
             </div>
           `;
           if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
         }
       }
     } catch (err) {
-      console.error('Failed to fetch plans:', err);
-      if (plansListContainer) {
-        plansListContainer.innerHTML = `
-          <div style="text-align: center; padding: 20px; color: #DC2626; font-size: 0.85rem;">
+      console.error('Failed to fetch studio plans:', err);
+      if (studioPlansListContainer) {
+        studioPlansListContainer.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: #DC2626; font-size: 0.82rem;">
             Failed to load plans: ${escapeHtml(err.message)}
           </div>
         `;
@@ -1922,12 +2094,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderPlansList(plans) {
-    if (!plansListContainer) return;
-    if (!plans || plans.length === 0) {
-      plansListContainer.innerHTML = `
+  function renderStudioPlansList() {
+    if (!studioPlansListContainer) return;
+
+    // Filter by project and search query
+    let filtered = loadedStudioPlans.slice();
+    if (currentStudioFilter && currentStudioFilter !== 'ALL') {
+      filtered = filtered.filter(p => (p.project || '').toLowerCase() === currentStudioFilter.toLowerCase());
+    }
+    if (studioSearchQuery) {
+      const q = studioSearchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.id || '').toLowerCase().includes(q) ||
+        (p.summary || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (filtered.length === 0) {
+      studioPlansListContainer.innerHTML = `
         <div style="text-align: center; padding: 30px 10px; color: #94A3B8; font-size: 0.82rem;">
-          ${window.I18n ? window.I18n.t('plans.no_plans') : 'No implementation plans found yet. Click "+ New Plan" or type /plan in Telegram!'}
+          ${window.I18n ? window.I18n.t('studio.no_plans') : 'No implementation plans found.'}
         </div>
       `;
       return;
@@ -1937,8 +2124,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatTime = (ts) => ts ? new Date(ts).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' }) : '-';
 
     let html = '';
-    plans.forEach(p => {
-      const isSelected = currentSelectedPlan && currentSelectedPlan.id === p.id;
+    filtered.forEach(p => {
+      const isSelected = currentSelectedStudioPlan && currentSelectedStudioPlan.id === p.id;
       const isDispatched = p.status === 'dispatched';
       const statusClass = isDispatched ? 'badge-done' : 'badge-todo';
       const statusText = isDispatched
@@ -1948,13 +2135,13 @@ document.addEventListener('DOMContentLoaded', () => {
       html += `
         <div class="plan-card ${isSelected ? 'active' : ''}" data-id="${p.id}">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-            <span style="font-weight:800; font-size:0.75rem; color:#2563EB;">${escapeHtml(p.id)}</span>
+            <span style="font-weight:800; font-size:0.75rem; color:#8B5CF6;">${escapeHtml(p.id)}</span>
             <div style="display:flex; align-items:center; gap:4px;">
               <span class="neo-badge" style="background:var(--bg-main); font-size:0.65rem;">${escapeHtml(p.project || 'general')}</span>
               <span class="neo-badge ${statusClass}" style="font-size:0.65rem;">${statusText}</span>
             </div>
           </div>
-          <div style="font-weight:700; font-size:0.86rem; color:var(--text-color); line-height:1.25; margin-top:2px;">
+          <div style="font-weight:700; font-size:0.86rem; color:var(--text-color); line-height:1.25; margin-top:3px;">
             ${escapeHtml(p.title || p.id)}
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:#64748B; margin-top:4px;">
@@ -1965,24 +2152,24 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     });
 
-    plansListContainer.innerHTML = html;
+    studioPlansListContainer.innerHTML = html;
 
     // Attach click listeners to cards
-    plansListContainer.querySelectorAll('.plan-card').forEach(card => {
+    studioPlansListContainer.querySelectorAll('.plan-card').forEach(card => {
       card.addEventListener('click', () => {
         const id = card.getAttribute('data-id');
         if (soundFx) soundFx.playClick();
-        selectPlan(id);
+        selectStudioPlan(id);
       });
     });
   }
 
-  async function selectPlan(planId, playSound = true) {
+  async function selectStudioPlan(planId, playSound = true) {
     if (!planId) return;
 
-    // Highlight card immediately in sidebar
-    if (plansListContainer) {
-      plansListContainer.querySelectorAll('.plan-card').forEach(card => {
+    // Highlight card immediately
+    if (studioPlansListContainer) {
+      studioPlansListContainer.querySelectorAll('.plan-card').forEach(card => {
         if (card.getAttribute('data-id') === planId) {
           card.classList.add('active');
         } else {
@@ -1998,48 +2185,53 @@ document.addEventListener('DOMContentLoaded', () => {
       const plan = data.plan || data;
       if (!plan) return;
 
-      currentSelectedPlan = plan;
+      currentSelectedStudioPlan = plan;
 
       // Update Reader Header
-      if (planViewerHeader) planViewerHeader.style.display = 'flex';
-      if (viewerPlanId) viewerPlanId.textContent = plan.id;
-      if (viewerPlanProject) viewerPlanProject.textContent = plan.project || 'general';
+      if (studioViewerHeader) studioViewerHeader.style.display = 'flex';
+      if (studioViewerPlanId) studioViewerPlanId.textContent = plan.id;
+      if (studioViewerPlanProject) studioViewerPlanProject.textContent = plan.project || 'general';
 
       const isDispatched = plan.status === 'dispatched';
-      if (viewerPlanStatus) {
-        viewerPlanStatus.className = 'neo-badge ' + (isDispatched ? 'badge-done' : 'badge-todo');
-        viewerPlanStatus.textContent = isDispatched
+      if (studioViewerPlanStatus) {
+        studioViewerPlanStatus.className = 'neo-badge ' + (isDispatched ? 'badge-done' : 'badge-todo');
+        studioViewerPlanStatus.textContent = isDispatched
           ? (window.I18n ? window.I18n.t('plans.status_dispatched') : 'Dispatched')
           : (window.I18n ? window.I18n.t('plans.status_draft') : 'Draft');
       }
 
-      if (viewerPlanTitle) {
-        viewerPlanTitle.textContent = plan.title || plan.id;
+      if (studioViewerPlanDate) {
+        const locale = (window.I18n && window.I18n.currentLocale === 'id') ? 'id-ID' : 'en-US';
+        studioViewerPlanDate.textContent = plan.created_at ? new Date(plan.created_at).toLocaleString(locale) : '';
+      }
+
+      if (studioViewerPlanTitle) {
+        studioViewerPlanTitle.textContent = plan.title || plan.id;
       }
 
       // Configure Action Buttons
-      if (dispatchPlanBtn) {
+      if (studioDispatchPlanBtn) {
         if (isDispatched) {
-          dispatchPlanBtn.disabled = true;
-          dispatchPlanBtn.innerHTML = `<i data-lucide="check" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.status_dispatched') : 'Dispatched'} (${escapeHtml(plan.dispatched_task_id || '')})</span>`;
+          studioDispatchPlanBtn.disabled = true;
+          studioDispatchPlanBtn.innerHTML = `<i data-lucide="check" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.status_dispatched') : 'Dispatched'} (${escapeHtml(plan.dispatched_task_id || '')})</span>`;
         } else {
-          dispatchPlanBtn.disabled = false;
-          dispatchPlanBtn.innerHTML = `<i data-lucide="send" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.dispatch_btn') : 'Dispatch to Kanban'}</span>`;
+          studioDispatchPlanBtn.disabled = false;
+          studioDispatchPlanBtn.innerHTML = `<i data-lucide="send" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.dispatch_btn') : 'Dispatch to Kanban'}</span>`;
         }
       }
 
-      // Render Markdown Body
-      if (planViewerContent) {
-        planViewerContent.innerHTML = renderMarkdownToHtml(plan.content || '');
+      // Render Markdown Content into Studio Pane
+      if (studioViewerContent) {
+        studioViewerContent.innerHTML = renderMarkdownToHtml(plan.content || '');
       }
 
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
       }
     } catch (err) {
-      console.error('Failed to select plan:', err);
-      if (planViewerContent) {
-        planViewerContent.innerHTML = `
+      console.error('Failed to select studio plan:', err);
+      if (studioViewerContent) {
+        studioViewerContent.innerHTML = `
           <div style="color: #DC2626; padding: 20px; font-weight: 700;">
             Failed to load plan details: ${escapeHtml(err.message)}
           </div>
@@ -2048,19 +2240,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Submit New Plan Form (HABIBIE AI Generation)
-  if (newPlanForm) {
-    newPlanForm.addEventListener('submit', async (e) => {
+  // Toggle & Submit New Plan Form (HABIBIE AI Generation)
+  if (studioToggleNewPlanBtn) {
+    studioToggleNewPlanBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      if (!studioNewPlanFormContainer) return;
+      const isHidden = studioNewPlanFormContainer.style.display === 'none';
+      studioNewPlanFormContainer.style.display = isHidden ? 'block' : 'none';
+      if (studioToggleNewPlanText) {
+        studioToggleNewPlanText.textContent = isHidden
+          ? (window.I18n ? window.I18n.t('plans.hide_form_btn') : 'Close Form')
+          : (window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan');
+      }
+      if (isHidden && studioPlanIdeaInput) {
+        studioPlanIdeaInput.focus();
+      }
+    });
+  }
+
+  if (studioCancelNewPlanBtn) {
+    studioCancelNewPlanBtn.addEventListener('click', () => {
+      if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
+      if (studioToggleNewPlanText) {
+        studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
+      }
+    });
+  }
+
+  if (studioNewPlanForm) {
+    studioNewPlanForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const idea = planIdeaInput ? planIdeaInput.value.trim() : '';
-      const project = planProjectSelect ? planProjectSelect.value : 'infobay';
-      const engine = planEngineSelect ? planEngineSelect.value : '9router';
+      const idea = studioPlanIdeaInput ? studioPlanIdeaInput.value.trim() : '';
+      const project = studioPlanProjectSelect ? studioPlanProjectSelect.value : 'infobay';
+      const engine = studioPlanEngineSelect ? studioPlanEngineSelect.value : '9router';
 
       if (!idea) return;
 
-      if (submitPlanBtn) submitPlanBtn.disabled = true;
-      if (submitPlanBtnText) {
-        submitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generating') : 'HABIBIE is Drafting Plan...';
+      if (studioSubmitPlanBtn) studioSubmitPlanBtn.disabled = true;
+      if (studioSubmitPlanBtnText) {
+        studioSubmitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generating') : 'HABIBIE is Drafting Plan...';
       }
       if (soundFx) soundFx.playClick();
 
@@ -2073,15 +2291,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const resJson = await res.json();
         if (res.ok && resJson.success) {
           if (soundFx) soundFx.playSuccess();
-          newPlanForm.reset();
-          if (newPlanFormContainer) newPlanFormContainer.style.display = 'none';
-          if (toggleNewPlanText) {
-            toggleNewPlanText.textContent = window.I18n ? window.I18n.t('plans.new_plan_btn') : '+ New Plan';
+          studioNewPlanForm.reset();
+          if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
+          if (studioToggleNewPlanText) {
+            studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
           }
-          await fetchPlans(false);
+          await fetchStudioPlans(false);
           const newPlanId = (resJson.plan && resJson.plan.id) || resJson.id;
           if (newPlanId) {
-            selectPlan(newPlanId);
+            selectStudioPlan(newPlanId);
           }
         } else {
           alert(`Failed: ${resJson.error || resJson.detail || 'Unknown error'}`);
@@ -2089,56 +2307,29 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         alert(`Error: ${err.message}`);
       } finally {
-        if (submitPlanBtn) submitPlanBtn.disabled = false;
-        if (submitPlanBtnText) {
-          submitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generate_btn') : 'Ask HABIBIE to Draft Plan';
+        if (studioSubmitPlanBtn) studioSubmitPlanBtn.disabled = false;
+        if (studioSubmitPlanBtnText) {
+          studioSubmitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generate_btn') : 'Ask HABIBIE';
         }
       }
     });
   }
 
-  // Toggle New Plan Form
-  if (toggleNewPlanBtn) {
-    toggleNewPlanBtn.addEventListener('click', () => {
-      if (soundFx) soundFx.playClick();
-      if (!newPlanFormContainer) return;
-      const isHidden = newPlanFormContainer.style.display === 'none';
-      newPlanFormContainer.style.display = isHidden ? 'block' : 'none';
-      if (toggleNewPlanText) {
-        toggleNewPlanText.textContent = isHidden
-          ? (window.I18n ? window.I18n.t('plans.hide_form_btn') : 'Close Form')
-          : (window.I18n ? window.I18n.t('plans.new_plan_btn') : '+ New Plan');
-      }
-      if (isHidden && planIdeaInput) {
-        planIdeaInput.focus();
-      }
-    });
-  }
-
-  if (cancelNewPlanBtn) {
-    cancelNewPlanBtn.addEventListener('click', () => {
-      if (newPlanFormContainer) newPlanFormContainer.style.display = 'none';
-      if (toggleNewPlanText) {
-        toggleNewPlanText.textContent = window.I18n ? window.I18n.t('plans.new_plan_btn') : '+ New Plan';
-      }
-    });
-  }
-
   // Dispatch Plan to Kanban
-  if (dispatchPlanBtn) {
-    dispatchPlanBtn.addEventListener('click', async () => {
-      if (!currentSelectedPlan) return;
-      const confirmMsg = `Dispatch plan "${currentSelectedPlan.title || currentSelectedPlan.id}" to Kanban backlog?`;
+  if (studioDispatchPlanBtn) {
+    studioDispatchPlanBtn.addEventListener('click', async () => {
+      if (!currentSelectedStudioPlan) return;
+      const confirmMsg = `Dispatch plan "${currentSelectedStudioPlan.title || currentSelectedStudioPlan.id}" to Kanban backlog?`;
       if (!confirm(confirmMsg)) return;
 
-      dispatchPlanBtn.disabled = true;
-      const origHtml = dispatchPlanBtn.innerHTML;
-      dispatchPlanBtn.innerHTML = `<i data-lucide="loader" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.dispatching') : 'Dispatching...'}</span>`;
+      studioDispatchPlanBtn.disabled = true;
+      const origHtml = studioDispatchPlanBtn.innerHTML;
+      studioDispatchPlanBtn.innerHTML = `<i data-lucide="loader" class="lucide-sm"></i> <span>${window.I18n ? window.I18n.t('plans.dispatching') : 'Dispatching...'}</span>`;
       if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
       if (soundFx) soundFx.playClick();
 
       try {
-        const res = await fetch(`/api/plans/${currentSelectedPlan.id}/dispatch`, {
+        const res = await fetch(`/api/plans/${currentSelectedStudioPlan.id}/dispatch`, {
           method: 'POST'
         });
         const resJson = await res.json();
@@ -2148,31 +2339,31 @@ document.addEventListener('DOMContentLoaded', () => {
             ? window.I18n.t('plans.dispatched_notice', { taskId: resJson.task_id })
             : `Plan dispatched to Kanban backlog as ${resJson.task_id}!`;
           alert(taskNotice);
-          await fetchPlans(false);
-          selectPlan(currentSelectedPlan.id);
+          await fetchStudioPlans(false);
+          selectStudioPlan(currentSelectedStudioPlan.id);
         } else {
           alert(`Failed: ${resJson.error || resJson.detail || 'Unknown error'}`);
-          dispatchPlanBtn.disabled = false;
-          dispatchPlanBtn.innerHTML = origHtml;
+          studioDispatchPlanBtn.disabled = false;
+          studioDispatchPlanBtn.innerHTML = origHtml;
           if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
         }
       } catch (err) {
         alert(`Error: ${err.message}`);
-        dispatchPlanBtn.disabled = false;
-        dispatchPlanBtn.innerHTML = origHtml;
+        studioDispatchPlanBtn.disabled = false;
+        studioDispatchPlanBtn.innerHTML = origHtml;
         if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
       }
     });
   }
 
   // Copy Plan Content
-  if (copyPlanBtn) {
-    copyPlanBtn.addEventListener('click', async () => {
-      if (!currentSelectedPlan || !currentSelectedPlan.content) return;
+  if (studioCopyPlanBtn) {
+    studioCopyPlanBtn.addEventListener('click', async () => {
+      if (!currentSelectedStudioPlan || !currentSelectedStudioPlan.content) return;
       try {
-        await navigator.clipboard.writeText(currentSelectedPlan.content);
+        await navigator.clipboard.writeText(currentSelectedStudioPlan.content);
         if (soundFx) soundFx.playSuccess();
-        const copySpan = copyPlanBtn.querySelector('span');
+        const copySpan = studioCopyPlanBtn.querySelector('span');
         const origText = copySpan ? copySpan.textContent : 'Copy';
         if (copySpan) copySpan.textContent = window.I18n ? window.I18n.t('plans.copied') : 'Copied!';
         setTimeout(() => {
@@ -2185,88 +2376,81 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Delete Plan
-  if (deletePlanBtn) {
-    deletePlanBtn.addEventListener('click', async () => {
-      if (!currentSelectedPlan) return;
-      const title = currentSelectedPlan.title || currentSelectedPlan.id;
+  if (studioDeletePlanBtn) {
+    studioDeletePlanBtn.addEventListener('click', async () => {
+      if (!currentSelectedStudioPlan) return;
+      const title = currentSelectedStudioPlan.title || currentSelectedStudioPlan.id;
       const confirmMsg = window.I18n
         ? window.I18n.t('plans.delete_confirm', { title })
         : `Are you sure you want to delete plan "${title}"?`;
 
       if (!confirm(confirmMsg)) return;
 
-      deletePlanBtn.disabled = true;
+      studioDeletePlanBtn.disabled = true;
       if (soundFx) soundFx.playClick();
 
       try {
-        const res = await fetch(`/api/plans/${currentSelectedPlan.id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/plans/${currentSelectedStudioPlan.id}`, { method: 'DELETE' });
         const resJson = await res.json();
         if (res.ok && resJson.success) {
           if (soundFx) soundFx.playSuccess();
-          currentSelectedPlan = null;
-          if (planViewerHeader) planViewerHeader.style.display = 'none';
-          if (planViewerContent) {
-            planViewerContent.innerHTML = `
-              <div style="text-align: center; padding: 60px 20px; color: #64748B;">
-                <i data-lucide="compass" class="lucide-lg" style="margin-bottom: 8px; opacity: 0.5;"></i>
-                <p style="font-weight: 700; font-size: 0.9rem;">${window.I18n ? window.I18n.t('plans.select_hint') : 'Select a plan on the left to read architecture details'}</p>
+          currentSelectedStudioPlan = null;
+          if (studioViewerHeader) studioViewerHeader.style.display = 'none';
+          if (studioViewerContent) {
+            studioViewerContent.innerHTML = `
+              <div style="text-align: center; padding: 120px 20px; color: #64748B;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: #EDE9FE; color: #8B5CF6; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; box-shadow: 3px 3px 0px var(--shadow-color);">
+                  <i data-lucide="compass" class="lucide-lg"></i>
+                </div>
+                <h4 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;">${window.I18n ? window.I18n.t('studio.empty_title') : 'Select a Blueprint to Read'}</h4>
+                <p style="font-size: 0.85rem; max-width: 480px; margin: 0 auto; color: #64748B;">${window.I18n ? window.I18n.t('studio.empty_hint') : 'Select an architectural blueprint on the left or click "+ Draft Architecture Plan" to create one with HABIBIE.'}</p>
               </div>
             `;
             if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
           }
-          await fetchPlans(false);
+          await fetchStudioPlans(false);
         } else {
           alert(`Failed: ${resJson.error || resJson.detail || 'Unknown error'}`);
         }
       } catch (err) {
         alert(`Error: ${err.message}`);
       } finally {
-        deletePlanBtn.disabled = false;
+        studioDeletePlanBtn.disabled = false;
       }
     });
   }
 
-  // Modal Open/Close handlers
-  function openPlansModal() {
-    if (!plansModal) return;
-    if (soundFx) soundFx.playClick();
-    plansModal.classList.add('active');
-    fetchPlans(true);
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-      window.lucide.createIcons();
-    }
+  // Search & Filter listeners
+  if (studioSearchInput) {
+    studioSearchInput.addEventListener('input', (e) => {
+      studioSearchQuery = e.target.value.trim();
+      renderStudioPlansList();
+    });
   }
 
-  function closePlansModal() {
-    if (!plansModal) return;
-    plansModal.classList.remove('active');
-    if (newPlanFormContainer) newPlanFormContainer.style.display = 'none';
-  }
-
-  if (openPlansBtn) {
-    openPlansBtn.addEventListener('click', openPlansModal);
-  }
-
-  if (kanbanPlansBtn) {
-    kanbanPlansBtn.addEventListener('click', openPlansModal);
-  }
-
-  if (closePlansModalBtn) {
-    closePlansModalBtn.addEventListener('click', closePlansModal);
-  }
-
-  if (refreshPlansBtn) {
-    refreshPlansBtn.addEventListener('click', () => {
+  studioFilterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      studioFilterBtns.forEach(b => {
+        b.classList.remove('neo-btn-primary');
+        b.classList.add('neo-btn-secondary');
+      });
+      btn.classList.add('neo-btn-primary');
+      btn.classList.remove('neo-btn-secondary');
+      currentStudioFilter = btn.getAttribute('data-filter') || 'ALL';
       if (soundFx) soundFx.playClick();
-      fetchPlans(true);
+      renderStudioPlansList();
+    });
+  });
+
+  if (studioRefreshBtn) {
+    studioRefreshBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      fetchStudioPlans(true);
     });
   }
 
-  if (plansModal) {
-    plansModal.addEventListener('click', (e) => {
-      if (e.target === plansModal) closePlansModal();
-    });
-  }
+  // Initial Fetch for Plans badge count
+  fetchStudioPlans(false);
 
   // Mulai koneksi real-time
   connectSSE();

@@ -459,12 +459,76 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 .topbar-container {
   max-width: 1400px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
-  gap: clamp(12px, 2vw, 24px);
+  justify-content: space-between;
+  gap: clamp(10px, 1.4vw, 20px);
   width: 100%;
   box-sizing: border-box;
+}
+
+/* 2. Workspace Navigation Switcher Tabs */
+.topbar-nav-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-main);
+  border: 2px solid var(--border-color);
+  box-shadow: 2px 2px 0px var(--shadow-color);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.nav-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background: transparent;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.nav-tab-btn:hover {
+  color: var(--text-color);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body.dark-mode .nav-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-tab-btn.active {
+  background: var(--bg-card) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 2px 2px 0px var(--shadow-color);
+}
+
+body.dark-mode .nav-tab-btn.active {
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+}
+
+.nav-tab-btn .tab-icon-plans {
+  color: #8B5CF6;
+}
+
+.nav-count-badge {
+  background: #8B5CF6;
+  color: #FFFFFF;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 2px;
 }
 
 /* 1. Brand Section (Kiri) */
@@ -667,6 +731,121 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   font-weight: 700;
 }
 
+/* Dropdown Menu (Ops Hub) */
+.dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.btn-ops {
+  gap: 5px;
+}
+
+.btn-ops .chevron-icon {
+  transition: transform 0.15s ease;
+}
+
+.btn-ops[aria-expanded="true"] .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.neo-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  border-radius: 8px;
+  min-width: 250px;
+  padding: 6px;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.12s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-main);
+  border-color: var(--border-color);
+  transform: translate(1px, 1px);
+}
+
+.dropdown-item .item-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-item .item-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+.dropdown-item .item-desc {
+  font-size: 0.7rem;
+  color: #64748B;
+  margin-top: 1px;
+}
+
+/* Quick Preferences Pod (Segmented Pill) */
+.segmented-pod {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-radius: 6px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.pod-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 11px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+  min-width: 34px;
+  box-sizing: border-box;
+}
+
+.pod-btn:last-child {
+  border-right: none;
+}
+
+.pod-btn:hover {
+  background: var(--bg-main);
+}
+
+.pod-btn:active {
+  background: #E2E8F0;
+}
+
+body.dark-mode .pod-btn:active {
+  background: #334155;
+}
+
 .btn-label-mobile {
   display: none;
 }
@@ -778,7 +957,24 @@ body.dark-mode ::-webkit-scrollbar-thumb {
     display: inline;
   }
 
-  /* Baris 2 Full-Width: Telemetry Hub Strip */
+  /* Baris 2 Full-Width: Workspace Navigation Switcher */
+  .topbar-nav-tabs {
+    grid-column: 1 / -1;
+    order: 3;
+    width: 100%;
+    display: flex;
+    justify-content: stretch;
+    box-sizing: border-box;
+  }
+
+  .nav-tab-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+  }
+
+  /* Baris 3 Full-Width: Telemetry Hub Strip */
   .desk-txt {
     display: none !important;
   }
@@ -789,7 +985,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 
   .topbar-telemetry {
     grid-column: 1 / -1;
-    order: 3;
+    order: 4;
     width: 100%;
     display: flex;
     justify-content: stretch;
@@ -1462,5 +1658,61 @@ body.dark-mode .plan-markdown-body code {
     border-right: none !important;
     border-bottom: 2px solid var(--border-color) !important;
     padding-bottom: 10px !important;
+  }
+}
+
+/* ==========================================================
+   DEDICATED PLANS STUDIO WORKSPACE (HABIBIE BLUEPRINTS)
+   ========================================================== */
+.studio-header-bar {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-radius: 8px;
+}
+
+.studio-sidebar {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-radius: 8px;
+}
+
+.studio-reader-pane {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-radius: 8px;
+}
+
+.studio-markdown-scroll::-webkit-scrollbar,
+#studioPlansListContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.studio-markdown-scroll::-webkit-scrollbar-thumb,
+#studioPlansListContainer::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+body.dark-mode .studio-markdown-scroll::-webkit-scrollbar-thumb,
+body.dark-mode #studioPlansListContainer::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+@media screen and (max-width: 900px) {
+  .studio-workspace-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .studio-sidebar {
+    height: auto !important;
+    position: static !important;
+    max-height: 380px !important;
+  }
+  .studio-reader-pane {
+    height: auto !important;
+    position: static !important;
+    min-height: 500px !important;
   }
 }

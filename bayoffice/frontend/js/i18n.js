@@ -27,6 +27,12 @@
         ram: 'RAM:',
         cpu: 'CPU:'
       },
+      nav: {
+        workspace: 'Live Office & Kanban',
+        workspace_short: 'Office & Kanban',
+        plans_studio: 'Plans Studio (HABIBIE)',
+        plans_studio_short: 'Plans Studio'
+      },
       actions: {
         theme_dark: 'Switch to Dark Mode',
         theme_light: 'Switch to Light Mode',
@@ -34,6 +40,11 @@
         audio_toggle: 'Toggle 8-Bit Audio Effects',
         audio_mute: 'Mute 8-Bit Audio',
         audio_unmute: 'Unmute 8-Bit Audio',
+        ops_hub: 'Ops Hub',
+        ops_hub_title: 'Operations & Agent Tools',
+        plans_desc: 'HABIBIE blueprints & roadmaps',
+        schedules_desc: 'Autonomous cron routines',
+        logs_desc: 'Live agent console streams',
         logs: 'Logs',
         logs_title: 'Live Agent Terminal Logs',
         schedules: 'Schedules',
@@ -62,7 +73,22 @@
         state_sleep: 'SLEEP',
         state_working: 'WORKING',
         state_reviewing: 'REVIEWING',
-        default_bubble: 'Ready for duty.'
+        default_bubble: 'Ready for duty.',
+        role_habibie: 'Chief Architect (On-Demand)',
+        habibie_bubble: 'Precision technical calculations before the first line of code is written.',
+        open_studio: 'Open Plans Studio'
+      },
+      studio: {
+        title: 'Implementation Plans Studio',
+        subtitle: 'Technical architecture blueprints drafted by HABIBIE',
+        new_plan_btn: '+ Draft Architecture Plan',
+        search_placeholder: 'Search blueprints, concepts, or IDs...',
+        filter_all: 'All Projects',
+        empty_title: 'Select a Blueprint to Read',
+        empty_hint: 'Select an architectural blueprint on the left or click "+ Draft Architecture Plan" to create one with HABIBIE.',
+        no_plans: 'No implementation plans found.',
+        author_badge: 'HABIBIE • CHIEF ARCHITECT',
+        back_to_office: 'Back to Office & Kanban'
       },
       kanban: {
         title: 'Task Kanban Board',
@@ -292,6 +318,12 @@
         ram: 'RAM:',
         cpu: 'CPU:'
       },
+      nav: {
+        workspace: 'Kantor Live & Kanban',
+        workspace_short: 'Kantor & Kanban',
+        plans_studio: 'Studio Rencana (HABIBIE)',
+        plans_studio_short: 'Studio Rencana'
+      },
       actions: {
         theme_dark: 'Beralih ke Mode Gelap',
         theme_light: 'Beralih ke Mode Terang',
@@ -299,6 +331,11 @@
         audio_toggle: 'Toggle Efek Suara 8-Bit',
         audio_mute: 'Bisukan Suara 8-Bit',
         audio_unmute: 'Nyalakan Suara 8-Bit',
+        ops_hub: 'Pusat Operasi',
+        ops_hub_title: 'Peralatan & Operasi Agen',
+        plans_desc: 'Blueprint arsitektur & peta jalan',
+        schedules_desc: 'Rutinitas otomasi cron',
+        logs_desc: 'Pantau live log terminal agen',
         logs: 'Logs',
         logs_title: 'Terminal Log Agen Real-Time',
         schedules: 'Jadwal',
@@ -327,7 +364,22 @@
         state_sleep: 'SLEEP',
         state_working: 'WORKING',
         state_reviewing: 'REVIEWING',
-        default_bubble: 'Siap bertugas.'
+        default_bubble: 'Siap bertugas.',
+        role_habibie: 'Kepala Arsitek (On-Demand)',
+        habibie_bubble: 'Kalkulasi teknis matang sebelum baris kode pertama ditulis.',
+        open_studio: 'Buka Studio Rencana'
+      },
+      studio: {
+        title: 'Studio Rencana Implementasi',
+        subtitle: 'Blueprint arsitektur teknis yang dirancang oleh HABIBIE',
+        new_plan_btn: '+ Rancang Blueprint Baru',
+        search_placeholder: 'Cari blueprint, konsep, atau ID...',
+        filter_all: 'Semua Proyek',
+        empty_title: 'Pilih Blueprint untuk Dibaca',
+        empty_hint: 'Pilih salah satu dokumen blueprint di sebelah kiri atau klik "+ Rancang Blueprint Baru" untuk menyusun arsitektur bersama HABIBIE.',
+        no_plans: 'Belum ada dokumen rencana implementasi.',
+        author_badge: 'HABIBIE • KEPALA ARSITEK',
+        back_to_office: 'Kembali ke Kantor & Kanban'
       },
       kanban: {
         title: 'Papan Kanban Tugas',
