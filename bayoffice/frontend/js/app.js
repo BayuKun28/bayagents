@@ -220,7 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const studioSubmitPlanBtn = document.getElementById('studioSubmitPlanBtn');
   const studioSubmitPlanBtnText = document.getElementById('studioSubmitPlanBtnText');
   const studioSearchInput = document.getElementById('studioSearchInput');
-  const studioFilterBtns = document.querySelectorAll('.studio-filter-btn');
+  const studioProjectSelect = document.getElementById('studioProjectSelect');
+  const studioPeriodSelect = document.getElementById('studioPeriodSelect');
   const studioRefreshBtn = document.getElementById('studioRefreshBtn');
   const studioStatBadge = document.getElementById('studioStatBadge');
   const studioPlansListContainer = document.getElementById('studioPlansListContainer');
@@ -243,7 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let loadedStudioPlans = [];
   let currentSelectedStudioPlan = null;
-  let currentStudioFilter = 'ALL';
+  let currentStudioProject = 'ALL';
+  let currentStudioPeriod = 'ALL';
   let studioSearchQuery = '';
 
   // Render icons initially
@@ -517,6 +519,28 @@ document.addEventListener('DOMContentLoaded', () => {
         modalHtml += `<option value="__custom__">${customProjectText}</option>`;
         taskProjectSelect.innerHTML = modalHtml;
         if (cur && cur !== '__custom__') taskProjectSelect.value = cur;
+      }
+
+      // 3. Update Studio Project Filter Select
+      if (studioProjectSelect) {
+        const cur = studioProjectSelect.value;
+        let optHtml = `<option value="ALL">${allProjectsText}</option>`;
+        for (const [pId, pData] of Object.entries(projects)) {
+          optHtml += `<option value="${pId}">${pData.name || pId}</option>`;
+        }
+        studioProjectSelect.innerHTML = optHtml;
+        studioProjectSelect.value = cur || 'ALL';
+      }
+
+      // 4. Update Studio Form Project Select
+      if (studioPlanProjectSelect) {
+        const cur = studioPlanProjectSelect.value;
+        let formOptHtml = '';
+        for (const [pId, pData] of Object.entries(projects)) {
+          formOptHtml += `<option value="${pId}">${pData.name || pId}</option>`;
+        }
+        studioPlanProjectSelect.innerHTML = formOptHtml;
+        if (cur) studioPlanProjectSelect.value = cur;
       }
     } catch (e) {
       console.warn('Gagal memuat registry proyek:', e);
@@ -2153,9 +2177,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const total = loadedStudioPlans.length;
         const dispatched = loadedStudioPlans.filter(p => p.status === 'dispatched').length;
         const drafts = total - dispatched;
-        studioStatBadge.textContent = window.I18n
-          ? `${window.I18n.t('plans.total_plans')}: ${total} • ${window.I18n.t('plans.draft_plans')}: ${drafts} • ${window.I18n.t('plans.dispatched_plans')}: ${dispatched}`
-          : `Total: ${total} • Drafts: ${drafts} • Dispatched: ${dispatched}`;
+        const isId = (window.I18n && window.I18n.currentLocale === 'id');
+        studioStatBadge.textContent = isId
+          ? `Total Rencana: ${total} • Draf: ${drafts} • Dikirim ke Kanban: ${dispatched}`
+          : `Total Plans: ${total} • Drafts: ${drafts} • Dispatched to Kanban: ${dispatched}`;
       }
 
       renderStudioPlansList();
@@ -2196,13 +2221,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function isPlanInPeriod(plan, period) {
+    if (!period || period === 'ALL') return true;
+    if (!plan || !plan.created_at) return true;
+    const planDate = new Date(plan.created_at);
+    if (isNaN(planDate.getTime())) return true;
+    const now = new Date();
+
+    if (period === 'THIS_MONTH') {
+      return planDate.getFullYear() === now.getFullYear() && planDate.getMonth() === now.getMonth();
+    }
+    if (period === 'TODAY') {
+      return planDate.getFullYear() === now.getFullYear() && planDate.getMonth() === now.getMonth() && planDate.getDate() === now.getDate();
+    }
+    if (period === 'THIS_WEEK') {
+      const currentDay = now.getDay();
+      const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+      return planDate >= startOfWeek && planDate <= endOfWeek;
+    }
+    if (period === 'LAST_MONTH') {
+      const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      return planDate.getFullYear() === lastMonthYear && planDate.getMonth() === lastMonth;
+    }
+    return true;
+  }
+
   function renderStudioPlansList() {
     if (!studioPlansListContainer) return;
 
-    // Filter by project and search query
+    // Filter by project, period and search query
     let filtered = loadedStudioPlans.slice();
-    if (currentStudioFilter && currentStudioFilter !== 'ALL') {
-      filtered = filtered.filter(p => (p.project || '').toLowerCase() === currentStudioFilter.toLowerCase());
+    if (currentStudioProject && currentStudioProject !== 'ALL') {
+      filtered = filtered.filter(p => (p.project || '').toLowerCase() === currentStudioProject.toLowerCase());
+    }
+    if (currentStudioPeriod && currentStudioPeriod !== 'ALL') {
+      filtered = filtered.filter(p => isPlanInPeriod(p, currentStudioPeriod));
     }
     if (studioSearchQuery) {
       const q = studioSearchQuery.toLowerCase();
@@ -2239,14 +2295,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
             <span style="font-weight:800; font-size:0.75rem; color:#8B5CF6;">${escapeHtml(p.id)}</span>
             <div style="display:flex; align-items:center; gap:4px;">
-              <span class="neo-badge" style="background:var(--bg-main); font-size:0.65rem;">${escapeHtml(p.project || 'general')}</span>
+              <span class="neo-badge plan-badge-project" style="font-size:0.65rem;">${escapeHtml(p.project || 'general')}</span>
               <span class="neo-badge ${statusClass}" style="font-size:0.65rem;">${statusText}</span>
             </div>
           </div>
-          <div style="font-weight:700; font-size:0.86rem; color:var(--text-color); line-height:1.25; margin-top:3px;">
+          <div class="plan-title-text" style="font-weight:700; font-size:0.86rem; line-height:1.25; margin-top:3px;">
             ${escapeHtml(p.title || p.id)}
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:#64748B; margin-top:4px;">
+          <div class="plan-meta-text" style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:#64748B; margin-top:4px;">
             <span>${escapeHtml(p.author || 'HABIBIE')}</span>
             <span>${formatTime(p.created_at)}</span>
           </div>
@@ -2557,19 +2613,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  studioFilterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      studioFilterBtns.forEach(b => {
-        b.classList.remove('neo-btn-primary');
-        b.classList.add('neo-btn-secondary');
-      });
-      btn.classList.add('neo-btn-primary');
-      btn.classList.remove('neo-btn-secondary');
-      currentStudioFilter = btn.getAttribute('data-filter') || 'ALL';
+  if (studioProjectSelect) {
+    studioProjectSelect.addEventListener('change', (e) => {
+      currentStudioProject = e.target.value;
       if (soundFx) soundFx.playClick();
       renderStudioPlansList();
     });
-  });
+  }
+
+  if (studioPeriodSelect) {
+    studioPeriodSelect.addEventListener('change', (e) => {
+      currentStudioPeriod = e.target.value;
+      if (soundFx) soundFx.playClick();
+      renderStudioPlansList();
+    });
+  }
 
   if (studioRefreshBtn) {
     studioRefreshBtn.addEventListener('click', () => {

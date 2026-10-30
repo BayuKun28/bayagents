@@ -1783,14 +1783,60 @@ body.dark-mode #statNextRunSched {
   box-shadow: 1px 1px 0px var(--shadow-color);
 }
 
-.plan-card.active {
-  background: var(--yellow) !important;
-  border-color: #1A1A1A;
+.plan-badge-project {
+  background: var(--bg-main);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  font-weight: 700;
+  transition: all 0.15s ease;
 }
 
+body.dark-mode .plan-badge-project {
+  background: #1E293B !important;
+  color: #CBD5E1 !important;
+  border-color: #475569 !important;
+}
+
+.plan-card.active {
+  background: var(--yellow) !important;
+  border-color: #1A1A1A !important;
+  color: #1A1A1A !important;
+}
+
+.plan-card.active .plan-badge-project {
+  background: #FFFFFF !important;
+  color: #1A1A1A !important;
+  border-color: #1A1A1A !important;
+}
+
+.plan-card.active .plan-title-text {
+  color: #1A1A1A !important;
+}
+
+.plan-card.active .plan-meta-text {
+  color: #475569 !important;
+}
+
+/* Plan Card Active in Dark Mode: High-contrast Dark Slate with Purple Accent & Bright Cyan Project Badge */
 body.dark-mode .plan-card.active {
-  background: #38BDF8 !important;
-  color: #0F172A !important;
+  background: #1E293B !important;
+  border-color: #8B5CF6 !important;
+  box-shadow: 2px 2px 0px #8B5CF6 !important;
+  color: #F8FAFC !important;
+}
+
+body.dark-mode .plan-card.active .plan-badge-project {
+  background: #0F172A !important;
+  color: #38BDF8 !important;
+  border-color: #38BDF8 !important;
+}
+
+body.dark-mode .plan-card.active .plan-title-text {
+  color: #F8FAFC !important;
+}
+
+body.dark-mode .plan-card.active .plan-meta-text {
+  color: #94A3B8 !important;
 }
 
 .plan-markdown-body h1 {

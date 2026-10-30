@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261030_06">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261030_07">
 </head>
 <body style="padding-bottom: 60px;">
 
@@ -34,13 +34,6 @@
 
         <!-- 2. Action Controls (Kanan) -->
         <div class="topbar-actions">
-          <!-- Hero Primary CTA: New Task -->
-          <button id="openTaskBtn" class="neo-btn neo-btn-primary topbar-btn btn-task" data-i18n-title="actions.new_task" title="New Task">
-            <i data-lucide="plus-circle" class="lucide-sm"></i>
-            <span class="btn-label-desktop" data-i18n="actions.new_task">New Task</span>
-            <span class="btn-label-mobile" data-i18n="actions.new_task_short">Task</span>
-          </button>
-
           <!-- Ops Hub Dropdown (Scheduled Tasks & Terminal Logs) -->
           <div class="dropdown-wrapper" id="opsDropdownWrapper">
             <button id="opsDropdownBtn" class="neo-btn neo-btn-secondary topbar-btn btn-ops" aria-expanded="false" data-i18n-title="actions.ops_hub_title" title="Operations & Agent Tools">
@@ -268,15 +261,6 @@
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <div style="position: relative; display: flex; align-items: center;">
-            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Search tasks..." data-i18n-placeholder="kanban.search_placeholder" style="padding: 6px 12px 6px 30px; font-size: 0.82rem; font-family: inherit; width: 170px; outline: none;">
-            <i data-lucide="search" class="lucide-xs" style="position: absolute; left: 10px; color: #94A3B8;"></i>
-          </div>
-
-          <button id="kanbanPlansBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.plans_title" title="Architecture & Implementation Plans">
-            <i data-lucide="compass" class="lucide-sm" style="color: #8B5CF6;"></i>
-            <span data-i18n="kanban.plans_btn">Plans</span>
-          </button>
           <button id="kanbanSchedulesBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.schedules_title" title="Manage Scheduled Tasks & Automation">
             <i data-lucide="clock" class="lucide-sm"></i>
             <span data-i18n="kanban.schedules_btn">Schedules</span>
@@ -293,6 +277,12 @@
             <i data-lucide="file-json" class="lucide-sm"></i>
             <span>JSON</span>
           </button>
+
+          <!-- Search Input (Pojok Paling Kanan) -->
+          <div style="position: relative; display: flex; align-items: center; margin-left: 6px;">
+            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Search tasks..." data-i18n-placeholder="kanban.search_placeholder" style="padding: 6px 12px 6px 30px; font-size: 0.82rem; font-family: inherit; width: 180px; outline: none;">
+            <i data-lucide="search" class="lucide-xs" style="position: absolute; left: 10px; color: #94A3B8;"></i>
+          </div>
         </div>
       </div>
 
@@ -324,7 +314,17 @@
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- Live Plans Statistics (Total Plans, Drafts, Dispatched to Kanban) -->
+        <span id="studioStatBadge" class="neo-badge" style="background: var(--bg-main); font-size: 0.72rem; font-weight: 800; padding: 5px 10px;">-</span>
+
+        <!-- Tombol Buat Plan Baru (+ Draft Architecture Plan) -->
+        <button id="studioToggleNewPlanBtn" class="neo-btn neo-btn-primary" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 800; background: #8B5CF6; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <i data-lucide="sparkles" class="lucide-sm"></i>
+          <span id="studioToggleNewPlanText" data-i18n="studio.new_plan_btn">+ Draft Architecture Plan</span>
+        </button>
+
+        <!-- Tombol Kembali ke Live Office -->
         <button id="studioBackToOfficeBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="arrow-left" class="lucide-sm"></i>
           <span data-i18n="studio.back_to_office">Back to Office</span>
@@ -338,29 +338,40 @@
       <!-- Kolom Kiri: Sidebar Blueprints List & Filter -->
       <div class="neo-box studio-sidebar" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; height: calc(100vh - 210px); min-height: 580px; position: sticky; top: 90px;">
         
-        <!-- Tombol Buat Plan Baru -->
-        <button id="studioToggleNewPlanBtn" class="neo-btn neo-btn-primary" style="padding: 10px 14px; font-size: 0.85rem; font-weight: 800; background: #8B5CF6; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
-          <i data-lucide="sparkles" class="lucide-sm"></i>
-          <span id="studioToggleNewPlanText" data-i18n="studio.new_plan_btn">+ Draft Architecture Plan</span>
-        </button>
-
-        <!-- Search & Project Filter -->
+        <!-- Search & Filter Controls -->
         <div style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Search Input -->
           <div style="position: relative;">
-            <input id="studioSearchInput" type="text" class="neo-box-sm" placeholder="Search blueprints..." data-i18n-placeholder="studio.search_placeholder" style="width: 100%; padding: 7px 10px 7px 32px; font-size: 0.8rem; outline: none;">
+            <input id="studioSearchInput" type="text" class="neo-box-sm" placeholder="Search blueprints..." data-i18n-placeholder="studio.search_placeholder" style="width: 100%; padding: 7px 10px 7px 32px; font-size: 0.8rem; outline: none; box-sizing: border-box;">
             <i data-lucide="search" class="lucide-xs" style="position: absolute; left: 10px; top: 10px; color: #94A3B8;"></i>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
-            <div style="display: flex; gap: 4px;">
-              <button class="neo-btn studio-filter-btn neo-btn-primary" data-filter="ALL" style="padding: 3px 8px; font-size: 0.7rem;">All</button>
-              <button class="neo-btn studio-filter-btn neo-btn-secondary" data-filter="infobay" style="padding: 3px 8px; font-size: 0.7rem;">Infobay</button>
-              <button class="neo-btn studio-filter-btn neo-btn-secondary" data-filter="bayoffice" style="padding: 3px 8px; font-size: 0.7rem;">BayOffice</button>
+
+          <!-- Project & Period Filters with Refresh Button -->
+          <div style="display: flex; gap: 6px; align-items: flex-end;">
+            <div style="flex: 1; min-width: 0;">
+              <label for="studioProjectSelect" style="font-size: 0.68rem; font-weight: 800; color: #64748B; display: block; margin-bottom: 2px;">PROJECT:</label>
+              <select id="studioProjectSelect" class="neo-box-sm" style="width: 100%; padding: 5px 6px; font-size: 0.74rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer; box-sizing: border-box;">
+                <option value="ALL" data-i18n="kanban.all_projects">All Projects</option>
+                <option value="infobay">infobay</option>
+                <option value="bayoffice">bayoffice</option>
+              </select>
             </div>
-            <button id="studioRefreshBtn" class="neo-btn neo-btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" title="Refresh Blueprints">
+
+            <div style="flex: 1; min-width: 0;">
+              <label for="studioPeriodSelect" style="font-size: 0.68rem; font-weight: 800; color: #64748B; display: block; margin-bottom: 2px;">PERIOD:</label>
+              <select id="studioPeriodSelect" class="neo-box-sm" style="width: 100%; padding: 5px 6px; font-size: 0.74rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer; box-sizing: border-box;">
+                <option value="ALL" selected data-i18n="kanban.period_all">All Time</option>
+                <option value="THIS_MONTH" data-i18n="kanban.period_this_month">This Month</option>
+                <option value="TODAY" data-i18n="kanban.period_today">Today</option>
+                <option value="THIS_WEEK" data-i18n="kanban.period_this_week">This Week</option>
+                <option value="LAST_MONTH" data-i18n="kanban.period_last_month">Last Month</option>
+              </select>
+            </div>
+
+            <button id="studioRefreshBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 8px; font-size: 0.75rem; height: 31px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" title="Refresh Blueprints">
               <i data-lucide="refresh-cw" class="lucide-xs"></i>
             </button>
           </div>
-          <span id="studioStatBadge" class="neo-badge" style="font-size: 0.68rem; background: var(--bg-main); text-align: center;">-</span>
         </div>
 
         <!-- Plans List Cards Scrollable Area -->
