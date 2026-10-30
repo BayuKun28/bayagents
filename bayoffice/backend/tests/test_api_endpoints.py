@@ -81,6 +81,14 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             list_after = await app.api_get_schedules(user=self.test_user)
             self.assertEqual(len(list_after["schedules"]), 0)
 
+            # 8. GET /api/sync
+            sync_res = await app.api_sync(user=self.test_user)
+            self.assertTrue(sync_res["success"])
+            self.assertIn("kanban", sync_res)
+            self.assertIn("agents", sync_res)
+            self.assertIn("system", sync_res)
+            self.assertIn("schedules", sync_res)
+
         asyncio.run(run_flow())
 
 

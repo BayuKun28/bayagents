@@ -226,6 +226,17 @@ async def api_get_projects(user: str = Depends(require_auth)):
     """Mengambil daftar proyek terdaftar."""
     return service.get_projects_registry()
 
+@app.get("/api/sync")
+async def api_sync(user: str = Depends(require_auth)):
+    """Mengambil snapshot penuh (kanban, agents, system, schedules) untuk sinkronisasi manual."""
+    return {
+        "success": True,
+        "kanban": service.get_kanban_data(),
+        "agents": service.get_agents_status(),
+        "system": service.get_expanded_system_metrics(),
+        "schedules": service.get_schedules_summary()
+    }
+
 @app.post("/api/tasks")
 async def api_create_task(data: TaskCreateRequest, user: str = Depends(require_auth)):
     """Menerbitkan tugas baru ke kanban & tmux atau 9Router."""
