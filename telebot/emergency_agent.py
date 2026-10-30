@@ -21,7 +21,7 @@ DATA_DIR = Path(os.getenv("DATA_DIR", str(BAYAGENTS_DIR / "data")))
 
 ROUTER9_BASE_URL = os.environ.get("ROUTER9_BASE_URL", "http://192.168.100.146:20128/v1")
 ROUTER9_MODEL = os.environ.get("ROUTER9_MODEL", "gemini-free-smart")
-ROUTER9_API_KEY = os.environ.get("ROUTER9_API_KEY", "sk-acb6c8a9df3a47ab-ir5af0-4c0da6b8")
+ROUTER9_API_KEY = os.environ.get("ROUTER9_API_KEY", "")
 KANBAN_FILE = str(Path(os.getenv("KANBAN_PATH", str(DATA_DIR / "kanban.json"))))
 
 AGENT_PROMPTS = {

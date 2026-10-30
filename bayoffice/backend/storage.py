@@ -9,6 +9,7 @@ import json
 import fcntl
 import time
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional, Dict, Union
 
@@ -67,3 +68,28 @@ def atomic_write_json(file_path: Union[str, Path], data: Any, indent: int = 2) -
             except Exception:
                 pass
         raise e
+
+
+@contextmanager
+def locked_json_transaction(file_path: Union[str, Path], default: Any = _DEFAULT_SENTINEL):
+    """
+    Konteks manajer transaksi read-modify-write (RMW) terisolasi.
+    Menggunakan file kunci (.lock) dengan eksklusif lock (fcntl.LOCK_EX)
+    untuk mencegah race condition saat mutasi data simultan antar-proses atau thread.
+    """
+    path = Path(file_path).resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_file = path.with_suffix(f"{path.suffix}.lock")
+
+    with open(lock_file, "a+", encoding="utf-8") as lf:
+        fcntl.flock(lf.fileno(), fcntl.LOCK_EX)
+        try:
+            data = atomic_read_json(path, default=default)
+            yield data
+            atomic_write_json(path, data)
+        finally:
+            try:
+                fcntl.flock(lf.fileno(), fcntl.LOCK_UN)
+            except Exception:
+                pass
+

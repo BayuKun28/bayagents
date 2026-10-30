@@ -5,12 +5,13 @@ import glob
 import csv
 import io
 import subprocess
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
 
-from storage import atomic_read_json, atomic_write_json
+from storage import atomic_read_json, atomic_write_json, locked_json_transaction
 
 CURRENT_DIR = Path(__file__).resolve().parent
 BAYOFFICE_DIR = CURRENT_DIR.parent
@@ -60,20 +61,39 @@ AGENT_PANES = {
     "HABIBIE": "ARCHITECT / STANDALONE"
 }
 
+_kanban_cache = {"mtime": 0.0, "data": {}}
+_kanban_lock = threading.Lock()
+
 def get_kanban_data() -> Dict[str, Any]:
-    """Membaca isi kanban.json dengan aman menggunakan atomic reader."""
+    """Membaca isi kanban.json dengan aman menggunakan atomic reader & stat-first cache."""
+    global _kanban_cache
     if not os.path.exists(KANBAN_PATH):
         return {"tasks": [], "mtime": 0}
     try:
         mtime = os.path.getmtime(KANBAN_PATH)
+        with _kanban_lock:
+            if _kanban_cache["mtime"] == mtime and _kanban_cache["data"]:
+                return dict(_kanban_cache["data"])
+
         data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
         data["mtime"] = mtime
-        return data
+        with _kanban_lock:
+            _kanban_cache["mtime"] = mtime
+            _kanban_cache["data"] = data
+        return dict(data)
     except Exception as e:
         return {"tasks": [], "error": str(e), "mtime": 0}
 
-def get_system_metrics() -> Dict[str, Any]:
-    """Membaca metrik RAM dan CPU tanpa overhead tinggi."""
+_system_metrics_cache = {"ts": 0.0, "data": {}}
+_system_metrics_lock = threading.Lock()
+
+def get_system_metrics(force_refresh: bool = False) -> Dict[str, Any]:
+    """Membaca metrik RAM dan CPU tanpa overhead tinggi (cached TTL 3s)."""
+    now = time.time()
+    with _system_metrics_lock:
+        if not force_refresh and (now - _system_metrics_cache["ts"] < 3.0) and _system_metrics_cache["data"]:
+            return dict(_system_metrics_cache["data"])
+
     metrics = {
         "ram_total": "3.2 GiB",
         "ram_used": "1.0 GiB",
@@ -114,10 +134,14 @@ def get_system_metrics() -> Dict[str, Any]:
 
     # 3. Status Sesi Tmux
     try:
-        res = subprocess.run(["tmux", "has-session", "-t", "agy_agents"], capture_output=True)
+        res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
         metrics["tmux_active"] = (res.returncode == 0)
     except Exception:
         metrics["tmux_active"] = False
+
+    with _system_metrics_lock:
+        _system_metrics_cache["ts"] = now
+        _system_metrics_cache["data"] = metrics
 
     return metrics
 
@@ -230,9 +254,25 @@ def get_projects_registry() -> Dict[str, Any]:
     """Membaca daftar proyek dari projects.json."""
     return atomic_read_json(PROJECTS_PATH, default={"projects": {}})
 
-def get_expanded_system_metrics() -> Dict[str, Any]:
-    """Membaca metrik mendalam (RAM, CPU, Suhu APU, Swap, Disk, Services) tanpa overhead."""
-    metrics = get_system_metrics()
+_expanded_metrics_cache = {"ts": 0.0, "data": {}}
+_expanded_metrics_lock = threading.Lock()
+
+def get_expanded_system_metrics(force_refresh: bool = False) -> Dict[str, Any]:
+    """Membaca metrik mendalam (RAM, CPU, Suhu APU, Swap, Disk, Services) dengan in-memory TTL 10s."""
+    now = time.time()
+    with _expanded_metrics_lock:
+        if not force_refresh and (now - _expanded_metrics_cache["ts"] < 10.0) and _expanded_metrics_cache["data"]:
+            cached = dict(_expanded_metrics_cache["data"])
+            quick = get_system_metrics()
+            cached["load_avg"] = quick["load_avg"]
+            cached["ram_total"] = quick["ram_total"]
+            cached["ram_used"] = quick["ram_used"]
+            cached["ram_available"] = quick["ram_available"]
+            cached["ram_percent"] = quick["ram_percent"]
+            cached["tmux_active"] = quick["tmux_active"]
+            return cached
+
+    metrics = get_system_metrics(force_refresh=force_refresh)
 
     # 1. Swap / ZRAM dari /proc/meminfo
     metrics["swap_total"] = "0 MiB"
@@ -289,16 +329,23 @@ def get_expanded_system_metrics() -> Dict[str, Any]:
     except Exception:
         pass
 
-    # 4. Status Service Vital
-    services = ["bayoffice.service", "nginx.service", "postgresql.service", "cloudflared.service"]
+    # 4. Status Service Vital (Batch single call)
+    service_names = ["bayoffice.service", "nginx.service", "postgresql.service", "cloudflared.service"]
     service_status = {}
-    for s in services:
-        try:
-            r = subprocess.run(["systemctl", "is-active", s], capture_output=True, text=True)
-            service_status[s.replace(".service", "")] = r.stdout.strip()
-        except Exception:
+    try:
+        r = subprocess.run(["systemctl", "is-active", *service_names], capture_output=True, text=True, timeout=2)
+        lines = [l.strip() for l in r.stdout.strip().splitlines()]
+        for idx, s in enumerate(service_names):
+            key = s.replace(".service", "")
+            service_status[key] = lines[idx] if idx < len(lines) else "unknown"
+    except Exception:
+        for s in service_names:
             service_status[s.replace(".service", "")] = "unknown"
     metrics["services"] = service_status
+
+    with _expanded_metrics_lock:
+        _expanded_metrics_cache["ts"] = now
+        _expanded_metrics_cache["data"] = metrics
 
     return metrics
 
@@ -397,30 +444,29 @@ def get_agent_logs(agent_name: str, lines: int = 120) -> Dict[str, Any]:
         return {"success": False, "error": f"Gagal membaca capture pane: {e}"}
 
 def delete_task(task_id: str) -> Dict[str, Any]:
-    """Menghapus tugas dari kanban.json."""
+    """Menghapus tugas dari kanban.json dengan transaksi terkunci."""
     task_id = task_id.strip()
     try:
-        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
-        tasks = k_data.get("tasks", [])
-        found = False
-        new_tasks = []
         deleted_task = None
-        for t in tasks:
-            if isinstance(t, dict) and t.get("id") == task_id:
-                found = True
-                deleted_task = t
-            else:
-                new_tasks.append(t)
-        if not found:
-            return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
-        k_data["tasks"] = new_tasks
-        atomic_write_json(KANBAN_PATH, k_data)
+        with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:
+            tasks = k_data.get("tasks", [])
+            found = False
+            new_tasks = []
+            for t in tasks:
+                if isinstance(t, dict) and t.get("id") == task_id:
+                    found = True
+                    deleted_task = t
+                else:
+                    new_tasks.append(t)
+            if not found:
+                return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
+            k_data["tasks"] = new_tasks
         return {"success": True, "message": f"Tugas {task_id} berhasil dihapus", "task": deleted_task}
     except Exception as e:
         return {"success": False, "error": f"Gagal menghapus tugas: {e}"}
 
 def update_task_status(task_id: str, new_status: str, notes: Optional[str] = None) -> Dict[str, Any]:
-    """Memperbarui status tugas secara manual di kanban.json."""
+    """Memperbarui status tugas secara manual di kanban.json dengan transaksi terkunci."""
     valid_statuses = ["To-Do", "In-Progress", "QA-Review", "Done"]
     normalized_status = None
     for vs in valid_statuses:
@@ -431,42 +477,40 @@ def update_task_status(task_id: str, new_status: str, notes: Optional[str] = Non
         return {"success": False, "error": f"Status tidak valid: {new_status}"}
 
     try:
-        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
-        found = False
         target_t = None
-        for t in k_data.get("tasks", []):
-            if isinstance(t, dict) and t.get("id") == task_id:
-                found = True
-                target_t = t
-                t["status"] = normalized_status
-                if notes:
-                    t["notes"] = notes
-                if normalized_status == "Done" and not t.get("completed_at"):
-                    t["completed_at"] = datetime.now().astimezone().isoformat()
-                break
-        if not found:
-            return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
-        atomic_write_json(KANBAN_PATH, k_data)
+        with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:
+            found = False
+            for t in k_data.get("tasks", []):
+                if isinstance(t, dict) and t.get("id") == task_id:
+                    found = True
+                    t["status"] = normalized_status
+                    if notes:
+                        t["notes"] = notes
+                    if normalized_status == "Done" and not t.get("completed_at"):
+                        t["completed_at"] = datetime.now().astimezone().isoformat()
+                    target_t = dict(t)
+                    break
+            if not found:
+                return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
         return {"success": True, "message": f"Status {task_id} diperbarui menjadi {normalized_status}", "task": target_t}
     except Exception as e:
         return {"success": False, "error": f"Gagal memperbarui status: {e}"}
 
 def retry_task(task_id: str) -> Dict[str, Any]:
-    """Menjalankan ulang (retry) tugas yang ada ke agen terkait."""
+    """Menjalankan ulang (retry) tugas yang ada ke agen terkait dengan transaksi terkunci."""
     try:
-        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
-        found = False
         target_t = None
-        for t in k_data.get("tasks", []):
-            if isinstance(t, dict) and t.get("id") == task_id:
-                found = True
-                target_t = t
-                t["status"] = "In-Progress"
-                t["notes"] = f"Tugas di-retry manual via BayOffice Web UI pada {datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')}."
-                break
-        if not found:
-            return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
-        atomic_write_json(KANBAN_PATH, k_data)
+        with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:
+            found = False
+            for t in k_data.get("tasks", []):
+                if isinstance(t, dict) and t.get("id") == task_id:
+                    found = True
+                    t["status"] = "In-Progress"
+                    t["notes"] = f"Tugas di-retry manual via BayOffice Web UI pada {datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')}."
+                    target_t = dict(t)
+                    break
+            if not found:
+                return {"success": False, "error": f"Tugas {task_id} tidak ditemukan"}
 
         assignee = target_t.get("assignee", "LUHUT")
         pane = AGENT_PANES.get(assignee, f"{TMUX_SESSION_NAME}:0.0")
@@ -579,35 +623,33 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     task_id = f"{task_prefix}-01"
     now_iso = datetime.now().astimezone().isoformat()
     try:
-        k_data = atomic_read_json(KANBAN_PATH, default={"tasks": []})
+        with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:
+            existing_nums = []
+            for t in k_data.get("tasks", []):
+                if isinstance(t, dict):
+                    tid = str(t.get("id", ""))
+                    if tid.startswith(task_prefix + "-"):
+                        part = tid.replace(task_prefix + "-", "")
+                        if part.isdigit():
+                            existing_nums.append(int(part))
+            next_num = max(existing_nums, default=0) + 1
+            task_id = f"{task_prefix}-{next_num:02d}"
 
-        existing_nums = []
-        for t in k_data.get("tasks", []):
-            if isinstance(t, dict):
-                tid = str(t.get("id", ""))
-                if tid.startswith(task_prefix + "-"):
-                    part = tid.replace(task_prefix + "-", "")
-                    if part.isdigit():
-                        existing_nums.append(int(part))
-        next_num = max(existing_nums, default=0) + 1
-        task_id = f"{task_prefix}-{next_num:02d}"
-
-        new_task_entry = {
-            "id": task_id,
-            "project": project_id,
-            "assignee": target_agent,
-            "title": (instruction[:80] + "...") if len(instruction) > 80 else instruction,
-            "skills_required": skills,
-            "description": instruction,
-            "status": "To-Do",
-            "target_dir": target_dir,
-            "engine": engine,
-            "model": model if engine == "agy" else None,
-            "created_at": now_iso,
-            "notes": f"Tugas baru via BayOffice Web UI [Proyek: {project_id} | {category}]. Target pelaksana: {target_agent}."
-        }
-        k_data.setdefault("tasks", []).append(new_task_entry)
-        atomic_write_json(KANBAN_PATH, k_data)
+            new_task_entry = {
+                "id": task_id,
+                "project": project_id,
+                "assignee": target_agent,
+                "title": (instruction[:80] + "...") if len(instruction) > 80 else instruction,
+                "skills_required": skills,
+                "description": instruction,
+                "status": "To-Do",
+                "target_dir": target_dir,
+                "engine": engine,
+                "model": model if engine == "agy" else None,
+                "created_at": now_iso,
+                "notes": f"Tugas baru via BayOffice Web UI [Proyek: {project_id} | {category}]. Target pelaksana: {target_agent}."
+            }
+            k_data.setdefault("tasks", []).append(new_task_entry)
     except Exception as e:
         return {"success": False, "error": f"Gagal menulis ke kanban.json: {e}"}
 

@@ -187,6 +187,42 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
 
         asyncio.run(run_test())
 
+    def test_login_rate_limiting_and_auth(self):
+        import asyncio
+        from unittest.mock import MagicMock
+        from fastapi import Response
+
+        async def run_auth_test():
+            # Mock request with client ip
+            mock_req = MagicMock()
+            mock_req.client.host = "192.168.100.99"
+            mock_req.headers = {"x-forwarded-proto": "https"}
+            mock_resp = Response()
+
+            # 1. Login dengan password salah 5 kali
+            bad_creds = app.LoginRequest(username="bay", password="wrong_password_test")
+            for _ in range(5):
+                res = await app.api_login(bad_creds, request=mock_req, response=mock_resp)
+                self.assertEqual(res.status_code, 401)
+
+            # 2. Percobaan ke-6 harus kena rate limit 429
+            rate_limit_res = await app.api_login(bad_creds, request=mock_req, response=mock_resp)
+            self.assertEqual(rate_limit_res.status_code, 429)
+
+            # 3. IP lain tidak terpengaruh
+            other_req = MagicMock()
+            other_req.client.host = "192.168.100.88"
+            other_req.headers = {"x-forwarded-proto": "https"}
+            other_res = await app.api_login(bad_creds, request=other_req, response=mock_resp)
+            self.assertEqual(other_res.status_code, 401)
+
+            # 4. Login sukses dengan password benar
+            good_creds = app.LoginRequest(username=app.ADMIN_USERNAME, password=app.ADMIN_PASSWORD)
+            success_res = await app.api_login(good_creds, request=other_req, response=mock_resp)
+            self.assertTrue(success_res.get("success"))
+
+        asyncio.run(run_auth_test())
+
 
 if __name__ == "__main__":
     unittest.main()

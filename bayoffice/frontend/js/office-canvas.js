@@ -102,8 +102,32 @@ class OfficeCanvas {
 
     this.hoveredAgent = null;
     this.onAgentClick = null;
+    this.rafId = null;
+    this.isPaused = false;
+    this.isViewActive = true;
+
     this.setupHitDetection();
+    this.setupVisibilityHandler();
     this.startLoop();
+  }
+
+  setupVisibilityHandler() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.stopLoop();
+      } else if (this.isViewActive) {
+        this.startLoop();
+      }
+    });
+  }
+
+  setViewActive(active) {
+    this.isViewActive = !!active;
+    if (this.isViewActive && !document.hidden) {
+      this.startLoop();
+    } else {
+      this.stopLoop();
+    }
   }
 
   setupHitDetection() {
@@ -286,14 +310,28 @@ class OfficeCanvas {
   }
 
   startLoop() {
+    if (this.rafId) return;
+    this.isPaused = false;
     const loop = () => {
+      if (this.isPaused) {
+        this.rafId = null;
+        return;
+      }
       this.animationFrame++;
       this.updateDynamicTargets();
       this.updatePositions();
       this.render();
-      requestAnimationFrame(loop);
+      this.rafId = requestAnimationFrame(loop);
     };
-    requestAnimationFrame(loop);
+    this.rafId = requestAnimationFrame(loop);
+  }
+
+  stopLoop() {
+    this.isPaused = true;
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   updatePositions() {

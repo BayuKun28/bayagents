@@ -1374,12 +1374,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (plansStudioView) plansStudioView.style.display = 'none';
 
     if (viewName === 'kanban') {
+      if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(false);
       if (navKanbanBtn) navKanbanBtn.classList.add('active');
       if (kanbanBoardView) kanbanBoardView.style.display = 'flex';
       window.location.hash = 'kanban';
       if (kanban) kanban.render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (viewName === 'plans') {
+      if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(false);
       if (navPlansBtn) navPlansBtn.classList.add('active');
       if (plansStudioView) plansStudioView.style.display = 'block';
       window.location.hash = 'plans';
@@ -1389,6 +1391,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // Default: 'office'
+      if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(true);
       if (navOfficeBtn) navOfficeBtn.classList.add('active');
       if (mainDashboardView) mainDashboardView.style.display = 'flex';
       if (window.location.hash === '#plans' || window.location.hash === '#kanban') {

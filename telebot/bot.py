@@ -1,5 +1,57 @@
 import os
 import sys
+
+# FAST CLI NOTIFIER SHORTCUT:
+# Jika dipanggil via CLI untuk kirim notifikasi singkat (misal: python3 bot.py "[LUHUT]: ..."),
+# langsung kirim via stdlib urllib tanpa memuat library bot berat (menghemat 40MB RAM & <50ms vs 1800ms).
+if len(sys.argv) > 1 and not any(arg in sys.argv for arg in ["--help", "-h"]):
+    cli_text = sys.argv[1] if len(sys.argv) == 2 else " ".join(sys.argv[1:])
+
+    from pathlib import Path
+    _env_path = Path(__file__).resolve().parent.parent / ".env"
+    token = None
+    chat_id = None
+    if _env_path.exists():
+        with open(_env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("TELEGRAM_BOT_TOKEN="):
+                    token = line.split("=", 1)[1].strip().strip('"\'')
+                elif line.startswith("TELEGRAM_ALLOWED_USER_ID="):
+                    chat_id = line.split("=", 1)[1].strip().strip('"\'')
+
+    token = token or os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = chat_id or os.getenv("TELEGRAM_ALLOWED_USER_ID")
+
+    if not token or not chat_id:
+        print(f"📢 [Local Notification]: {cli_text}")
+        sys.exit(0)
+
+    import urllib.request
+    import urllib.parse
+
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": cli_text,
+        "parse_mode": "Markdown"
+    }
+    data = urllib.parse.urlencode(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            pass
+    except Exception:
+        payload.pop("parse_mode", None)
+        data = urllib.parse.urlencode(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                pass
+        except Exception as e:
+            print(f"Gagal kirim notifikasi CLI: {e}")
+    sys.exit(0)
+
 import re
 import shutil
 import subprocess
@@ -1062,7 +1114,7 @@ async def weekly_report_job(context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def watchdog_job(context: ContextTypes.DEFAULT_TYPE):
-    alerts = run_watchdog_checks()
+    alerts = await asyncio.to_thread(run_watchdog_checks)
     if not alerts:
         ALERT_COOLDOWNS.clear()
         return

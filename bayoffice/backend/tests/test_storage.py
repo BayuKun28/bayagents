@@ -1,11 +1,16 @@
 import os
+import sys
 import json
 import tempfile
 import unittest
 import threading
 from pathlib import Path
 
-from storage import atomic_read_json, atomic_write_json
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from storage import atomic_read_json, atomic_write_json, locked_json_transaction
 
 
 class TestAtomicStorage(unittest.TestCase):
@@ -79,6 +84,34 @@ class TestAtomicStorage(unittest.TestCase):
             t.join()
 
         self.assertEqual(len(errors), 0, f"Concurrent errors occurred: {errors}")
+
+    def test_locked_json_transaction_prevents_lost_updates(self):
+        """Menguji bahwa locked_json_transaction mencegah race condition / lost updates pada operasi simultan."""
+        initial = {"counter": 0}
+        atomic_write_json(self.file_path, initial)
+
+        num_threads = 4
+        increments_per_thread = 25
+        errors = []
+
+        def worker():
+            try:
+                for _ in range(increments_per_thread):
+                    with locked_json_transaction(self.file_path, default={"counter": 0}) as data:
+                        current = data.get("counter", 0)
+                        data["counter"] = current + 1
+            except Exception as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=worker) for _ in range(num_threads)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(errors), 0, f"Errors occurred during transaction: {errors}")
+        final_data = atomic_read_json(self.file_path)
+        self.assertEqual(final_data.get("counter"), num_threads * increments_per_thread)
 
 
 if __name__ == "__main__":

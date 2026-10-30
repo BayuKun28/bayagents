@@ -1,7 +1,10 @@
 import os
 import json
+import time
 import asyncio
-from typing import Optional
+import secrets
+import threading
+from typing import Optional, Dict, List
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
@@ -172,22 +175,56 @@ async def serve_login(request: Request):
     return HTMLResponse("<h1>Login Page Not Found</h1>", status_code=404)
 
 # ==========================================================
-# AUTH API ENDPOINTS
+# AUTH API ENDPOINTS & RATE LIMITING
 # ==========================================================
+_failed_login_attempts: Dict[str, List[float]] = {}
+_login_lock = threading.Lock()
+LOGIN_MAX_FAILED_ATTEMPTS = 5
+LOGIN_COOLDOWN_WINDOW = 60  # detik
+
 @app.post("/api/auth/login")
-async def api_login(data: LoginRequest, response: Response):
-    """Memproses kredensial login dan menyematkan session cookie."""
-    if data.username == ADMIN_USERNAME and data.password == ADMIN_PASSWORD:
+async def api_login(data: LoginRequest, request: Request, response: Response):
+    """Memproses kredensial login dengan proteksi rate limit brute force dan timing attack."""
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+
+    with _login_lock:
+        attempts = [t for t in _failed_login_attempts.get(client_ip, []) if now - t < LOGIN_COOLDOWN_WINDOW]
+        _failed_login_attempts[client_ip] = attempts
+        if len(attempts) >= LOGIN_MAX_FAILED_ATTEMPTS:
+            remaining = int(LOGIN_COOLDOWN_WINDOW - (now - attempts[0]))
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={
+                    "success": False,
+                    "message": f"Terlalu banyak percobaan gagal. Silakan coba lagi dalam {remaining} detik."
+                }
+            )
+
+    valid_user = secrets.compare_digest(data.username, ADMIN_USERNAME)
+    valid_pass = secrets.compare_digest(data.password, ADMIN_PASSWORD)
+
+    if valid_user and valid_pass:
+        with _login_lock:
+            _failed_login_attempts.pop(client_ip, None)
         token = serializer.dumps({"user": data.username})
+        is_secure = (
+            request.headers.get("x-forwarded-proto") == "https" or
+            request.url.scheme == "https"
+        )
         response.set_cookie(
             key=COOKIE_NAME,
             value=token,
             max_age=SESSION_MAX_AGE,
             httponly=True,
             samesite="lax",
-            secure=False  # Disesuaikan untuk HTTP lokal / Cloudflare Terminated SSL
+            secure=is_secure
         )
         return {"success": True, "message": "Login berhasil"}
+
+    with _login_lock:
+        _failed_login_attempts.setdefault(client_ip, []).append(now)
+
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"success": False, "message": "Username atau password salah"}
