@@ -564,8 +564,20 @@ body.dark-mode .nav-tab-btn.active {
   color: #F8FAFC !important;
 }
 
+.nav-tab-btn .tab-icon-kanban {
+  color: #0284C7;
+}
+
+body.dark-mode .nav-tab-btn .tab-icon-kanban {
+  color: #38BDF8;
+}
+
 .nav-tab-btn .tab-icon-plans {
   color: #8B5CF6;
+}
+
+body.dark-mode .nav-tab-btn .tab-icon-plans {
+  color: #A78BFA;
 }
 
 .nav-count-badge {
@@ -576,6 +588,27 @@ body.dark-mode .nav-tab-btn.active {
   padding: 1px 6px;
   border-radius: 10px;
   margin-left: 2px;
+}
+
+/* Dedicated Kanban Board Layout */
+.kanban-dedicated-container {
+  width: 100%;
+}
+
+.kanban-dedicated-container .kanban-col-box {
+  min-height: 600px;
+  height: calc(100vh - 250px);
+  max-height: calc(100vh - 250px) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+@media screen and (max-width: 900px) {
+  .kanban-dedicated-container .kanban-col-box {
+    min-height: 460px;
+    height: auto;
+    max-height: 580px !important;
+  }
 }
 
 /* 1. Brand Section (Kiri) */

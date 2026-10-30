@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261030_05">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261030_06">
 </head>
 <body style="padding-bottom: 60px;">
 
@@ -118,12 +118,18 @@
           </div>
         </div>
 
-        <!-- Right: Workspace Navigation Switcher Tabs (Live Office & Kanban | Plans Studio) -->
+        <!-- Right: Workspace Navigation Switcher Tabs (Live Office | Kanban Board | Plans Studio) -->
         <nav class="topbar-nav-tabs" aria-label="Workspace Modes">
-          <button id="navOfficeBtn" class="nav-tab-btn active" data-view="office" data-i18n-title="nav.workspace" title="Live Office & Kanban">
+          <button id="navOfficeBtn" class="nav-tab-btn active" data-view="office" data-i18n-title="nav.workspace" title="Live Office">
             <i data-lucide="layout-dashboard" class="lucide-sm"></i>
-            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.workspace">Live Office & Kanban</span>
+            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.workspace">Live Office</span>
             <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.workspace_short">Office</span>
+          </button>
+          <button id="navKanbanBtn" class="nav-tab-btn" data-view="kanban" data-i18n-title="nav.kanban" title="Kanban Board">
+            <i data-lucide="kanban" class="lucide-sm tab-icon-kanban" style="color: #0284C7;"></i>
+            <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.kanban">Kanban Board</span>
+            <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.kanban_short">Kanban</span>
+            <span id="navKanbanCountBadge" class="nav-count-badge" style="display: none; background: #0284C7;">0</span>
           </button>
           <button id="navPlansBtn" class="nav-tab-btn" data-view="plans" data-i18n-title="nav.plans_studio" title="Plans Studio (HABIBIE)">
             <i data-lucide="compass" class="lucide-sm tab-icon-plans" style="color: #8B5CF6;"></i>
@@ -141,70 +147,100 @@
   <!-- MAIN CONTAINER -->
   <main id="mainContainer" style="max-width: 1400px; margin: 20px auto; padding: 0 16px;">
 
-    <!-- VIEW 1: LIVE OFFICE & KANBAN (DEFAULT WORKSPACE) -->
-    <div id="mainDashboardView" class="workspace-view active" style="display: flex; flex-direction: column; gap: 28px;">
+    <!-- VIEW 1: LIVE VIRTUAL OFFICE WORKSPACE (CANVAS + AGENT CARDS ONLY) -->
+    <div id="mainDashboardView" class="workspace-view active" style="display: flex; flex-direction: column; gap: 20px;">
 
-      <!-- SECTION 1: 2D PIXEL CANVAS VIRTUAL OFFICE -->
-    <section>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="monitor" class="lucide-sm"></i>
-          <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;" data-i18n="canvas.title">
-            2D Virtual Office
-          </h2>
-          <span class="neo-badge badge-done" style="font-size: 0.7rem;" data-i18n="canvas.live_view">Live View</span>
+      <!-- 2D PIXEL CANVAS VIRTUAL OFFICE -->
+      <section>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="monitor" class="lucide-sm"></i>
+            <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;" data-i18n="canvas.title">
+              2D Virtual Office
+            </h2>
+            <span class="neo-badge badge-done" style="font-size: 0.7rem;" data-i18n="canvas.live_view">Live View</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;" data-i18n="canvas.rooms_subtitle">
+              5 Rooms: Executive Suite • Architect Studio • Engineering Bay • Game Room • Cafeteria Bar
+            </span>
+            <button id="fullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 5px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="maximize-2" class="lucide-sm"></i>
+              <span data-i18n="canvas.fullscreen">Fullscreen</span>
+            </button>
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;" data-i18n="canvas.rooms_subtitle">
-            5 Rooms: Executive Suite • Architect Studio • Engineering Bay • Game Room • Cafeteria Bar
-          </span>
-          <button id="fullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 5px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="maximize-2" class="lucide-sm"></i>
-            <span data-i18n="canvas.fullscreen">Fullscreen</span>
+
+        <!-- Canvas Box -->
+        <div class="canvas-container" id="canvasContainer">
+          <div class="fullscreen-controls" id="canvasOverlayControls" style="display: none;">
+            <button id="exitFullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="minimize-2" class="lucide-sm"></i>
+              <span data-i18n="canvas.exit_fullscreen">Exit Fullscreen</span>
+            </button>
+          </div>
+          <canvas id="officeCanvas"></canvas>
+        </div>
+
+        <!-- Agent Status Grid Cards below Canvas (Luhut, Jokowi, Prabowo, Gibran, Habibie) -->
+        <div id="agentsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 14px;">
+          <!-- Dynamic agent cards injected by app.js -->
+        </div>
+      </section>
+
+    </div> <!-- /#mainDashboardView -->
+
+    <!-- VIEW 2: DEDICATED KANBAN BOARD WORKSPACE -->
+    <div id="kanbanBoardView" class="workspace-view" style="display: none; flex-direction: column; gap: 18px;">
+      
+      <!-- Kanban Header Banner -->
+      <div class="kanban-header-bar neo-box" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="background: #0284C7; color: #FFFFFF; width: 42px; height: 42px; border-radius: 8px; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0px var(--shadow-color);">
+            <i data-lucide="kanban" class="lucide-md"></i>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0; letter-spacing: -0.3px;" data-i18n="kanban.title">Task Kanban Board</h2>
+              <span class="neo-badge badge-todo" style="font-size: 0.68rem;" data-i18n="kanban.source_badge">kanban.json</span>
+              <span id="kanbanTotalTasksBadge" class="neo-badge" style="background: var(--bg-main); font-size: 0.68rem; font-weight: 800;">-</span>
+            </div>
+            <p style="font-size: 0.78rem; color: #64748B; margin: 2px 0 0 0;" data-i18n="kanban.subtitle">Multi-agent task orchestration, sprint pipeline & live status</p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button id="kanbanNewTaskBtn" class="neo-btn neo-btn-primary" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="plus-circle" class="lucide-sm"></i>
+            <span data-i18n="actions.new_task">New Task</span>
+          </button>
+          <button id="kanbanRefreshBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;" title="Refresh Kanban">
+            <i data-lucide="refresh-cw" class="lucide-sm"></i>
+            <span>Refresh</span>
+          </button>
+          <button id="kanbanBackToOfficeBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="arrow-left" class="lucide-sm"></i>
+            <span data-i18n="kanban.back_to_office">Back to Office</span>
           </button>
         </div>
       </div>
 
-      <!-- Canvas Box -->
-      <div class="canvas-container" id="canvasContainer">
-        <div class="fullscreen-controls" id="canvasOverlayControls" style="display: none;">
-          <button id="exitFullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="minimize-2" class="lucide-sm"></i>
-            <span data-i18n="canvas.exit_fullscreen">Exit Fullscreen</span>
-          </button>
-        </div>
-        <canvas id="officeCanvas"></canvas>
-      </div>
-
-      <!-- Agent Status Grid Cards below Canvas -->
-      <div id="agentsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 14px;">
-        <!-- Dynamic agent cards injected by app.js -->
-      </div>
-    </section>
-
-    <!-- SECTION 2: INTERACTIVE KANBAN BOARD -->
-    <section>
-      <!-- Kanban Header & Controls -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <i data-lucide="kanban" class="lucide-sm"></i>
-          <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;" data-i18n="kanban.title">
-            Task Kanban Board
-          </h2>
-          <span class="neo-badge badge-todo" style="font-size: 0.7rem;" data-i18n="kanban.source_badge">kanban.json</span>
-        </div>
-
-        <!-- Filter & Search Controls -->
+      <!-- Filter & Control Toolbar -->
+      <div class="neo-box kanban-toolbar" style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <!-- Project Filter Selector -->
-          <select id="projectFilterSelect" class="neo-box-sm" style="padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer;">
-            <option value="ALL" data-i18n="kanban.all_projects">All Projects</option>
-            <option value="infobay">infobay</option>
-            <option value="bayoffice">bayoffice</option>
-          </select>
+          <!-- Project Filter -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label for="projectFilterSelect" style="font-size: 0.76rem; font-weight: 800; color: #64748B;">PROJECT:</label>
+            <select id="projectFilterSelect" class="neo-box-sm" style="padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer;">
+              <option value="ALL" data-i18n="kanban.all_projects">All Projects</option>
+              <option value="infobay">infobay</option>
+              <option value="bayoffice">bayoffice</option>
+            </select>
+          </div>
 
-          <!-- Date Period Filter (Default: Bulan Ini) -->
+          <!-- Date Period Filter -->
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <label for="periodFilterSelect" style="font-size: 0.76rem; font-weight: 800; color: #64748B;">PERIOD:</label>
             <select id="periodFilterSelect" class="neo-box-sm" style="padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background: var(--bg-card); outline: none; cursor: pointer;">
               <option value="THIS_MONTH" selected data-i18n="kanban.period_this_month">This Month</option>
               <option value="TODAY" data-i18n="kanban.period_today">Today</option>
@@ -214,7 +250,6 @@
               <option value="CUSTOM" data-i18n="kanban.period_custom">Custom Range...</option>
             </select>
 
-            <!-- Custom Date Inputs (hidden by default) -->
             <div id="customDateContainer" style="display: none; align-items: center; gap: 4px;">
               <input type="date" id="customStartDate" class="neo-box-sm" style="padding: 5px 8px; font-size: 0.75rem; font-family: inherit; font-weight: 600; outline: none; cursor: pointer;">
               <span style="font-weight: 800; font-size: 0.75rem; color: var(--border-color);">-</span>
@@ -223,54 +258,53 @@
           </div>
 
           <!-- Agent Filter Buttons -->
-          <div style="display: flex; gap: 6px;">
+          <div style="display: flex; gap: 5px; flex-wrap: wrap;">
             <button class="neo-btn filter-btn neo-btn-primary" data-assignee="ALL" style="padding: 5px 10px; font-size: 0.75rem;" data-i18n="kanban.all_assignees">All</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="LUHUT" style="padding: 5px 10px; font-size: 0.75rem;">LUHUT</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="JOKOWI" style="padding: 5px 10px; font-size: 0.75rem;">JOKOWI</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="PRABOWO" style="padding: 5px 10px; font-size: 0.75rem;">PRABOWO</button>
             <button class="neo-btn filter-btn neo-btn-secondary" data-assignee="GIBRAN" style="padding: 5px 10px; font-size: 0.75rem;">GIBRAN</button>
           </div>
+        </div>
 
-          <!-- Search Input -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="position: relative; display: flex; align-items: center;">
-            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Search tasks..." data-i18n-placeholder="kanban.search_placeholder" style="padding: 7px 12px; font-size: 0.85rem; font-family: inherit; width: 180px; outline: none;">
+            <input id="searchInput" type="text" class="neo-box-sm" placeholder="Search tasks..." data-i18n-placeholder="kanban.search_placeholder" style="padding: 6px 12px 6px 30px; font-size: 0.82rem; font-family: inherit; width: 170px; outline: none;">
+            <i data-lucide="search" class="lucide-xs" style="position: absolute; left: 10px; color: #94A3B8;"></i>
           </div>
 
-          <!-- Insights & Export Buttons -->
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <button id="kanbanPlansBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.plans_title" title="Architecture & Implementation Plans">
-              <i data-lucide="compass" class="lucide-sm"></i>
-              <span data-i18n="kanban.plans_btn">Plans</span>
-            </button>
-            <button id="kanbanSchedulesBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.schedules_title" title="Manage Scheduled Tasks & Automation">
-              <i data-lucide="clock" class="lucide-sm"></i>
-              <span data-i18n="kanban.schedules_btn">Schedules</span>
-            </button>
-            <button id="openAnalyticsBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.insights_title" title="View Sprint Metrics & Analytics">
-              <i data-lucide="bar-chart-2" class="lucide-sm"></i>
-              <span data-i18n="kanban.insights_btn">Insights</span>
-            </button>
-            <button id="exportCsvBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_csv_title" title="Export Tasks to CSV">
-              <i data-lucide="download" class="lucide-sm"></i>
-              <span>CSV</span>
-            </button>
-            <button id="exportJsonBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_json_title" title="Export Tasks to JSON">
-              <i data-lucide="file-json" class="lucide-sm"></i>
-              <span>JSON</span>
-            </button>
-          </div>
+          <button id="kanbanPlansBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.plans_title" title="Architecture & Implementation Plans">
+            <i data-lucide="compass" class="lucide-sm" style="color: #8B5CF6;"></i>
+            <span data-i18n="kanban.plans_btn">Plans</span>
+          </button>
+          <button id="kanbanSchedulesBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.schedules_title" title="Manage Scheduled Tasks & Automation">
+            <i data-lucide="clock" class="lucide-sm"></i>
+            <span data-i18n="kanban.schedules_btn">Schedules</span>
+          </button>
+          <button id="openAnalyticsBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.insights_title" title="View Sprint Metrics & Analytics">
+            <i data-lucide="bar-chart-2" class="lucide-sm"></i>
+            <span data-i18n="kanban.insights_btn">Insights</span>
+          </button>
+          <button id="exportCsvBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_csv_title" title="Export Tasks to CSV">
+            <i data-lucide="download" class="lucide-sm"></i>
+            <span>CSV</span>
+          </button>
+          <button id="exportJsonBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" data-i18n-title="kanban.export_json_title" title="Export Tasks to JSON">
+            <i data-lucide="file-json" class="lucide-sm"></i>
+            <span>JSON</span>
+          </button>
         </div>
       </div>
 
-      <!-- Kanban Columns Container -->
-      <div id="kanbanContainer">
+      <!-- Kanban Columns Container (Expansive & Dedicated) -->
+      <div id="kanbanContainer" class="kanban-dedicated-container">
         <!-- Rendered dynamically by kanban.js -->
         <div style="text-align: center; padding: 40px; color: #94A3B8; font-weight: 700;" data-i18n="kanban.loading">
           Loading kanban board data...
         </div>
       </div>
-    </section>
-  </div> <!-- /#mainDashboardView -->
+
+    </div> <!-- /#kanbanBoardView -->
 
   <!-- VIEW 2: DEDICATED PLANS STUDIO (HABIBIE BLUEPRINTS WORKSPACE) -->
   <div id="plansStudioView" class="workspace-view" style="display: none;">
@@ -293,7 +327,7 @@
       <div style="display: flex; align-items: center; gap: 10px;">
         <button id="studioBackToOfficeBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="arrow-left" class="lucide-sm"></i>
-          <span data-i18n="studio.back_to_office">Back to Office & Kanban</span>
+          <span data-i18n="studio.back_to_office">Back to Office</span>
         </button>
       </div>
     </div>

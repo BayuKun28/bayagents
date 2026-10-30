@@ -190,10 +190,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Workspace Navigation & Views
   const navOfficeBtn = document.getElementById('navOfficeBtn');
+  const navKanbanBtn = document.getElementById('navKanbanBtn');
   const navPlansBtn = document.getElementById('navPlansBtn');
+  const navKanbanCountBadge = document.getElementById('navKanbanCountBadge');
   const navPlansCountBadge = document.getElementById('navPlansCountBadge');
   const mainDashboardView = document.getElementById('mainDashboardView');
+  const kanbanBoardView = document.getElementById('kanbanBoardView');
   const plansStudioView = document.getElementById('plansStudioView');
+  const kanbanTotalTasksBadge = document.getElementById('kanbanTotalTasksBadge');
+  const kanbanBackToOfficeBtn = document.getElementById('kanbanBackToOfficeBtn');
+  const kanbanNewTaskBtn = document.getElementById('kanbanNewTaskBtn');
+  const kanbanRefreshBtn = document.getElementById('kanbanRefreshBtn');
 
   // Ops Hub Dropdown DOM
   const opsDropdownBtn = document.getElementById('opsDropdownBtn');
@@ -277,6 +284,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Update Kanban
           kanban.setTasks(payload.kanban.tasks);
+
+          // Update Nav Kanban Count Badge & Sprint Header Badge
+          if (payload.kanban && Array.isArray(payload.kanban.tasks)) {
+            const tasks = payload.kanban.tasks;
+            if (navKanbanCountBadge) {
+              navKanbanCountBadge.textContent = tasks.length;
+              navKanbanCountBadge.style.display = tasks.length > 0 ? 'inline-block' : 'none';
+            }
+            if (kanbanTotalTasksBadge) {
+              const inProg = tasks.filter(t => (t.status || '').toLowerCase() === 'in-progress').length;
+              const qa = tasks.filter(t => (t.status || '').toLowerCase() === 'qa-review').length;
+              const done = tasks.filter(t => (t.status || '').toLowerCase() === 'done').length;
+              kanbanTotalTasksBadge.textContent = `TOTAL: ${tasks.length} • PROG: ${inProg} • QA: ${qa} • DONE: ${done}`;
+            }
+          }
 
           // Update Header Metrics
           updateMetrics(payload.system);
@@ -385,6 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
         stateBadge = `<span class="neo-badge badge-qa" style="font-size:0.68rem;">${txtReviewing}</span>`;
       }
 
+      const txtViewTasks = (window.I18n && window.I18n.t('agents.view_tasks')) || 'View Tasks';
+
       html += `
         <div class="neo-box-sm" style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -402,11 +426,38 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="agent-bubble-box" style="font-size: 0.78rem; padding: 6px 10px; border-radius: 6px; min-height: 40px; display: flex; align-items: center; line-height: 1.35; border: 1px solid var(--border-color);">
             <i>${a.bubble_text || defaultBubble}</i>
           </div>
+          <button class="neo-btn neo-btn-secondary agent-open-kanban-btn" data-agent="${name}" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 700; width: 100%; margin-top: 2px;">
+            <i data-lucide="kanban" class="lucide-xs" style="color: #0284C7;"></i>
+            <span>${txtViewTasks}</span>
+          </button>
         </div>
       `;
     });
 
     agentsGrid.innerHTML = html;
+
+    // Attach click listener ke tombol Lihat Tugas pada kartu agen pelaksana
+    agentsGrid.querySelectorAll('.agent-open-kanban-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const agent = btn.getAttribute('data-agent');
+        if (soundFx) soundFx.playClick();
+        
+        // Filter kanban to agent
+        const fBtns = document.querySelectorAll('.filter-btn');
+        fBtns.forEach(b => {
+          if (b.getAttribute('data-assignee') === agent) {
+            b.classList.add('neo-btn-primary');
+            b.classList.remove('neo-btn-secondary');
+          } else {
+            b.classList.remove('neo-btn-primary');
+            b.classList.add('neo-btn-secondary');
+          }
+        });
+        if (kanban) kanban.setFilter(agent);
+        switchWorkspaceView('kanban');
+      });
+    });
 
     // Attach click listener ke tombol Buka Studio Rencana pada kartu HABIBIE
     agentsGrid.querySelectorAll('.habibie-open-studio-btn').forEach(btn => {
@@ -1844,27 +1895,42 @@ document.addEventListener('DOMContentLoaded', () => {
   // 19. Dedicated Plans Studio & Ops Hub Controller
   // ==========================================================
 
-  // A. Workspace View Switcher (Live Office & Kanban <-> Plans Studio)
+  // A. Workspace View Switcher (Live Office <-> Kanban Board <-> Plans Studio)
   function switchWorkspaceView(viewName) {
     if (soundFx) soundFx.playClick();
-    if (viewName === 'plans') {
-      if (navOfficeBtn) navOfficeBtn.classList.remove('active');
+
+    // Reset all tabs active state
+    if (navOfficeBtn) navOfficeBtn.classList.remove('active');
+    if (navKanbanBtn) navKanbanBtn.classList.remove('active');
+    if (navPlansBtn) navPlansBtn.classList.remove('active');
+
+    // Hide all views
+    if (mainDashboardView) mainDashboardView.style.display = 'none';
+    if (kanbanBoardView) kanbanBoardView.style.display = 'none';
+    if (plansStudioView) plansStudioView.style.display = 'none';
+
+    if (viewName === 'kanban') {
+      if (navKanbanBtn) navKanbanBtn.classList.add('active');
+      if (kanbanBoardView) kanbanBoardView.style.display = 'flex';
+      window.location.hash = 'kanban';
+      if (kanban) kanban.render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (viewName === 'plans') {
       if (navPlansBtn) navPlansBtn.classList.add('active');
-      if (mainDashboardView) mainDashboardView.style.display = 'none';
       if (plansStudioView) plansStudioView.style.display = 'block';
       window.location.hash = 'plans';
       fetchStudioPlans(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      if (navPlansBtn) navPlansBtn.classList.remove('active');
+      // Default: 'office'
       if (navOfficeBtn) navOfficeBtn.classList.add('active');
-      if (plansStudioView) plansStudioView.style.display = 'none';
       if (mainDashboardView) mainDashboardView.style.display = 'flex';
-      if (window.location.hash === '#plans') {
+      if (window.location.hash === '#plans' || window.location.hash === '#kanban') {
         history.replaceState(null, null, ' ');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
     }
@@ -1874,12 +1940,44 @@ document.addEventListener('DOMContentLoaded', () => {
     navOfficeBtn.addEventListener('click', () => switchWorkspaceView('office'));
   }
 
+  if (navKanbanBtn) {
+    navKanbanBtn.addEventListener('click', () => switchWorkspaceView('kanban'));
+  }
+
   if (navPlansBtn) {
     navPlansBtn.addEventListener('click', () => switchWorkspaceView('plans'));
   }
 
   if (studioBackToOfficeBtn) {
     studioBackToOfficeBtn.addEventListener('click', () => switchWorkspaceView('office'));
+  }
+
+  if (kanbanBackToOfficeBtn) {
+    kanbanBackToOfficeBtn.addEventListener('click', () => switchWorkspaceView('office'));
+  }
+
+  if (kanbanNewTaskBtn) {
+    kanbanNewTaskBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      taskAlert.style.display = 'none';
+      taskModal.classList.add('active');
+      document.getElementById('taskInstruction').focus();
+      if (window.lucide) window.lucide.createIcons();
+    });
+  }
+
+  if (kanbanRefreshBtn) {
+    kanbanRefreshBtn.addEventListener('click', () => {
+      if (soundFx) soundFx.playClick();
+      fetch('/api/sync')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.kanban && Array.isArray(data.kanban.tasks)) {
+            kanban.setTasks(data.kanban.tasks);
+          }
+        })
+        .catch(err => console.error('Error refreshing kanban:', err));
+    });
   }
 
   if (kanbanPlansBtn) {
@@ -1893,11 +1991,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle URL hash on page load
   if (window.location.hash === '#plans') {
     switchWorkspaceView('plans');
+  } else if (window.location.hash === '#kanban') {
+    switchWorkspaceView('kanban');
   }
 
   window.addEventListener('hashchange', () => {
     if (window.location.hash === '#plans') {
       switchWorkspaceView('plans');
+    } else if (window.location.hash === '#kanban') {
+      switchWorkspaceView('kanban');
     } else if (window.location.hash === '#office' || !window.location.hash) {
       switchWorkspaceView('office');
     }

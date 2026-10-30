@@ -28,8 +28,10 @@
         cpu: 'CPU:'
       },
       nav: {
-        workspace: 'Live Office & Kanban',
+        workspace: 'Live Office',
         workspace_short: 'Office',
+        kanban: 'Kanban Board',
+        kanban_short: 'Kanban',
         plans_studio: 'Plans Studio (HABIBIE)',
         plans_studio_short: 'Plans'
       },
@@ -78,7 +80,8 @@
         role_habibie: 'Chief Architect (On-Demand)',
         role_habibie_badge: 'ARCHITECT',
         habibie_bubble: 'Cinta Sejati',
-        open_studio: 'Open Plans Studio'
+        open_studio: 'Open Plans Studio',
+        view_tasks: 'View Tasks'
       },
       studio: {
         title: 'Implementation Plans Studio',
@@ -90,11 +93,13 @@
         empty_hint: 'Select an architectural blueprint on the left or click "+ Draft Architecture Plan" to create one with HABIBIE.',
         no_plans: 'No implementation plans found.',
         author_badge: 'HABIBIE • CHIEF ARCHITECT',
-        back_to_office: 'Back to Office & Kanban'
+        back_to_office: 'Back to Office'
       },
       kanban: {
         title: 'Task Kanban Board',
+        subtitle: 'Multi-agent task orchestration, sprint pipeline & live status',
         source_badge: 'kanban.json',
+        back_to_office: 'Back to Office',
         all_projects: 'All Projects',
         all_assignees: 'All',
         search_placeholder: 'Search tasks...',
@@ -323,8 +328,10 @@
         cpu: 'CPU:'
       },
       nav: {
-        workspace: 'Kantor Live & Kanban',
+        workspace: 'Kantor Live',
         workspace_short: 'Kantor',
+        kanban: 'Papan Kanban',
+        kanban_short: 'Kanban',
         plans_studio: 'Studio Rencana (HABIBIE)',
         plans_studio_short: 'Rencana'
       },
@@ -373,7 +380,8 @@
         role_habibie: 'Kepala Arsitek (On-Demand)',
         role_habibie_badge: 'ARSITEK',
         habibie_bubble: 'Cinta Sejati',
-        open_studio: 'Buka Studio Rencana'
+        open_studio: 'Buka Studio Rencana',
+        view_tasks: 'Lihat Tugas'
       },
       studio: {
         title: 'Studio Rencana Implementasi',
@@ -385,11 +393,13 @@
         empty_hint: 'Pilih salah satu dokumen blueprint di sebelah kiri atau klik "+ Rancang Blueprint Baru" untuk menyusun arsitektur bersama HABIBIE.',
         no_plans: 'Belum ada dokumen rencana implementasi.',
         author_badge: 'HABIBIE • KEPALA ARSITEK',
-        back_to_office: 'Kembali ke Kantor & Kanban'
+        back_to_office: 'Kembali ke Kantor'
       },
       kanban: {
         title: 'Papan Kanban Tugas',
+        subtitle: 'Orkestrasi tugas multi-agen, pipeline sprint & status langsung',
         source_badge: 'kanban.json',
+        back_to_office: 'Kembali ke Kantor',
         all_projects: 'Semua Proyek',
         all_assignees: 'Semua',
         search_placeholder: 'Cari tugas...',
