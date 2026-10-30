@@ -29,9 +29,9 @@
       },
       nav: {
         workspace: 'Live Office & Kanban',
-        workspace_short: 'Office & Kanban',
+        workspace_short: 'Office',
         plans_studio: 'Plans Studio (HABIBIE)',
-        plans_studio_short: 'Plans Studio'
+        plans_studio_short: 'Plans'
       },
       actions: {
         theme_dark: 'Switch to Dark Mode',
@@ -60,10 +60,11 @@
       canvas: {
         title: '2D Virtual Office',
         live_view: 'Live View',
-        rooms_subtitle: '4 Rooms: Executive Suite • Engineering Bay • Game Room • Cafeteria Bar',
+        rooms_subtitle: '5 Rooms: Executive Suite • Architect Studio • Engineering Bay • Game Room • Cafeteria Bar',
         fullscreen: 'Fullscreen',
         exit_fullscreen: 'Exit Fullscreen',
-        room_executive: 'EXECUTIVE SUITE - LUHUT (ORCHESTRATOR)',
+        room_executive: 'EXECUTIVE SUITE - LUHUT',
+        room_architect: 'ARCHITECT STUDIO - HABIBIE',
         room_engineering: 'ENGINEERING BAY - WORKSTATIONS',
         room_game: 'GAME ROOM & ARCADE LOUNGE',
         room_cafeteria: 'CAFETERIA & COFFEE BAR'
@@ -75,7 +76,8 @@
         state_reviewing: 'REVIEWING',
         default_bubble: 'Ready for duty.',
         role_habibie: 'Chief Architect (On-Demand)',
-        habibie_bubble: 'Precision technical calculations before the first line of code is written.',
+        role_habibie_badge: 'ARCHITECT',
+        habibie_bubble: 'Cinta Sejati',
         open_studio: 'Open Plans Studio'
       },
       studio: {
@@ -320,9 +322,9 @@
       },
       nav: {
         workspace: 'Kantor Live & Kanban',
-        workspace_short: 'Kantor & Kanban',
+        workspace_short: 'Kantor',
         plans_studio: 'Studio Rencana (HABIBIE)',
-        plans_studio_short: 'Studio Rencana'
+        plans_studio_short: 'Rencana'
       },
       actions: {
         theme_dark: 'Beralih ke Mode Gelap',
@@ -351,10 +353,11 @@
       canvas: {
         title: 'Kantor Virtual 2D',
         live_view: 'Live View',
-        rooms_subtitle: '4 Ruangan: Executive Suite • Engineering Bay • Game Room • Kantin Bar',
+        rooms_subtitle: '5 Ruangan: Ruang Pimpinan • Studio Arsitek • Lab Engineer • Game Room • Kantin Kafe',
         fullscreen: 'Fullscreen',
         exit_fullscreen: 'Keluar Fullscreen',
-        room_executive: 'EXECUTIVE SUITE - LUHUT (ORCHESTRATOR)',
+        room_executive: 'RUANG PIMPINAN - LUHUT',
+        room_architect: 'STUDIO ARSITEK - HABIBIE',
         room_engineering: 'ENGINEERING BAY - WORKSTATIONS',
         room_game: 'GAME ROOM & ARCADE LOUNGE',
         room_cafeteria: 'KANTIN & COFFEE BAR'
@@ -366,7 +369,8 @@
         state_reviewing: 'REVIEWING',
         default_bubble: 'Siap bertugas.',
         role_habibie: 'Kepala Arsitek (On-Demand)',
-        habibie_bubble: 'Kalkulasi teknis matang sebelum baris kode pertama ditulis.',
+        role_habibie_badge: 'ARSITEK',
+        habibie_bubble: 'Cinta Sejati',
         open_studio: 'Buka Studio Rencana'
       },
       studio: {

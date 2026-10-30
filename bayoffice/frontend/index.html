@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app.title">BayOffice — Virtual Workspace AI Agents</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FFDE59%22 stroke-width=%222%22><rect width=%2216%22 height=%2220%22 x=%224%22 y=%222%22 rx=%222%22/><path d=%22M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01%22/></svg>">
-  <link rel="stylesheet" href="/static/css/style.css?v=20261030_02">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261030_03">
 </head>
 <body style="padding-bottom: 60px;">
 
@@ -33,11 +33,13 @@
       <nav class="topbar-nav-tabs" aria-label="Workspace Modes">
         <button id="navOfficeBtn" class="nav-tab-btn active" data-view="office" data-i18n-title="nav.workspace" title="Live Office & Kanban">
           <i data-lucide="layout-dashboard" class="lucide-sm"></i>
-          <span class="nav-tab-text" data-i18n="nav.workspace">Live Office & Kanban</span>
+          <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.workspace">Live Office & Kanban</span>
+          <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.workspace_short">Office</span>
         </button>
         <button id="navPlansBtn" class="nav-tab-btn" data-view="plans" data-i18n-title="nav.plans_studio" title="Plans Studio (HABIBIE)">
           <i data-lucide="compass" class="lucide-sm tab-icon-plans" style="color: #8B5CF6;"></i>
-          <span class="nav-tab-text" data-i18n="nav.plans_studio">Plans Studio (HABIBIE)</span>
+          <span class="nav-tab-text nav-tab-text-full" data-i18n="nav.plans_studio">Plans Studio (HABIBIE)</span>
+          <span class="nav-tab-text nav-tab-text-short" data-i18n="nav.plans_studio_short">Plans</span>
           <span id="navPlansCountBadge" class="nav-count-badge" style="display: none;">0</span>
         </button>
       </nav>
@@ -78,7 +80,7 @@
         <div class="dropdown-wrapper" id="opsDropdownWrapper">
           <button id="opsDropdownBtn" class="neo-btn neo-btn-secondary topbar-btn btn-ops" aria-expanded="false" data-i18n-title="actions.ops_hub_title" title="Operations & Agent Tools">
             <i data-lucide="layers" class="lucide-sm"></i>
-            <span class="btn-label-desktop" data-i18n="actions.ops_hub">Ops Hub</span>
+            <span class="btn-label-desktop btn-label-ops" data-i18n="actions.ops_hub">Ops Hub</span>
             <i data-lucide="chevron-down" class="lucide-xs chevron-icon"></i>
           </button>
           <div id="opsDropdownMenu" class="neo-dropdown-menu" style="display: none;">
@@ -115,7 +117,7 @@
         <!-- Logout Action -->
         <button id="logoutBtn" class="neo-btn neo-btn-secondary topbar-btn btn-logout" data-i18n-title="actions.logout_title" title="Log out of session">
           <i data-lucide="log-out" class="lucide-sm"></i>
-          <span class="btn-label-desktop" data-i18n="actions.logout">Logout</span>
+          <span class="btn-label-desktop btn-label-logout" data-i18n="actions.logout">Logout</span>
         </button>
       </div>
 
@@ -140,7 +142,7 @@
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;" data-i18n="canvas.rooms_subtitle">
-            4 Rooms: Executive Suite • Engineering Bay • Game Room • Cafeteria Bar
+            5 Rooms: Executive Suite • Architect Studio • Engineering Bay • Game Room • Cafeteria Bar
           </span>
           <button id="fullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 5px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
             <i data-lucide="maximize-2" class="lucide-sm"></i>
@@ -294,42 +296,6 @@
           <span id="studioToggleNewPlanText" data-i18n="studio.new_plan_btn">+ Draft Architecture Plan</span>
         </button>
 
-        <!-- Collapsible New Plan Form -->
-        <div id="studioNewPlanFormContainer" class="neo-box-sm" style="display: none; padding: 14px; background: var(--bg-main);">
-          <h4 style="font-weight: 800; font-size: 0.88rem; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="compass" class="lucide-xs" style="color: #8B5CF6;"></i>
-            <span data-i18n="plans.form_title">Draft Architecture Plan with HABIBIE</span>
-          </h4>
-          <form id="studioNewPlanForm" style="display: flex; flex-direction: column; gap: 10px;">
-            <div>
-              <label style="display: block; font-weight: 700; font-size: 0.78rem; margin-bottom: 4px;" data-i18n="plans.idea_label">Scope / Concept</label>
-              <textarea id="studioPlanIdeaInput" rows="3" required class="neo-box-sm" placeholder="e.g. Implement dynamic portfolio categories..." data-i18n-placeholder="plans.idea_placeholder" style="width: 100%; padding: 8px; font-size: 0.82rem; resize: vertical; outline: none; font-family: inherit;"></textarea>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <div>
-                <label style="display: block; font-weight: 700; font-size: 0.75rem; margin-bottom: 2px;" data-i18n="plans.project_label">Project</label>
-                <select id="studioPlanProjectSelect" class="neo-box-sm" style="width: 100%; padding: 6px 8px; font-size: 0.78rem; outline: none;">
-                  <option value="infobay">infobay</option>
-                  <option value="bayoffice">bayoffice</option>
-                </select>
-              </div>
-              <div>
-                <label style="display: block; font-weight: 700; font-size: 0.75rem; margin-bottom: 2px;" data-i18n="plans.engine_label">Brain</label>
-                <select id="studioPlanEngineSelect" class="neo-box-sm" style="width: 100%; padding: 6px 8px; font-size: 0.78rem; outline: none;">
-                  <option value="9router">9Router</option>
-                  <option value="agy">AGY CLI</option>
-                </select>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px;">
-              <button type="button" id="studioCancelNewPlanBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.78rem;" data-i18n="plans.cancel_btn">Cancel</button>
-              <button type="submit" id="studioSubmitPlanBtn" class="neo-btn neo-btn-primary" style="padding: 6px 12px; font-size: 0.78rem; background: #8B5CF6; color: #FFFFFF;">
-                <span id="studioSubmitPlanBtnText" data-i18n="plans.generate_btn">Ask HABIBIE</span>
-              </button>
-            </div>
-          </form>
-        </div>
-
         <!-- Search & Project Filter -->
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="position: relative;">
@@ -357,6 +323,87 @@
 
       <!-- Kolom Kanan: Main Markdown Studio Reading & Action Canvas -->
       <div class="neo-box studio-reader-pane" style="padding: 24px; display: flex; flex-direction: column; min-height: 580px; height: calc(100vh - 210px); position: sticky; top: 90px; overflow: hidden;">
+        
+        <!-- Expansive Architecture Drafting Workspace (Form Luas di Sisi Kanan) -->
+        <div id="studioNewPlanFormContainer" class="studio-drafting-pane" style="display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-right: 6px;">
+          <!-- Drafting Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--border-color); padding-bottom: 16px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <img src="/static/assets/avatars/habibie.jpg" alt="HABIBIE" 
+                   style="width: 52px; height: 52px; border-radius: 50%; border: 3px solid #8B5CF6; object-fit: cover; box-shadow: 2px 2px 0px var(--shadow-color);">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0; letter-spacing: -0.3px;" data-i18n="plans.form_title">
+                    Draft Architecture Blueprint with HABIBIE
+                  </h3>
+                  <span class="neo-badge" style="background: #8B5CF6; color: #FFFFFF; font-size: 0.68rem; font-weight: 800;">CHIEF ARCHITECT</span>
+                </div>
+                <p style="font-size: 0.8rem; color: #64748B; margin: 4px 0 0 0;" data-i18n="plans.form_subtitle">
+                  Describe technical requirements, architectural scope, or feature epics. HABIBIE will formulate architectural blueprints and task breakdowns.
+                </p>
+              </div>
+            </div>
+            <button type="button" id="studioCancelNewPlanBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 14px; font-size: 0.82rem; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="x" class="lucide-xs"></i>
+              <span data-i18n="plans.cancel_btn">Cancel</span>
+            </button>
+          </div>
+
+          <!-- Drafting Form Body -->
+          <form id="studioNewPlanForm" style="display: flex; flex-direction: column; flex: 1; gap: 18px;">
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <label style="display: block; font-weight: 800; font-size: 0.88rem; margin-bottom: 8px;" for="studioPlanIdeaInput" data-i18n="plans.idea_label">
+                Architecture Concept / Scope of Work
+              </label>
+              <textarea id="studioPlanIdeaInput" required class="neo-box-sm" rows="8" 
+                        placeholder="Describe the architectural scope in detail...&#10;&#10;e.g. Design end-to-end multi-tenant notification system with Redis Pub/Sub, PostgreSQL audit logs, and real-time SSE frontend stream. Include database schema, endpoints contract, and rollback contingency." 
+                        data-i18n-placeholder="plans.idea_placeholder" 
+                        style="width: 100%; min-height: 200px; flex: 1; padding: 14px; font-size: 0.92rem; line-height: 1.6; resize: vertical; outline: none; font-family: inherit; box-sizing: border-box;"></textarea>
+            </div>
+
+            <!-- Parameters Grid (Project & Brain Engine) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+              <div>
+                <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 6px;" for="studioPlanProjectSelect" data-i18n="plans.project_label">
+                  Target Project
+                </label>
+                <select id="studioPlanProjectSelect" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; outline: none; cursor: pointer; background: var(--bg-card);">
+                  <option value="infobay">infobay (~/infobay)</option>
+                  <option value="bayoffice">bayoffice (~/bayagents/bayoffice)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 6px;" for="studioPlanEngineSelect" data-i18n="plans.engine_label">
+                  AI Brain / Reasoning Engine
+                </label>
+                <select id="studioPlanEngineSelect" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; outline: none; cursor: pointer; background: var(--bg-card);">
+                  <option value="9router">⚡ 9Router (gemini-free-smart) — Fast & Free</option>
+                  <option value="agy">🧠 AGY CLI (Antigravity Standalone) — Deep Reasoning</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Neobrutalist Architecture Guidelines Card -->
+            <div class="neo-box-sm" style="padding: 12px 16px; background: var(--bg-main); font-size: 0.8rem; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; border-left: 4px solid #8B5CF6;">
+              <i data-lucide="compass" class="lucide-sm" style="color: #8B5CF6; flex-shrink: 0; margin-top: 2px;"></i>
+              <div style="color: #64748B;">
+                <b style="color: var(--text-color);">What HABIBIE produces:</b> Comprehensive System Architecture, Database Schema, API Contracts, QA Verification Criteria, and Granular Task Breakdown directly dispatchable to the Kanban backlog.
+              </div>
+            </div>
+
+            <!-- Form Action Footer -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-top: 6px;">
+              <button type="button" id="studioCancelNewPlanBtn2" class="neo-btn neo-btn-secondary" style="padding: 10px 18px; font-size: 0.88rem;" data-i18n="plans.cancel_btn">
+                Cancel
+              </button>
+              <button type="submit" id="studioSubmitPlanBtn" class="neo-btn neo-btn-primary" style="padding: 10px 24px; font-size: 0.92rem; font-weight: 800; background: #8B5CF6; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="sparkles" class="lucide-sm"></i>
+                <span id="studioSubmitPlanBtnText" data-i18n="plans.generate_btn">Formulate Architecture Plan</span>
+              </button>
+            </div>
+          </form>
+        </div>
         
         <!-- Top Toolbar & Metadata Header -->
         <div id="studioViewerHeader" style="display: none; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--border-color); padding-bottom: 14px; margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
@@ -1086,10 +1133,10 @@
 
   <!-- SCRIPTS -->
   <script src="/static/js/lucide.min.js"></script>
-  <script src="/static/js/i18n.js?v=20261030_02"></script>
-  <script src="/static/js/sound-fx.js?v=20261030_02"></script>
-  <script src="/static/js/office-canvas.js?v=20261030_02"></script>
-  <script src="/static/js/kanban.js?v=20261030_02"></script>
-  <script src="/static/js/app.js?v=20261030_02"></script>
+  <script src="/static/js/i18n.js?v=20261030_03"></script>
+  <script src="/static/js/sound-fx.js?v=20261030_03"></script>
+  <script src="/static/js/office-canvas.js?v=20261030_03"></script>
+  <script src="/static/js/kanban.js?v=20261030_03"></script>
+  <script src="/static/js/app.js?v=20261030_03"></script>
 </body>
 </html>

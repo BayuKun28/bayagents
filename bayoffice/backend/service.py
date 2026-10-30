@@ -154,6 +154,14 @@ def get_agents_status() -> Dict[str, Any]:
             "current_task": None,
             "bubble_text": "Standby pasif." if not tmux_active else "Rehat di game room, frontend siap.",
             "desk": {"x": 700, "y": 125, "color": "#FFA07A"}
+        },
+        "HABIBIE": {
+            "name": "HABIBIE",
+            "role": "Chief Architect",
+            "state": "idle",
+            "current_task": None,
+            "bubble_text": "Cinta Sejati",
+            "desk": {"x": 345, "y": 88, "color": "#8B5CF6"}
         }
     }
 
@@ -167,7 +175,7 @@ def get_agents_status() -> Dict[str, Any]:
         # In-Progress
         if status in ["in-progress", "in progress", "working"]:
             if assignee in agents and agents[assignee]["state"] != "working":
-                if tmux_active:
+                if tmux_active or assignee == "HABIBIE":
                     agents[assignee]["state"] = "working"
                     agents[assignee]["current_task"] = t
                     agents[assignee]["bubble_text"] = f"Mengerjakan {t.get('id')}: {t.get('title', '')[:30]}..."

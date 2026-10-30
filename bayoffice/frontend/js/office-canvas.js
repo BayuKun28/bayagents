@@ -48,7 +48,7 @@ class OfficeCanvas {
       avatar_JOKOWI: '/static/assets/avatars/jokowi.jpg',
       avatar_PRABOWO: '/static/assets/avatars/prabowo.jpg',
       avatar_GIBRAN: '/static/assets/avatars/gibran.jpg',
-      avatar_HABIBIE: '/static/assets/avatars/habibie.svg'
+      avatar_HABIBIE: '/static/assets/avatars/habibie.jpg'
     });
     
     // Posisi awal dan state agen (Termasuk HABIBIE - Chief Architect)
@@ -57,8 +57,8 @@ class OfficeCanvas {
         name: 'LUHUT',
         role: 'Lead Orchestrator',
         color: '#EF4444',
-        x: 220, y: 130,
-        targetX: 220, targetY: 130,
+        x: 112, y: 150,
+        targetX: 112, targetY: 150,
         state: 'idle',
         bubble: 'Memantau sprint dari Executive Suite.'
       },
@@ -93,10 +93,10 @@ class OfficeCanvas {
         name: 'HABIBIE',
         role: 'Chief Architect',
         color: '#8B5CF6',
-        x: 80, y: 155,
-        targetX: 80, targetY: 155,
+        x: 334, y: 150,
+        targetX: 334, targetY: 150,
         state: 'idle',
-        bubble: 'Kalkulasi teknis matang sebelum baris kode pertama ditulis.'
+        bubble: 'Cinta Sejati'
       }
     };
 
@@ -181,35 +181,42 @@ class OfficeCanvas {
   }
 
   getAgentTargetPosition(name, state) {
-    // 1. Jika mode SLEEP (Auto-Sleep / Hemat RAM) -> Tersebar di Game Room dengan rotasi dinamis 15s
+    // 1. Khusus HABIBIE: Chief Architect selalu di ruangannya sendiri (Architect Studio)
+    // Tidak pernah ikut ke Game Room saat agen lain tidur/hibernasi
+    if (name === 'HABIBIE') {
+      if (state === 'working' || state === 'reviewing') {
+        return { x: 334, y: 88 }; // Meja gambar arsitek
+      }
+      return { x: 334, y: 150 };  // Kursi santai studio arsitek
+    }
+
+    // 2. Jika mode SLEEP (Auto-Sleep / Hemat RAM) -> Agen lain tersebar di Game Room dengan rotasi dinamis 15s
     if (state === 'sleeping') {
       const gameRoomSpots = this.getGameRoomSpots();
-      const agentNames = ['PRABOWO', 'JOKOWI', 'GIBRAN', 'LUHUT', 'HABIBIE'];
+      const agentNames = ['PRABOWO', 'JOKOWI', 'GIBRAN', 'LUHUT'];
       const idx = agentNames.indexOf(name);
       const rotationIndex = Math.floor(this.animationFrame / 900);
       const spotIdx = ((idx >= 0 ? idx : 0) + rotationIndex) % gameRoomSpots.length;
       return gameRoomSpots[spotIdx];
     }
 
-    // 2. Jika mode KERJA (Working / Reviewing) -> Pindah ke Meja Kerja
+    // 3. Jika mode KERJA (Working / Reviewing) -> Pindah ke Meja Kerja
     if (state === 'working' || state === 'reviewing') {
       const workDesks = {
-        LUHUT:   { x: 220, y: 88 }, // Duduk di kursi eksekutif pimpinan
-        JOKOWI:  { x: 540, y: 82 }, // Duduk di workstation backend
-        PRABOWO: { x: 700, y: 82 }, // Duduk di workstation frontend
-        GIBRAN:  { x: 860, y: 82 }, // Duduk di workstation QA & Security
-        HABIBIE: { x: 80, y: 88 }   // Duduk di Architect Drafting Desk
+        LUHUT:   { x: 112, y: 88 }, // Kursi eksekutif pimpinan
+        JOKOWI:  { x: 540, y: 82 }, // Workstation backend
+        PRABOWO: { x: 700, y: 82 }, // Workstation frontend
+        GIBRAN:  { x: 860, y: 82 }  // Workstation QA & Security
       };
       return workDesks[name] || { x: 540, y: 82 };
     }
 
-    // 3. Jika mode STANDBY (Idle) -> Santai di Ruangan masing-masing
+    // 4. Jika mode STANDBY (Idle) -> Santai di Ruangan masing-masing
     const standbySpots = {
-      LUHUT:   { x: 345, y: 155 }, // Santai di Sofa Ruang Pimpinan
+      LUHUT:   { x: 112, y: 150 }, // Santai di Ruang Pimpinan
       JOKOWI:  { x: 670, y: 395 }, // Duduk santai di Meja Kafe 1 Kantin
       PRABOWO: { x: 205, y: 385 }, // Santai di Sofa Game Room
-      GIBRAN:  { x: 790, y: 395 }, // Duduk santai di Meja Kafe 2 Kantin
-      HABIBIE: { x: 80, y: 155 }   // Duduk santai di Studio Arsitek
+      GIBRAN:  { x: 790, y: 395 }  // Duduk santai di Meja Kafe 2 Kantin
     };
     return standbySpots[name] || { x: 480, y: 240 };
   }
@@ -224,13 +231,21 @@ class OfficeCanvas {
       const ag = this.agents[name];
       if (!ag) return;
 
+      // Khusus HABIBIE: Selalu di studio sendiri
+      if (name === 'HABIBIE') {
+        const target = this.getAgentTargetPosition('HABIBIE', ag.state);
+        ag.targetX = target.x;
+        ag.targetY = target.y;
+        return;
+      }
+
       // 1. Jika mode KERJA -> Selalu di workstation
       if (ag.state === 'working' || ag.state === 'reviewing') {
         const target = this.getAgentTargetPosition(name, ag.state);
         ag.targetX = target.x;
         ag.targetY = target.y;
       } 
-      // 2. Jika mode SLEEPING (Auto-Sleep) -> Berada di Game Room dan rotasi 15 detik sekali ke 4 spot terpisah
+      // 2. Jika mode SLEEPING (Auto-Sleep) -> Berada di Game Room dan rotasi 15 detik sekali
       else if (ag.state === 'sleeping') {
         const spotIdx = (idx + rotationIndex) % gameRoomSpots.length;
         ag.targetX = gameRoomSpots[spotIdx].x;
@@ -305,8 +320,9 @@ class OfficeCanvas {
     ctx.fillStyle = isDark ? '#0B0F17' : '#1E232A';
     ctx.fillRect(0, 0, w, h);
 
-    // 1. Gambar 4 Ruangan Berbeda
-    this.drawExecutiveSuite(ctx, 10, 10, 430, 225, isDark);
+    // 1. Gambar 5 Ruangan Berbeda (Termasuk Dedicated Studio Arsitek HABIBIE)
+    this.drawExecutiveSuite(ctx, 10, 10, 210, 225, isDark);
+    this.drawArchitectStudio(ctx, 228, 10, 212, 225, isDark);
     this.drawEngineeringBay(ctx, 450, 10, 500, 225, isDark);
     this.drawGameRoom(ctx, 10, 245, 430, 225, isDark);
     this.drawKantinPantry(ctx, 450, 245, 500, 225, isDark);
@@ -316,7 +332,7 @@ class OfficeCanvas {
     ctx.lineWidth = 3;
     ctx.strokeRect(8, 8, w - 16, h - 16);
 
-    // 3. Render 4 Agen dengan Avatar Asli & Chat Bubble
+    // 3. Render 5 Agen dengan Avatar Asli & Chat Bubble
     this.renderAgents(ctx, isDark);
   }
 
@@ -350,103 +366,203 @@ class OfficeCanvas {
     ctx.strokeRect(x, y, w, h);
 
     // 4. Papan Label Ruangan (Zero Emoji)
-    const execLabel = (window.I18n && window.I18n.t) ? window.I18n.t('canvas.room_executive') : 'EXECUTIVE SUITE - LUHUT (ORCHESTRATOR)';
-    this.drawRoomLabel(ctx, x + 12, y + 18, execLabel, '#FCA5A5', isDark);
+    const execLabel = (window.I18n && window.I18n.t) ? window.I18n.t('canvas.room_executive') : 'EXECUTIVE SUITE - LUHUT';
+    this.drawRoomLabel(ctx, x + 8, y + 18, execLabel, '#FCA5A5', isDark);
 
-    // 5. Dinding Belakang: Jendela Panorama Kota Metropolitan & Lemari Credenza
-    // Jendela Skyline Kaca Panorama
+    // 5. Dinding Belakang: Jendela Panorama & Credenza
     if (this.images.officeWindow && this.images.officeWindow.complete) {
-      ctx.drawImage(this.images.officeWindow, x + 250, y + 18, 115, 46);
+      ctx.drawImage(this.images.officeWindow, x + 98, y + 18, 96, 44);
     }
-    // Lemari Credenza Kayu Mahoni dengan Piala Sprint & Buku
     if (this.images.bookshelfCredenza && this.images.bookshelfCredenza.complete) {
-      ctx.drawImage(this.images.bookshelfCredenza, x + 18, y + 28, 95, 34);
+      ctx.drawImage(this.images.bookshelfCredenza, x + 14, y + 26, 76, 32);
     }
 
-    // 6. Tanaman Monstera Pot & Snake Plant
+    // 6. Tanaman Hias Sudut
     if (this.images.monsteraPlant && this.images.monsteraPlant.complete) {
-      ctx.drawImage(this.images.monsteraPlant, x + 375, y + 20, 44, 52);
+      ctx.drawImage(this.images.monsteraPlant, x + 165, y + 160, 36, 44);
     }
     if (this.images.plantSnake && this.images.plantSnake.complete) {
-      ctx.drawImage(this.images.plantSnake, x + 16, y + 155, 24, 48);
+      ctx.drawImage(this.images.plantSnake, x + 12, y + 160, 22, 44);
     }
-
-    // 6b. Studio Arsitek HABIBIE (Architect's Drafting Table & Blueprints)
-    const draftX = x + 38;
-    const draftY = y + 102;
-    // Tilted drafting board (Royal Purple border & blueprint mat)
-    ctx.fillStyle = isDark ? '#2E1065' : '#4C1D95';
-    ctx.fillRect(draftX, draftY, 80, 52);
-    ctx.strokeStyle = '#8B5CF6';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(draftX, draftY, 80, 52);
-    // Blueprint on table
-    ctx.fillStyle = isDark ? '#3B0764' : '#EDE9FE';
-    ctx.fillRect(draftX + 8, draftY + 8, 64, 36);
-    ctx.strokeStyle = '#8B5CF6';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(draftX + 8, draftY + 8, 64, 36);
-    // Blueprint schematic lines
-    ctx.strokeStyle = '#A78BFA';
-    ctx.beginPath();
-    ctx.moveTo(draftX + 16, draftY + 16);
-    ctx.lineTo(draftX + 62, draftY + 16);
-    ctx.moveTo(draftX + 16, draftY + 24);
-    ctx.lineTo(draftX + 54, draftY + 24);
-    ctx.moveTo(draftX + 16, draftY + 32);
-    ctx.lineTo(draftX + 64, draftY + 32);
-    ctx.stroke();
-    // Architect Lamp
-    ctx.fillStyle = '#FFE600';
-    ctx.beginPath();
-    ctx.arc(draftX + 70, draftY + 12, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#09090B';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
 
     // 7. Area Meja Pimpinan (Executive Desk & Chair)
-    const deskX = x + 155;
-    const deskY = y + 98;
+    const deskX = x + 44;
+    const deskY = y + 96;
 
-    // Kursi Kulit Direktur Pimpinan (Aset SVG Mewah di belakang meja)
+    // Kursi Kulit Direktur Pimpinan
     if (this.images.executiveChair && this.images.executiveChair.complete) {
-      ctx.drawImage(this.images.executiveChair, deskX + 40, deskY - 30, 50, 50);
+      ctx.drawImage(this.images.executiveChair, deskX + 36, deskY - 28, 48, 48);
     } else {
       ctx.fillStyle = '#7F1D1D';
-      ctx.fillRect(deskX + 43, deskY - 26, 44, 24);
+      ctx.fillRect(deskX + 38, deskY - 24, 44, 22);
       ctx.strokeStyle = '#B91C1C';
-      ctx.strokeRect(deskX + 43, deskY - 26, 44, 24);
+      ctx.strokeRect(deskX + 38, deskY - 24, 44, 22);
     }
 
-    // Meja Pimpinan Kayu Jati Besar (Boss Desk SVG Asset / Fallback)
+    // Meja Pimpinan Kayu Jati Besar
     if (this.images.executiveDesk && this.images.executiveDesk.complete) {
-      ctx.drawImage(this.images.executiveDesk, deskX, deskY, 130, 65);
+      ctx.drawImage(this.images.executiveDesk, deskX, deskY, 120, 60);
     } else {
       ctx.fillStyle = '#451A03';
-      ctx.fillRect(deskX, deskY, 120, 55);
+      ctx.fillRect(deskX, deskY, 115, 52);
       ctx.strokeStyle = '#78350F';
       ctx.lineWidth = 2;
-      ctx.strokeRect(deskX, deskY, 120, 55);
+      ctx.strokeRect(deskX, deskY, 115, 52);
     }
 
-    // 8. Sofa Santai Tamu di pojok (Realistis Kulit Modern)
-    if (this.images.sofaLounge && this.images.sofaLounge.complete) {
-      ctx.drawImage(this.images.sofaLounge, x + 290, y + 138, 115, 54);
-    } else {
-      ctx.fillStyle = '#831843';
-      ctx.fillRect(x + 300, y + 140, 95, 45);
-      ctx.strokeStyle = '#BE185D';
-      ctx.strokeRect(x + 300, y + 140, 95, 45);
-    }
-
-    // 9. Ceiling Spotlight Warm Glow di atas Meja Pimpinan
-    const grad = ctx.createRadialGradient(deskX + 65, deskY + 30, 10, deskX + 65, deskY + 30, 85);
+    // Spotlight Warm Glow di atas Meja Pimpinan
+    const grad = ctx.createRadialGradient(deskX + 60, deskY + 30, 8, deskX + 60, deskY + 30, 75);
     grad.addColorStop(0, 'rgba(254, 243, 199, 0.12)');
     grad.addColorStop(1, 'rgba(254, 243, 199, 0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(deskX + 65, deskY + 30, 85, 0, Math.PI * 2);
+    ctx.arc(deskX + 60, deskY + 30, 75, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ==========================================================
+  // RUANGAN 2: ARCHITECT STUDIO (HABIBIE - CHIEF ARCHITECT)
+  // ==========================================================
+  drawArchitectStudio(ctx, x, y, w, h, isDark) {
+    // 1. Dinding Atas & Plin Lantai (Royal Blueprint Indigo)
+    const wallH = 68;
+    ctx.fillStyle = isDark ? '#191228' : '#2A1B3D';
+    ctx.fillRect(x, y, w, wallH);
+    ctx.fillStyle = isDark ? '#3C2460' : '#4E2C7D';
+    ctx.fillRect(x, y + wallH - 4, w, 4);
+
+    // 2. Lantai Karpet Blueprint Studio (Deep Purple with Blueprint Grid)
+    ctx.fillStyle = isDark ? '#23153A' : '#371F54';
+    ctx.fillRect(x, y + wallH, w, h - wallH);
+
+    // Blueprint Architectural Grid Lines
+    ctx.strokeStyle = isDark ? 'rgba(167, 139, 250, 0.16)' : 'rgba(139, 92, 246, 0.22)';
+    ctx.lineWidth = 1;
+    for (let lx = x + 18; lx < x + w; lx += 18) {
+      ctx.beginPath();
+      ctx.moveTo(lx, y + wallH);
+      ctx.lineTo(lx, y + h);
+      ctx.stroke();
+    }
+    for (let ly = y + wallH + 18; ly < y + h; ly += 18) {
+      ctx.beginPath();
+      ctx.moveTo(x, ly);
+      ctx.lineTo(x + w, ly);
+      ctx.stroke();
+    }
+
+    // 3. Border Ruangan
+    ctx.strokeStyle = isDark ? '#4C2882' : '#6D28D9';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+
+    // 4. Papan Label Ruangan (Zero Emoji)
+    const archLabel = (window.I18n && window.I18n.t) ? window.I18n.t('canvas.room_architect') : 'ARCHITECT STUDIO - HABIBIE';
+    this.drawRoomLabel(ctx, x + 8, y + 18, archLabel, '#C4B5FD', isDark);
+
+    // 5. Dinding Belakang: Poster Blueprint Pesawat N-250 & Rak Tabung Blueprint
+    // Frame Poster N-250 Aerospace
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(x + 12, y + 22, 88, 40);
+    ctx.strokeStyle = '#38BDF8';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x + 12, y + 22, 88, 40);
+    // Skema Aerodinamis N-250 (Vector Lines)
+    ctx.strokeStyle = '#93C5FD';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    // Fuselage
+    ctx.moveTo(x + 20, y + 42);
+    ctx.lineTo(x + 88, y + 42);
+    // Wings
+    ctx.moveTo(x + 45, y + 42);
+    ctx.lineTo(x + 36, y + 28);
+    ctx.moveTo(x + 45, y + 42);
+    ctx.lineTo(x + 36, y + 56);
+    // Tail
+    ctx.moveTo(x + 82, y + 42);
+    ctx.lineTo(x + 92, y + 32);
+    ctx.stroke();
+    // Label Mini
+    ctx.fillStyle = '#E0F2FE';
+    ctx.font = 'bold 7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('N-250 AEROSPACE', x + 56, y + 33);
+
+    // Rak Tabung Blueprint & Buku Teknik
+    if (this.images.bookshelfCredenza && this.images.bookshelfCredenza.complete) {
+      ctx.drawImage(this.images.bookshelfCredenza, x + 108, y + 24, 60, 36);
+    } else {
+      ctx.fillStyle = '#312E81';
+      ctx.fillRect(x + 108, y + 24, 60, 36);
+      ctx.strokeStyle = '#6366F1';
+      ctx.strokeRect(x + 108, y + 24, 60, 36);
+    }
+
+    // Tanaman Snake Plant di Sudut
+    if (this.images.plantSnake && this.images.plantSnake.complete) {
+      ctx.drawImage(this.images.plantSnake, x + 178, y + 20, 24, 46);
+    }
+
+    // 6. Meja Gambar Arsitek Miring (Drafting Table & Chair)
+    const draftX = x + 35;
+    const draftY = y + 96;
+
+    // Kursi Putar Arsitek (Drafting Stool/Chair di belakang meja)
+    if (this.images.executiveChair && this.images.executiveChair.complete) {
+      ctx.drawImage(this.images.executiveChair, draftX + 48, draftY - 26, 44, 44);
+    } else {
+      ctx.fillStyle = '#4C1D95';
+      ctx.fillRect(draftX + 50, draftY - 22, 40, 20);
+      ctx.strokeStyle = '#8B5CF6';
+      ctx.strokeRect(draftX + 50, draftY - 22, 40, 20);
+    }
+
+    // Meja Gambar Arsitek (Papan gambar miring neobrutalist ungu)
+    ctx.fillStyle = isDark ? '#2E1065' : '#4C1D95';
+    ctx.fillRect(draftX, draftY, 138, 58);
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(draftX, draftY, 138, 58);
+
+    // Blueprint Mat di atas meja
+    ctx.fillStyle = isDark ? '#3B0764' : '#EDE9FE';
+    ctx.fillRect(draftX + 12, draftY + 8, 114, 42);
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(draftX + 12, draftY + 8, 114, 42);
+
+    // Garis Skematik Blueprint Teknis
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(draftX + 22, draftY + 18);
+    ctx.lineTo(draftX + 105, draftY + 18);
+    ctx.moveTo(draftX + 22, draftY + 26);
+    ctx.lineTo(draftX + 85, draftY + 26);
+    ctx.moveTo(draftX + 22, draftY + 34);
+    ctx.lineTo(draftX + 112, draftY + 34);
+    // T-Square Ruler
+    ctx.moveTo(draftX + 16, draftY + 12);
+    ctx.lineTo(draftX + 16, draftY + 44);
+    ctx.stroke();
+
+    // Lampu Arsitek (Architect Desk Lamp dengan glow hangat)
+    ctx.fillStyle = '#FBBF24';
+    ctx.beginPath();
+    ctx.arc(draftX + 122, draftY + 14, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#18181B';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Spotlight Warm Golden Glow di atas meja arsitek
+    const archGlow = ctx.createRadialGradient(draftX + 70, draftY + 28, 8, draftX + 70, draftY + 28, 80);
+    archGlow.addColorStop(0, 'rgba(253, 224, 71, 0.14)');
+    archGlow.addColorStop(1, 'rgba(253, 224, 71, 0)');
+    ctx.fillStyle = archGlow;
+    ctx.beginPath();
+    ctx.arc(draftX + 70, draftY + 28, 80, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -832,7 +948,7 @@ class OfficeCanvas {
   // RENDER AGENTS DENGAN AVATAR & SPEECH BUBBLE
   // ==========================================================
   renderAgents(ctx, isDark) {
-    const agentList = ['LUHUT', 'JOKOWI', 'PRABOWO', 'GIBRAN'];
+    const agentList = ['LUHUT', 'HABIBIE', 'JOKOWI', 'PRABOWO', 'GIBRAN'];
 
     agentList.forEach(name => {
       const ag = this.agents[name];
@@ -876,7 +992,10 @@ class OfficeCanvas {
       let statusBorder = '#F59E0B'; // Standby = Amber
       let statusBadgeText = 'STANDBY';
 
-      if (ag.state === 'working') {
+      if (name === 'HABIBIE') {
+        statusBorder = '#8B5CF6';
+        statusBadgeText = (ag.state === 'working') ? 'WORKING' : 'ARCHITECT';
+      } else if (ag.state === 'working') {
         statusBorder = '#22C55E';
         statusBadgeText = 'WORKING';
       } else if (ag.state === 'reviewing') {
@@ -926,7 +1045,12 @@ class OfficeCanvas {
       let activeBubble = ag.bubble;
       let badgeLabel = statusBadgeText;
 
-      if (inGameRoom && gameRoomQuotes[name]) {
+      // Khusus HABIBIE: Saat tidak ada kegiatan (idle / sleeping) selalu tampilkan "Cinta Sejati"
+      if (name === 'HABIBIE') {
+        if (!ag.state || ag.state === 'idle' || ag.state === 'sleeping') {
+          activeBubble = 'Cinta Sejati';
+        }
+      } else if (inGameRoom && gameRoomQuotes[name]) {
         activeBubble = gameRoomQuotes[name];
         badgeLabel = 'GAME ROOM';
       }
@@ -939,8 +1063,9 @@ class OfficeCanvas {
       const isCurrentSpeaker = (speakerCycle[activeSpeakerIndex] === name);
 
       // Jika di Game Room: Hanya tampilkan agen yang sedang gilirannya berbicara sehingga 0% overlap
-      // Jika di ruangan lain (Executive, Workstation, Kantin): selalu tampilkan normal
-      const shouldShowBubble = inGameRoom ? isCurrentSpeaker : (ag.state !== 'sleeping');
+      // Jika di ruangan lain (Executive, Workstation, Kantin, Architect Studio): selalu tampilkan normal
+      // Khusus HABIBIE: Selalu tampilkan bubble "Cinta Sejati"
+      const shouldShowBubble = (name === 'HABIBIE') ? true : (inGameRoom ? isCurrentSpeaker : (ag.state !== 'sleeping'));
 
       if (activeBubble && shouldShowBubble) {
         this.drawSpeechBubble(ctx, drawX, drawY - 30, activeBubble, badgeLabel, isDark);

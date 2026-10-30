@@ -345,13 +345,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Khusus HABIBIE: Chief Architect On-Demand Card
       if (name === 'HABIBIE') {
         const habibieRole = window.I18n ? window.I18n.t('agents.role_habibie') : 'Chief Architect (On-Demand)';
-        const habibieBubble = window.I18n ? window.I18n.t('agents.habibie_bubble') : 'Kalkulasi teknis matang sebelum baris kode pertama ditulis.';
+        const habibieBubble = window.I18n ? window.I18n.t('agents.habibie_bubble') : 'Cinta Sejati';
         const openStudioText = window.I18n ? window.I18n.t('agents.open_studio') : 'Open Plans Studio';
         html += `
           <div class="neo-box-sm" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; border: 2px solid #8B5CF6;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="/static/assets/avatars/habibie.svg" alt="HABIBIE" 
+                <img src="/static/assets/avatars/habibie.jpg" alt="HABIBIE" 
                      style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid #8B5CF6; object-fit: cover; box-shadow: 2px 2px 0px var(--shadow-color);" 
                      onerror="this.src='/static/assets/avatars/habibie.jpg'">
                 <div>
@@ -2187,6 +2187,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       currentSelectedStudioPlan = plan;
 
+      // Sembunyikan form drafting saat menampilkan dokumen blueprint
+      if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
+      if (studioToggleNewPlanText) {
+        studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
+      }
+
       // Update Reader Header
       if (studioViewerHeader) studioViewerHeader.style.display = 'flex';
       if (studioViewerPlanId) studioViewerPlanId.textContent = plan.id;
@@ -2240,32 +2246,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Toggle & Submit New Plan Form (HABIBIE AI Generation)
+  // Toggle & Submit New Plan Form (HABIBIE AI Generation - Right Pane)
+  function hideStudioNewPlanForm() {
+    if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
+    if (studioToggleNewPlanText) {
+      studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
+    }
+    if (currentSelectedStudioPlan) {
+      if (studioViewerHeader) studioViewerHeader.style.display = 'flex';
+      if (studioViewerContent) studioViewerContent.style.display = 'block';
+    } else {
+      if (studioViewerHeader) studioViewerHeader.style.display = 'none';
+      if (studioViewerContent) studioViewerContent.style.display = 'block';
+    }
+  }
+
+  function showStudioNewPlanForm() {
+    if (studioViewerHeader) studioViewerHeader.style.display = 'none';
+    if (studioViewerContent) studioViewerContent.style.display = 'none';
+    if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'flex';
+    if (studioToggleNewPlanText) {
+      studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('plans.hide_form_btn') : 'Close Drafting Form';
+    }
+    if (studioPlanIdeaInput) {
+      setTimeout(() => studioPlanIdeaInput.focus(), 80);
+    }
+  }
+
   if (studioToggleNewPlanBtn) {
     studioToggleNewPlanBtn.addEventListener('click', () => {
       if (soundFx) soundFx.playClick();
       if (!studioNewPlanFormContainer) return;
-      const isHidden = studioNewPlanFormContainer.style.display === 'none';
-      studioNewPlanFormContainer.style.display = isHidden ? 'block' : 'none';
-      if (studioToggleNewPlanText) {
-        studioToggleNewPlanText.textContent = isHidden
-          ? (window.I18n ? window.I18n.t('plans.hide_form_btn') : 'Close Form')
-          : (window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan');
-      }
-      if (isHidden && studioPlanIdeaInput) {
-        studioPlanIdeaInput.focus();
+      const isVisible = studioNewPlanFormContainer.style.display === 'flex' || studioNewPlanFormContainer.style.display === 'block';
+      if (isVisible) {
+        hideStudioNewPlanForm();
+      } else {
+        showStudioNewPlanForm();
       }
     });
   }
 
-  if (studioCancelNewPlanBtn) {
-    studioCancelNewPlanBtn.addEventListener('click', () => {
-      if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
-      if (studioToggleNewPlanText) {
-        studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
-      }
-    });
-  }
+  const studioCancelBtn1 = document.getElementById('studioCancelNewPlanBtn');
+  const studioCancelBtn2 = document.getElementById('studioCancelNewPlanBtn2');
+  [studioCancelBtn1, studioCancelBtn2].forEach(btn => {
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (soundFx) soundFx.playClick();
+        hideStudioNewPlanForm();
+      });
+    }
+  });
 
   if (studioNewPlanForm) {
     studioNewPlanForm.addEventListener('submit', async (e) => {
@@ -2292,10 +2322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok && resJson.success) {
           if (soundFx) soundFx.playSuccess();
           studioNewPlanForm.reset();
-          if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
-          if (studioToggleNewPlanText) {
-            studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
-          }
+          hideStudioNewPlanForm();
           await fetchStudioPlans(false);
           const newPlanId = (resJson.plan && resJson.plan.id) || resJson.id;
           if (newPlanId) {

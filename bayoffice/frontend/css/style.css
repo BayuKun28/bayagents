@@ -850,6 +850,80 @@ body.dark-mode .pod-btn:active {
   display: none;
 }
 
+.nav-tab-text-short {
+  display: none;
+}
+
+.nav-tab-text-full {
+  display: inline;
+}
+
+/* ==========================================================
+   RESPONSIVE TOPBAR (LAPTOP & NOTEBOOK: 900px - 1366px)
+   Anti-Collision & Clean Neobrutalist UI/UX
+   ========================================================== */
+@media screen and (max-width: 1366px) {
+  .topbar-header {
+    padding: 10px 16px;
+  }
+
+  .topbar-container {
+    gap: 10px;
+  }
+
+  /* Shorten Tab labels (Office / Plans) on Laptop */
+  .nav-tab-text-full {
+    display: none !important;
+  }
+
+  .nav-tab-text-short {
+    display: inline !important;
+  }
+
+  .topbar-subtitle {
+    display: none !important;
+  }
+
+  .topbar-btn.btn-logout .btn-label-desktop {
+    display: none !important;
+  }
+
+  .topbar-btn.btn-logout {
+    padding: 8px 10px;
+    min-width: 36px;
+    justify-content: center;
+  }
+
+  .telemetry-deck {
+    padding: 4px 12px;
+    gap: 10px;
+  }
+}
+
+@media screen and (max-width: 1140px) {
+  .topbar-btn.btn-ops .btn-label-desktop {
+    display: none !important;
+  }
+
+  .topbar-btn.btn-ops {
+    padding: 8px 10px;
+  }
+
+  .chip-label {
+    display: none !important;
+  }
+
+  .telemetry-chip {
+    gap: 4px;
+    font-size: 0.74rem;
+  }
+
+  .telemetry-badge {
+    font-size: 0.68rem !important;
+    padding: 2px 8px !important;
+  }
+}
+
 /* ==========================================================
    RESPONSIVE TOPBAR (TABLET & MOBILE APP BAR: < 900px)
    ========================================================== */
@@ -902,7 +976,7 @@ body.dark-mode .pod-btn:active {
   }
 
   .topbar-subtitle {
-    display: none;
+    display: none !important;
   }
 
   /* Baris 1 Kanan: Actions */
@@ -912,7 +986,7 @@ body.dark-mode .pod-btn:active {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 6px;
+    gap: 5px;
     flex-shrink: 0;
   }
 
@@ -937,6 +1011,11 @@ body.dark-mode .pod-btn:active {
   .btn-logout {
     min-width: 32px;
     justify-content: center;
+  }
+
+  .pod-btn {
+    padding: 6px 7px;
+    min-width: 28px;
   }
 
   .topbar-btn:hover {
@@ -970,8 +1049,16 @@ body.dark-mode .pod-btn:active {
   .nav-tab-btn {
     flex: 1;
     justify-content: center;
-    padding: 6px 8px;
-    font-size: 0.76rem;
+    padding: 7px 8px;
+    font-size: 0.78rem;
+  }
+
+  .nav-tab-text-full {
+    display: none !important;
+  }
+
+  .nav-tab-text-short {
+    display: inline !important;
   }
 
   /* Baris 3 Full-Width: Telemetry Hub Strip */
@@ -1032,6 +1119,16 @@ body.dark-mode .pod-btn:active {
 
   .chip-label {
     display: none;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .brand-badge-version {
+    display: none !important;
+  }
+
+  .btn-ops .chevron-icon {
+    display: none !important;
   }
 }
 
