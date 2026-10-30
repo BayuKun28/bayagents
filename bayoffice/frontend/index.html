@@ -611,7 +611,12 @@
                 <select id="studioPlanProjectSelect" class="neo-box-sm" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; outline: none; cursor: pointer; background: var(--bg-card);">
                   <option value="infobay">infobay (~/infobay)</option>
                   <option value="bayoffice">bayoffice (~/bayagents/bayoffice)</option>
+                  <option value="__custom__" data-i18n="modal_task.project_custom">New Project / Custom Folder...</option>
                 </select>
+                <div id="studioCustomProjectContainer" style="display: none; margin-top: 8px;">
+                  <input type="text" id="studioCustomProjectInput" class="neo-box-sm" placeholder="Type new project folder name (e.g., baydev, crm, chatbot)..." data-i18n-placeholder="modal_task.project_custom_placeholder" style="width: 100%; padding: 8px 12px; font-family: inherit; font-size: 0.88rem; outline: none; box-sizing: border-box;">
+                  <small style="font-size: 0.72rem; color: #64748B; display: block; margin-top: 4px;" data-i18n-html="modal_task.project_custom_hint">This project will be automatically registered in <code>projects.json</code> at <code>/home/bay/&lt;name&gt;</code></small>
+                </div>
               </div>
 
               <div>

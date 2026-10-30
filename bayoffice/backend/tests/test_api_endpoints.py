@@ -91,6 +91,55 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
 
         asyncio.run(run_flow())
 
+    def test_plan_generate_dynamic_project_registration(self):
+        import asyncio
+        from unittest.mock import patch
+        import service
+
+        temp_proj_file = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+        temp_proj_file.close()
+
+        orig_proj_path = service.PROJECTS_PATH
+        service.PROJECTS_PATH = Path(temp_proj_file.name)
+
+        try:
+            # Initialize empty projects registry
+            from storage import atomic_write_json, atomic_read_json
+            atomic_write_json(service.PROJECTS_PATH, {"projects": {"infobay": {"name": "Infobay"}}})
+
+            # Mock AI generation so we don't call real external API in unit test
+            with patch("plans_manager.generate_plan_ai") as mock_ai:
+                mock_ai.return_value = {
+                    "success": True,
+                    "id": "PLAN-99",
+                    "title": "New Custom Architecture",
+                    "project": "custom-analytics-app",
+                    "status": "Draft",
+                    "file_path": "/tmp/dummy.md"
+                }
+
+                plan_req = app.PlanGenerateRequest(
+                    idea="Build analytics streaming dashboard",
+                    project="custom-analytics-app",
+                    engine="9router"
+                )
+
+                async def run_plan():
+                    return await app.api_generate_plan(plan_req, user=self.test_user)
+
+                res = asyncio.run(run_plan())
+                self.assertTrue(res["success"])
+                self.assertEqual(res["project"], "custom-analytics-app")
+
+                # Verify that 'custom-analytics-app' was registered in projects.json
+                reg = atomic_read_json(service.PROJECTS_PATH)
+                self.assertIn("custom-analytics-app", reg.get("projects", {}))
+                self.assertEqual(reg["projects"]["custom-analytics-app"]["id"], "custom-analytics-app")
+        finally:
+            service.PROJECTS_PATH = orig_proj_path
+            if os.path.exists(temp_proj_file.name):
+                os.unlink(temp_proj_file.name)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,8 @@ window.OfficePlans = (function () {
   let studioToggleNewPlanText;
   let studioPlanIdeaInput;
   let studioPlanProjectSelect;
+  let studioCustomProjectContainer;
+  let studioCustomProjectInput;
   let studioPlanEngineSelect;
   let studioSubmitPlanBtn;
   let studioSubmitPlanBtnText;
@@ -397,6 +399,11 @@ window.OfficePlans = (function () {
 
   function hideStudioNewPlanForm() {
     if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
+    if (studioCustomProjectContainer) studioCustomProjectContainer.style.display = 'none';
+    if (studioCustomProjectInput) studioCustomProjectInput.value = '';
+    if (studioPlanProjectSelect && studioPlanProjectSelect.value === '__custom__') {
+      studioPlanProjectSelect.value = studioPlanProjectSelect.options[0]?.value || 'bayoffice';
+    }
     if (studioToggleNewPlanText) {
       studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
     }
@@ -441,6 +448,8 @@ window.OfficePlans = (function () {
     studioToggleNewPlanText = document.getElementById('studioToggleNewPlanText');
     studioPlanIdeaInput = document.getElementById('studioPlanIdeaInput');
     studioPlanProjectSelect = document.getElementById('studioPlanProjectSelect');
+    studioCustomProjectContainer = document.getElementById('studioCustomProjectContainer');
+    studioCustomProjectInput = document.getElementById('studioCustomProjectInput');
     studioPlanEngineSelect = document.getElementById('studioPlanEngineSelect');
     studioSubmitPlanBtn = document.getElementById('studioSubmitPlanBtn');
     studioSubmitPlanBtnText = document.getElementById('studioSubmitPlanBtnText');
@@ -448,6 +457,18 @@ window.OfficePlans = (function () {
     studioProjectSelect = document.getElementById('studioProjectSelect');
     studioPeriodSelect = document.getElementById('studioPeriodSelect');
     studioRefreshBtn = document.getElementById('studioRefreshBtn');
+
+    if (studioPlanProjectSelect) {
+      studioPlanProjectSelect.addEventListener('change', () => {
+        const isCustom = studioPlanProjectSelect.value === '__custom__';
+        if (studioCustomProjectContainer) {
+          studioCustomProjectContainer.style.display = isCustom ? 'block' : 'none';
+        }
+        if (isCustom && studioCustomProjectInput) {
+          studioCustomProjectInput.focus();
+        }
+      });
+    }
 
     // Toggle Form button
     if (studioToggleNewPlanBtn) {
@@ -479,10 +500,20 @@ window.OfficePlans = (function () {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const idea = studioPlanIdeaInput ? studioPlanIdeaInput.value.trim() : '';
-        const project = studioPlanProjectSelect ? studioPlanProjectSelect.value : 'infobay';
+        let project = studioPlanProjectSelect ? studioPlanProjectSelect.value : 'infobay';
         const engine = studioPlanEngineSelect ? studioPlanEngineSelect.value : '9router';
 
         if (!idea) return;
+
+        if (project === '__custom__') {
+          const customProject = studioCustomProjectInput ? studioCustomProjectInput.value.trim().toLowerCase().replace(/\s+/g, '-') : '';
+          if (!customProject) {
+            alert(window.I18n ? window.I18n.t('modal_task.project_custom_placeholder') : 'Please enter a valid project name.');
+            if (studioCustomProjectInput) studioCustomProjectInput.focus();
+            return;
+          }
+          project = customProject;
+        }
 
         if (studioSubmitPlanBtn) studioSubmitPlanBtn.disabled = true;
         if (studioSubmitPlanBtnText) {
@@ -501,6 +532,12 @@ window.OfficePlans = (function () {
             if (window.soundFx) window.soundFx.playSuccess();
             form.reset();
             hideStudioNewPlanForm();
+
+            // Reload dynamic project registries across all views
+            if (typeof window.loadProjects === 'function') {
+              window.loadProjects();
+            }
+
             await fetchStudioPlans(false);
             const newPlanId = (resJson.plan && resJson.plan.id) || resJson.id;
             if (newPlanId) {

@@ -749,7 +749,10 @@ def get_plan_detail(plan_id: str) -> Optional[Dict[str, Any]]:
 
 def generate_plan_ai(idea: str, project: str = "bayoffice", engine: str = "9router") -> Dict[str, Any]:
     """Meminta HABIBIE menyusun implementation plan teknis."""
-    return plans_manager.generate_plan_ai(idea=idea, project=project, engine=engine)
+    clean_project = (project or "bayoffice").strip()
+    if clean_project:
+        register_project_if_new(clean_project)
+    return plans_manager.generate_plan_ai(idea=idea, project=clean_project, engine=engine)
 
 def dispatch_plan_to_kanban(plan_id: str) -> Dict[str, Any]:
     """Mendelegasikan implementation plan ke tim agen di Kanban."""

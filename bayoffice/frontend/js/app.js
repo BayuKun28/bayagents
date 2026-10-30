@@ -468,13 +468,18 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const [pId, pData] of Object.entries(projects)) {
           formOptHtml += `<option value="${pId}">${pData.name || pId}</option>`;
         }
+        formOptHtml += `<option value="__custom__">${customProjectText}</option>`;
         studioPlanProjectSelect.innerHTML = formOptHtml;
-        if (cur) studioPlanProjectSelect.value = cur;
+        if (cur && cur !== '__custom__') {
+          studioPlanProjectSelect.value = cur;
+        }
       }
     } catch (e) {
       console.warn('Gagal memuat registry proyek:', e);
     }
   }
+
+  window.loadProjects = loadProjects;
 
   loadProjects();
 
