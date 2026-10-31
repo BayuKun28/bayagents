@@ -184,7 +184,50 @@
             </button>
           </div>
           <canvas id="officeCanvas"></canvas>
-          <div id="officeThreeContainer" style="display: none; width: 100%; height: 480px; position: relative;"></div>
+          <div id="officeThreeContainer" style="display: none; width: 100%; height: 480px; position: relative;">
+            <!-- 3D Camera & Living Atmosphere Controls Overlay -->
+            <div id="threeControlsOverlay" class="three-controls-overlay">
+              <div class="three-controls-left">
+                <span id="threeAtmosphereBadge" class="three-badge" title="Status Pencahayaan Suasana Kantor">
+                  <i data-lucide="sun" class="lucide-xs"></i>
+                  <span id="threeAtmosphereText">Siang (WIB)</span>
+                </span>
+                <span id="threeFpsBadge" class="three-badge three-badge-subtle" title="Target Frame Rate">
+                  <span>60 FPS</span>
+                </span>
+              </div>
+              <div class="three-controls-right">
+                <div class="three-btn-group">
+                  <button id="threeZoomInBtn" class="neo-btn-sm" title="Zoom In (+)">
+                    <i data-lucide="zoom-in" class="lucide-xs"></i>
+                  </button>
+                  <button id="threeZoomOutBtn" class="neo-btn-sm" title="Zoom Out (-)">
+                    <i data-lucide="zoom-out" class="lucide-xs"></i>
+                  </button>
+                  <button id="threeResetBtn" class="neo-btn-sm" title="Reset Pandangan Isometrik">
+                    <i data-lucide="rotate-ccw" class="lucide-xs"></i>
+                    <span data-i18n="canvas.reset">Reset</span>
+                  </button>
+                  <button id="threeTopDownBtn" class="neo-btn-sm" title="Pandangan Atas (Top-Down Floorplan)">
+                    <i data-lucide="layout-grid" class="lucide-xs"></i>
+                    <span>Top-Down</span>
+                  </button>
+                </div>
+                <div class="three-focus-dropdown-wrapper">
+                  <select id="threeFocusSelect" class="neo-select-sm" title="Fokus Kamera ke Meja Agen">
+                    <option value="">🎯 Fokus Agen / Area...</option>
+                    <option value="LUHUT">👨‍💼 LUHUT (Executive Suite)</option>
+                    <option value="HABIBIE">📐 HABIBIE (Architect Studio)</option>
+                    <option value="JOKOWI">⚙️ JOKOWI (Backend Bay)</option>
+                    <option value="PRABOWO">🎨 PRABOWO (Frontend Bay)</option>
+                    <option value="GIBRAN">🛡️ GIBRAN (QA Terminal)</option>
+                    <option value="arcade">🕹️ Game Room (Arcade)</option>
+                    <option value="cafe">☕ Cafeteria & Espresso</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Agent Status Grid Cards below Canvas (Luhut, Jokowi, Prabowo, Gibran, Habibie) -->
@@ -1440,7 +1483,8 @@
   <script src="/static/js/sound-fx.js?v=20261030_03"></script>
   <script src="/static/js/office-canvas.js?v=20261030_03"></script>
   <script src="/static/js/three.min.js?v=r128"></script>
-  <script src="/static/js/office-three.js?v=20261031_01"></script>
+  <script src="/static/js/OrbitControls.js?v=r128"></script>
+  <script src="/static/js/office-three.js?v=20261101_01"></script>
   <script src="/static/js/kanban.js?v=20261030_06"></script>
   <script src="/static/js/office-health.js?v=20261030_01"></script>
   <script src="/static/js/office-insights.js?v=20261030_02"></script>

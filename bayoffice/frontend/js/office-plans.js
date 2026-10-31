@@ -39,7 +39,7 @@ window.OfficePlans = (function () {
   let loadedStudioPlans = [];
   let currentSelectedStudioPlan = null;
   let currentStudioProject = 'ALL';
-  let currentStudioPeriod = 'THIS_MONTH';
+  let currentStudioPeriod = 'ALL';
   let studioSearchQuery = '';
 
   function escapeHtml(str) {
@@ -481,6 +481,13 @@ window.OfficePlans = (function () {
     studioProjectSelect = document.getElementById('studioProjectSelect');
     studioPeriodSelect = document.getElementById('studioPeriodSelect');
     studioRefreshBtn = document.getElementById('studioRefreshBtn');
+
+    if (studioPeriodSelect) {
+      currentStudioPeriod = studioPeriodSelect.value || 'ALL';
+    }
+    if (studioProjectSelect) {
+      currentStudioProject = studioProjectSelect.value || 'ALL';
+    }
 
     if (studioPlanProjectSelect) {
       studioPlanProjectSelect.addEventListener('change', () => {

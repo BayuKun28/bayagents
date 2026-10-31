@@ -88,6 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
         officeThree.setViewActive(true);
         if (window.latestAgentsData) officeThree.updateAgents(window.latestAgentsData);
       }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
       if (toggle3dBtn) {
         toggle3dBtn.classList.add('neo-btn-primary');
         toggle3dBtn.classList.remove('neo-btn-secondary');
