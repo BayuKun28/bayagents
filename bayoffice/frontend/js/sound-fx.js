@@ -64,6 +64,26 @@ class SoundFX {
     this.playTone(587.33, 0.05, 'sine', 0.04); // D5 soft blip
   }
 
+  playDoorSwing() {
+    // Gentle synthesized door swing blip (280Hz -> 360Hz sine glide)
+    if (!this.enabled) return;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(380, this.ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.08);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.08);
+    } catch (e) {}
+  }
+
   playDispatch() {
     if (!this.enabled) return;
     try {

@@ -188,7 +188,7 @@
             <!-- 3D Camera & Living Atmosphere Controls Overlay -->
             <div id="threeControlsOverlay" class="three-controls-overlay">
               <div class="three-controls-left">
-                <span id="threeAtmosphereBadge" class="three-badge" title="Status Pencahayaan Suasana Kantor">
+                <span id="threeAtmosphereBadge" class="three-badge" style="cursor: pointer;" title="Klik untuk beralih 5 Suasana Pencahayaan (Fajar / Siang / Sore / Malam / Larut Malam)">
                   <i data-lucide="sun" class="lucide-xs"></i>
                   <span id="threeAtmosphereText">Siang (WIB)</span>
                 </span>
@@ -225,6 +225,50 @@
                     <option value="cafe">☕ Cafeteria & Espresso</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <!-- 3D Agent Inspection HUD Card Modal -->
+            <div id="threeAgentCard" class="three-agent-card" style="display: none;">
+              <div class="three-agent-card-header">
+                <div class="three-agent-photo-wrapper">
+                  <img id="threeAgentCardPhoto" src="/static/assets/avatars/luhut.jpg" alt="Agent Photo" class="three-agent-photo">
+                  <span id="threeAgentCardStatusDot" class="three-agent-status-dot"></span>
+                </div>
+                <div class="three-agent-info">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <h4 id="threeAgentCardName" style="margin: 0; font-size: 1rem; font-weight: 800;">LUHUT</h4>
+                    <span id="threeAgentCardRoleBadge" class="three-agent-role-badge">Lead Orchestrator</span>
+                  </div>
+                  <span id="threeAgentCardLocation" style="font-size: 0.75rem; color: #64748B; font-weight: 600;">Executive Suite (Meja Kerja)</span>
+                </div>
+                <button id="threeAgentCardCloseBtn" class="three-agent-close-btn" title="Tutup">✕</button>
+              </div>
+              <div class="three-agent-card-body" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="three-agent-thought-box">
+                  <i data-lucide="message-square" class="lucide-xs" style="color: #64748B; flex-shrink: 0;"></i>
+                  <span id="threeAgentCardBubble" style="font-size: 0.8rem; font-weight: 600; color: #1E293B;">Executive Suite</span>
+                </div>
+                <div class="three-agent-meta-row">
+                  <span class="three-agent-meta-item">
+                    <i data-lucide="cpu" class="lucide-xs"></i>
+                    <span>RAM: <strong>0 MB</strong> (WebGL Client)</span>
+                  </span>
+                  <span class="three-agent-meta-item">
+                    <i data-lucide="activity" class="lucide-xs"></i>
+                    <span id="threeAgentCardState">Status: <strong>Idle</strong></span>
+                  </span>
+                </div>
+              </div>
+              <div class="three-agent-card-actions">
+                <button id="threeAgentCardFocusBtn" class="neo-btn neo-btn-primary" style="padding: 4px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+                  <i data-lucide="crosshair" class="lucide-xs"></i>
+                  <span>Fokus Meja</span>
+                </button>
+                <button id="threeAgentCardKanbanBtn" class="neo-btn neo-btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+                  <i data-lucide="kanban" class="lucide-xs"></i>
+                  <span>Filter Kanban</span>
+                </button>
               </div>
             </div>
           </div>
