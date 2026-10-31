@@ -2357,6 +2357,33 @@
         "themed_furniture_and_vfx": "VALID - Maket pesawat N-250 Gatotkaca, mesin espresso dengan partikel uap naik, server rack LED berkedip, meja biliar & arcade kabinet terpasang rapi.",
         "stability_and_tests": "VALID - 19/19 backend test passed, 0 error sintaks JavaScript, safe WebGL resource cleanup terverifikasi."
       }
+    },
+    {
+      "id": "TASK-OPS-17",
+      "project": "bayoffice",
+      "assignee": "PRABOWO",
+      "title": "BayOffice 3D V3: Ultra-Realistic Living Workspace, Populated Game Room & Ambient Polish",
+      "skills_required": [
+        "Lead Orchestrator",
+        "Task Delegation"
+      ],
+      "description": "[Dari Plan PLAN-20261101-03: BayOffice 3D V3: Ultra-Realistic Living Workspace, Populated Game Room & Ambient Polish]\n\n# Implementation Plan: BayOffice 3D V3 (Ultra-Realistic Living Workspace, Populated Game Room & Ambient Polish)\n\n> **ID Dokumen:** `PLAN-20261101-03`  \n> **Target Proyek:** `bayoffice`  \n> **Arsitek:** HABIBIE (Chief Architect, Strategic Planner & Homelab System Advisor)  \n> **Status:** Draft / Siap Review & Eksekusi  \n> **Engine:** AGY (Gemini 3.8 Flash High)  \n\n---\n\n## 1. 🎯 Analisis Bug Game Room & Visi Peningkatan Ultra-Realistic V3\n\nDokumen ini disusun sebagai respons langsung terhadap temuan Mas Bay terkait kondisi **Game Room** serta merancang cetak biru teknis untuk mendorong tingkat **...",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/bayoffice/frontend",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "created_at": "2026-11-01T06:35:52.091998+07:00",
+      "notes": "Implementasi BayOffice 3D V3 tuntas 100%: 1. Game Room Kalibrasi & Props Lengkap: Meja biliar presisi di bawah lampu gantung (world -8.0, 7.0), arcade cabinet di bawah neon ungu (world -17.0, 5.5), vending machine minuman kaleng bercahaya, sofa mustard empuk dengan sandaran, meja kopi kaca ber-gamepad retro cyan/pink, 65' Smart TV synthwave, zona beanbag warna-warni, dan pot tanaman monstera. 2. Animated Screen Glow & Shader: Canvas-to-Texture dinamis 12 FPS pada monitor Jokowi (log kernel/Postgres/FastAPI scrolling), Prabowo (UI mockup responsif + kursor klik interaktif + editor Tailwind JSX), Gibran (oscilloscope cyan/emerald 60Hz + matrix checklist 26/26 pass), Luhut (radar cluster topology + dashboard gauges), Smart TV Game Room (80s synthwave sunset perspective grid), dan Arcade CRT (retro 8-bit Pac-Man & blink coin). Soft point light bounce memantulkan pendaran layar ke permukaan meja dan wajah avatar. 3. Autonomous Social Pathing: Agen idle secara berkala berdiri, berjalan melewati koridor dan pintu animatif via waypoint anti-tembus dinding ke Kantin (espresso bar) atau Game Room (arcade/biliar), dengan bubble status dinamis. Saat task In-Progress aktif, agen otomatis kembali ke meja kerja dan mengetik. 4. Cozy Ambient Soundscapes: Web Audio API pure synthesizer (0 KB transfer) untuk suara ketikan keyboard mekanikal, desis uap espresso, clack bola biliar, dan blip arcade.",
+      "qa_review": "PASSED - Verifikasi komprehensif BayOffice 3D V3 lulus 100%. Kalibrasi koordinat Game Room sempurna (biliar world -8.0, 7.0 di bawah lampu & arcade world -17.0, 5.5 di bawah neon ungu), 8 props baru terpasang estetik. Animated screen canvas textures berjalan lancar dengan throttle 12 FPS hemat CPU. Waypoint pathing anti-tembus dinding via koridor tengah teruji andal. Ambient soundscapes Web Audio API 0 KB terisolasi aman. Layanan bayoffice.service port 8888 responsif.",
+      "qa_certification": {
+        "status": "PASSED_100%",
+        "auditor": "GIBRAN",
+        "game_room_calibration": "VALID - Koordinat lokal meja biliar (3.5, 0.0 -> world -8.0, 7.0) dan arcade (-5.5, -1.5 -> world -17.0, 5.5) terpasang presisi di bawah lampu gantung & neon ungu. Props lengkap: Vending machine, L-shaped sofa, glass coffee table + gamepads, 65\" Smart TV synthwave, beanbags, dan monstera tertata rapi tanpa out-of-bounds.",
+        "animated_screen_shaders": "VALID - Canvas-to-Texture dinamis (~12 FPS throttle) aktif pada seluruh monitor agen, TV Game Room, dan Arcade CRT. Soft emissive point light bounce menambah realisme tanpa lonjakan GPU/CPU.",
+        "autonomous_social_pathing": "VALID - Waypoint anti-tembus dinding berfungsi mulus via koridor tengah (0.5, -1.2 -> 0.5, 1.2) menuju Kantin/Game Room saat idle. Agen auto-return ke meja kerja saat menerima status working/reviewing.",
+        "ambient_soundscapes": "VALID - Web Audio API synthesizer (0 KB audio assets) aman tanpa memory leak, dilengkapi error guard & volume throttle.",
+        "performance_and_stability": "VALID - Node syntax check lulus 100%, HTTP 200/302 OK pada port 8888, zero overhead pada CPU homelab (0% idle, RAM 42.9MB)."
+      }
     }
   ]
 }

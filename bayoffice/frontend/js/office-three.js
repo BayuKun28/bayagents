@@ -93,6 +93,12 @@ class OfficeThree {
     this.serverRackLeds = [];
     this.lastLedBlinkTime = 0;
 
+    // 📺 V3 Animated Screen Canvases & Shader Textures
+    this.screenCanvases = {};
+    this.screenTextures = {};
+    this.screenCtxs = {};
+    this.lastScreenUpdate = 0;
+
     // Textures & Avatars
     this.textureLoader = new THREE.TextureLoader();
     this.avatarTextures = {};
@@ -113,6 +119,7 @@ class OfficeThree {
       this.initRenderer();
       this.initControls();
       this.initLightingAndAtmosphere();
+      this.initAnimatedScreenTextures();
       this.loadAvatarAssets();
       this.buildOfficeEnvironment();
       this.initAgents();
@@ -121,7 +128,7 @@ class OfficeThree {
       this.updateDayNightAtmosphere();
       this.startLoop();
 
-      console.log('[OfficeThree] BayOffice 3D V2 Realistic Themed Living Workspace initialized.');
+      console.log('[OfficeThree] BayOffice 3D V3 Ultra-Realistic Living Workspace initialized.');
     } catch (err) {
       console.error('[OfficeThree] WebGL initialization failed:', err);
     }
@@ -454,6 +461,646 @@ class OfficeThree {
         mesh.material.opacity = enabled ? opacity : 0.05;
       }
     });
+  }
+
+  // =========================================================================
+  // 📺 V3 ANIMATED SCREEN SHADERS & CANVAS TEXTURES (CANVAS-TO-TEXTURE ENGINE)
+  // =========================================================================
+
+  initAnimatedScreenTextures() {
+    const screens = [
+      { id: 'backend', w: 320, h: 200 },
+      { id: 'frontend_ui', w: 320, h: 200 },
+      { id: 'frontend_code', w: 320, h: 200 },
+      { id: 'qa_scope', w: 200, h: 320 },
+      { id: 'qa_matrix', w: 200, h: 320 },
+      { id: 'commander_radar', w: 320, h: 200 },
+      { id: 'commander_gauges', w: 320, h: 200 },
+      { id: 'tv_synthwave', w: 320, h: 180 },
+      { id: 'arcade_crt', w: 220, h: 220 }
+    ];
+
+    screens.forEach(s => {
+      const canvas = document.createElement('canvas');
+      canvas.width = s.w;
+      canvas.height = s.h;
+      const ctx = canvas.getContext('2d');
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+
+      this.screenCanvases[s.id] = canvas;
+      this.screenCtxs[s.id] = ctx;
+      this.screenTextures[s.id] = texture;
+    });
+
+    this.updateAnimatedScreens(0);
+  }
+
+  drawBackendScreen(ctx, time) {
+    ctx.fillStyle = '#05080C';
+    ctx.fillRect(0, 0, 320, 200);
+
+    // Titlebar
+    ctx.fillStyle = '#0E1726';
+    ctx.fillRect(0, 0, 320, 18);
+    ctx.fillStyle = '#EF4444';
+    ctx.beginPath(); ctx.arc(10, 9, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#F59E0B';
+    ctx.beginPath(); ctx.arc(20, 9, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#10B981';
+    ctx.beginPath(); ctx.arc(30, 9, 3.5, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '9px "Courier New", monospace';
+    ctx.fillText('jokowi@homelab:~ (FastAPI + PostgreSQL 17)', 45, 12);
+
+    // Log Stream
+    const allLogs = [
+      '[0.120] KERNEL: Linux 6.8.0-amd64 boot OK',
+      '[0.840] POSTGRES: Listening on 127.0.0.1:5432',
+      '[1.205] REDIS: Ping latency <0.4ms (Healthy)',
+      '[2.110] UVICORN: Started worker process [2801]',
+      '[2.890] SANCTUM: Token auth verified (user: bay)',
+      '[3.402] GET /api/v1/biodata 200 OK (1.1ms)',
+      '[4.105] POST /api/v1/portfolios 201 Created',
+      '[5.008] KANBAN: State sync In-Progress [PASS]',
+      '[5.890] BACKUP: Snapshot archived to /backups',
+      '[6.412] SYSTEM: Memory pressure 0.0% (ZRAM ON)'
+    ];
+
+    const offset = Math.floor(time * 1.5) % allLogs.length;
+    ctx.font = '10px "Courier New", monospace';
+    for (let i = 0; i < 9; i++) {
+      const line = allLogs[(offset + i) % allLogs.length];
+      const isGreen = i % 2 === 0;
+      ctx.fillStyle = isGreen ? '#10B981' : '#34D399';
+      ctx.fillText(line, 10, 34 + i * 16);
+    }
+
+    // Active Shell Prompt
+    ctx.fillStyle = '#38BDF8';
+    const cursor = (Math.floor(time * 3) % 2 === 0) ? '█' : ' ';
+    ctx.fillText(`jokowi@homelab:~$ ./run_tests.sh --watch ${cursor}`, 10, 188);
+  }
+
+  drawFrontendUIScreen(ctx, time) {
+    ctx.fillStyle = '#0B1120';
+    ctx.fillRect(0, 0, 320, 200);
+
+    // Modern Header Bar
+    ctx.fillStyle = '#1E293B';
+    ctx.fillRect(0, 0, 320, 26);
+
+    ctx.fillStyle = '#F97316';
+    ctx.fillRect(10, 6, 14, 14);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText('BayOffice Studio', 30, 16);
+
+    // Nav pills
+    const tabs = ['Home', 'Kanban', 'System', 'Deploy'];
+    tabs.forEach((t, idx) => {
+      ctx.fillStyle = idx === 1 ? '#0284C7' : '#334155';
+      ctx.fillRect(140 + idx * 42, 6, 38, 14);
+      ctx.fillStyle = '#F8FAFC';
+      ctx.font = '8px sans-serif';
+      ctx.fillText(t, 148 + idx * 42, 16);
+    });
+
+    // Content Grid (Neubrutalism Cards)
+    // Card A: Sprint Status
+    ctx.fillStyle = '#1E293B';
+    ctx.strokeStyle = '#0284C7';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(12, 38, 140, 72);
+    ctx.strokeRect(12, 38, 140, 72);
+
+    ctx.fillStyle = '#38BDF8';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('SPRINT V3 ACTIVE', 20, 52);
+
+    // Mini Progress Bar
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(20, 60, 120, 8);
+    const progW = (Math.sin(time * 1.5) * 0.3 + 0.7) * 120;
+    ctx.fillStyle = '#10B981';
+    ctx.fillRect(20, 60, progW, 8);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '8px sans-serif';
+    ctx.fillText('UI Wireframe • Tailwind 4.0', 20, 82);
+    ctx.fillText('CSS Hard Shadows 4px 4px', 20, 96);
+
+    // Card B: Metrics View
+    ctx.fillStyle = '#1E293B';
+    ctx.strokeStyle = '#F97316';
+    ctx.fillRect(164, 38, 144, 72);
+    ctx.strokeRect(164, 38, 144, 72);
+
+    ctx.fillStyle = '#F97316';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('PERFORMANCE 60 FPS', 172, 52);
+
+    // Sparkline Bars
+    for (let b = 0; b < 10; b++) {
+      const bh = Math.sin(time * 3 + b * 0.8) * 15 + 20;
+      ctx.fillStyle = b > 7 ? '#EC4899' : '#06B6D4';
+      ctx.fillRect(174 + b * 12, 100 - bh, 8, bh);
+    }
+
+    // Lower Action Panel
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(12, 120, 296, 70);
+    ctx.fillStyle = '#475569';
+    ctx.strokeRect(12, 120, 296, 70);
+
+    ctx.fillStyle = '#EC4899';
+    ctx.fillRect(20, 132, 70, 20);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('BUILD DIST', 32, 145);
+
+    ctx.fillStyle = '#10B981';
+    ctx.fillRect(100, 132, 70, 20);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('VITE LIVE', 114, 145);
+
+    // Dynamic Mouse Cursor Moving & Clicking
+    const curX = 140 + Math.sin(time * 2.0) * 80;
+    const curY = 100 + Math.cos(time * 2.5) * 45;
+    const isClick = Math.sin(time * 4) > 0.8;
+
+    if (isClick) {
+      ctx.strokeStyle = '#38BDF8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(curX, curY, 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Mouse Arrow
+    ctx.fillStyle = '#FFFFFF';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(curX, curY);
+    ctx.lineTo(curX + 8, curY + 8);
+    ctx.lineTo(curX + 3, curY + 9);
+    ctx.lineTo(curX + 5, curY + 14);
+    ctx.lineTo(curX + 2, curY + 15);
+    ctx.lineTo(curX, curY + 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  drawFrontendCodeScreen(ctx, time) {
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(0, 0, 320, 200);
+
+    // Code Editor Tab Bar
+    ctx.fillStyle = '#1E293B';
+    ctx.fillRect(0, 0, 320, 22);
+    ctx.fillStyle = '#38BDF8';
+    ctx.fillRect(10, 2, 90, 20);
+    ctx.fillStyle = '#0F172A';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText('OfficeThree.jsx', 18, 15);
+
+    const code = [
+      { n: '1', t: 'import { Canvas, useFrame } from "three";', c: '#93C5FD' },
+      { n: '2', t: 'export const LivingWorkspace = () => {', c: '#F472B6' },
+      { n: '3', t: '  const [status, setStatus] = useState("V3");', c: '#FBBF24' },
+      { n: '4', t: '  useFrame(({ clock }) => {', c: '#A78BFA' },
+      { n: '5', t: '    animateScreenGlow(clock.getElapsedTime());', c: '#34D399' },
+      { n: '6', t: '    syncAgentPathing({ target: "Kantin" });', c: '#38BDF8' },
+      { n: '7', t: '  });', c: '#A78BFA' },
+      { n: '8', t: '  return <Workspace3D atmosphere="WIB" />;', c: '#FB923C' },
+      { n: '9', t: '}; // Zero Homelab CPU Overhead', c: '#64748B' },
+      { n: '10', t: 'export default LivingWorkspace;', c: '#F472B6' }
+    ];
+
+    ctx.font = '10px "Courier New", monospace';
+    code.forEach((cd, idx) => {
+      ctx.fillStyle = '#475569';
+      ctx.fillText(cd.n.padStart(2, ' '), 8, 40 + idx * 15);
+      ctx.fillStyle = cd.c;
+      ctx.fillText(cd.t, 32, 40 + idx * 15);
+    });
+
+    // Blinking Code Cursor
+    if (Math.floor(time * 3) % 2 === 0) {
+      ctx.fillStyle = '#38BDF8';
+      ctx.fillRect(235, 120, 7, 12);
+    }
+  }
+
+  drawQAScopeScreen(ctx, time) {
+    ctx.fillStyle = '#03171B';
+    ctx.fillRect(0, 0, 200, 320);
+
+    // Scope Header
+    ctx.fillStyle = '#06292E';
+    ctx.fillRect(0, 0, 200, 24);
+    ctx.fillStyle = '#06B6D4';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText('DIGITAL OSCILLOSCOPE CH1', 12, 16);
+
+    // Reticle Grid
+    ctx.strokeStyle = '#083E46';
+    ctx.lineWidth = 0.5;
+    for (let x = 10; x < 200; x += 20) {
+      ctx.beginPath(); ctx.moveTo(x, 26); ctx.lineTo(x, 220); ctx.stroke();
+    }
+    for (let y = 30; y < 220; y += 20) {
+      ctx.beginPath(); ctx.moveTo(10, y); ctx.lineTo(190, y); ctx.stroke();
+    }
+
+    // Glowing Realtime Waveform
+    ctx.strokeStyle = '#06B6D4';
+    ctx.lineWidth = 2.0;
+    ctx.shadowColor = '#06B6D4';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+
+    const centerY = 125;
+    for (let x = 10; x <= 190; x += 2) {
+      const rad = (x - 10) * 0.09 + time * 8;
+      const y = centerY + Math.sin(rad) * 35 + Math.sin(rad * 2.3 + time * 4) * 10;
+      if (x === 10) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0; // reset
+
+    // Lower Signal Stats
+    ctx.fillStyle = '#041F23';
+    ctx.fillRect(0, 226, 200, 94);
+
+    ctx.fillStyle = '#10B981';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText('TRACE LOCK: 60.00 Hz', 12, 246);
+    ctx.fillStyle = '#38BDF8';
+    ctx.font = '9px monospace';
+    ctx.fillText('Vpp: 3.30V | RMS: 1.17V', 12, 264);
+    ctx.fillText('JITTER: 0.12ms (NOMINAL)', 12, 280);
+
+    ctx.fillStyle = '#10B981';
+    ctx.fillRect(12, 292, 176, 16);
+    ctx.fillStyle = '#022C22';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('AUDIT STATUS: PASSED', 34, 304);
+  }
+
+  drawQAMatrixScreen(ctx, time) {
+    ctx.fillStyle = '#03171B';
+    ctx.fillRect(0, 0, 200, 320);
+
+    // Matrix Header
+    ctx.fillStyle = '#064E3B';
+    ctx.fillRect(0, 0, 200, 26);
+    ctx.fillStyle = '#A7F3D0';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText('QA TEST SUITE MATRIX', 14, 17);
+
+    const tests = [
+      'PHPUnit Feature (26/26)',
+      'Sanctum Auth Guards',
+      'XSS Filter & Sanitizer',
+      'WCAG AAA High Contrast',
+      'Mobile 360px Adaptive',
+      'Zero Infinite Loops',
+      'RAM-Pressure (0% OOM)',
+      'Vite Production Build'
+    ];
+
+    ctx.font = '9px monospace';
+    tests.forEach((t, i) => {
+      const y = 46 + i * 28;
+      ctx.fillStyle = '#06292E';
+      ctx.fillRect(10, y - 11, 180, 22);
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 0.8;
+      ctx.strokeRect(10, y - 11, 180, 22);
+
+      ctx.fillStyle = '#10B981';
+      ctx.fillText('✔ ' + t, 16, y + 4);
+    });
+
+    // Bottom Animated Pulse
+    const pulse = Math.floor(time * 2.5) % 2 === 0;
+    ctx.fillStyle = pulse ? '#10B981' : '#047857';
+    ctx.fillRect(10, 280, 180, 26);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('CERTIFIED 100% PASSED', 26, 296);
+  }
+
+  drawCommanderRadar(ctx, time) {
+    ctx.fillStyle = '#140508';
+    ctx.fillRect(0, 0, 320, 200);
+
+    // Titlebar
+    ctx.fillStyle = '#2A080C';
+    ctx.fillRect(0, 0, 320, 18);
+    ctx.fillStyle = '#EF4444';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText('HOMELAB CLUSTER TOPOLOGY RADAR', 10, 13);
+
+    const cx = 160;
+    const cy = 108;
+
+    // Range rings
+    ctx.strokeStyle = '#450A0A';
+    ctx.lineWidth = 1;
+    [30, 60, 85].forEach(r => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    // Crosshairs
+    ctx.beginPath();
+    ctx.moveTo(cx - 85, cy); ctx.lineTo(cx + 85, cy);
+    ctx.moveTo(cx, cy - 85); ctx.lineTo(cx, cy + 85);
+    ctx.stroke();
+
+    // Rotating Radar Sweep
+    const angle = (time * 1.8) % (Math.PI * 2);
+    ctx.strokeStyle = '#EF4444';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * 85, cy + Math.sin(angle) * 85);
+    ctx.stroke();
+
+    // Node Blips
+    const nodes = [
+      { name: 'SRV-145', x: cx - 45, y: cy - 35, color: '#10B981' },
+      { name: 'SRV-146', x: cx + 50, y: cy - 25, color: '#38BDF8' },
+      { name: 'ROUTER', x: cx, y: cy + 45, color: '#F59E0B' }
+    ];
+
+    nodes.forEach(n => {
+      ctx.fillStyle = n.color;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '8px monospace';
+      ctx.fillText(n.name, n.x + 6, n.y + 3);
+    });
+
+    // Bottom Stats
+    ctx.fillStyle = '#F87171';
+    ctx.font = '9px monospace';
+    ctx.fillText('STATUS: SYNCHRONIZED • LATENCY: 0.4ms • DUAL-SERVER MIRROR', 10, 194);
+  }
+
+  drawCommanderGauges(ctx, time) {
+    ctx.fillStyle = '#140508';
+    ctx.fillRect(0, 0, 320, 200);
+
+    // Titlebar
+    ctx.fillStyle = '#2A080C';
+    ctx.fillRect(0, 0, 320, 18);
+    ctx.fillStyle = '#EF4444';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText('EXECUTIVE COMMAND DASHBOARD', 10, 13);
+
+    const drawDial = (x, y, r, val, label, color) => {
+      ctx.strokeStyle = '#371014';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(x, y, r, Math.PI * 0.8, Math.PI * 2.2);
+      ctx.stroke();
+
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, r, Math.PI * 0.8, Math.PI * 0.8 + val * (Math.PI * 1.4));
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(Math.round(val * 100) + '%', x - 12, y + 4);
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '8px sans-serif';
+      ctx.fillText(label, x - 14, y + 22);
+    };
+
+    const cpuVal = 0.22 + Math.sin(time * 2) * 0.08;
+    const ramVal = 0.45;
+    const netVal = 0.15 + Math.cos(time * 1.5) * 0.05;
+
+    drawDial(60, 75, 30, cpuVal, 'CPU AMD', '#EF4444');
+    drawDial(160, 75, 30, ramVal, 'RAM 8GB', '#F59E0B');
+    drawDial(260, 75, 30, netVal, 'LAN 1Gbps', '#10B981');
+
+    // Horizontal Core Bars
+    ctx.fillStyle = '#1F0A0E';
+    ctx.fillRect(20, 125, 280, 58);
+    ctx.strokeStyle = '#450A0A';
+    ctx.strokeRect(20, 125, 280, 58);
+
+    ctx.fillStyle = '#E2E8F0';
+    ctx.font = '9px monospace';
+    ctx.fillText('CORE 0: [||||||||||..........] 1.8 GHz', 30, 145);
+    ctx.fillText('CORE 1: [||||||..............] 1.5 GHz', 30, 165);
+
+    ctx.fillStyle = '#EF4444';
+    ctx.fillText('ORCHESTRATOR: LUHUT ON PASSIVE STANDBY', 30, 194);
+  }
+
+  drawTVSynthwave(ctx, time) {
+    ctx.fillStyle = '#12072B';
+    ctx.fillRect(0, 0, 320, 180);
+
+    // Stars in sky
+    ctx.fillStyle = '#FFFFFF';
+    for (let s = 0; s < 25; s++) {
+      const sx = (s * 37) % 320;
+      const sy = (s * 23) % 90;
+      const sa = Math.sin(time * 3 + s) * 0.5 + 0.5;
+      ctx.globalAlpha = sa;
+      ctx.fillRect(sx, sy, 1.5, 1.5);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Glowing Synthwave Sun
+    const sunY = 95;
+    const sunGrad = ctx.createLinearGradient(160, 30, 160, 110);
+    sunGrad.addColorStop(0, '#FACC15');
+    sunGrad.addColorStop(1, '#EC4899');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(160, sunY, 40, Math.PI, 0, false);
+    ctx.fill();
+
+    // Horizontal scanline cuts through sun
+    ctx.fillStyle = '#12072B';
+    for (let cut = 0; cut < 5; cut++) {
+      ctx.fillRect(115, sunY - 8 - cut * 7, 90, 2 + cut * 0.6);
+    }
+
+    // Neon Wireframe Mountains
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, 95);
+    ctx.lineTo(60, 60);
+    ctx.lineTo(120, 95);
+    ctx.lineTo(200, 50);
+    ctx.lineTo(270, 95);
+    ctx.lineTo(320, 75);
+    ctx.stroke();
+
+    // 3D Moving Perspective Ground Grid
+    ctx.fillStyle = '#090317';
+    ctx.fillRect(0, 95, 320, 85);
+
+    ctx.strokeStyle = '#D946EF';
+    ctx.lineWidth = 1.0;
+
+    // Vanishing perspective lines
+    for (let vx = -100; vx <= 420; vx += 35) {
+      ctx.beginPath();
+      ctx.moveTo(160, 95);
+      ctx.lineTo(vx, 180);
+      ctx.stroke();
+    }
+
+    // Horizontal moving grid lines
+    const gridOffset = (time * 35) % 20;
+    for (let gz = 0; gz < 5; gz++) {
+      const gy = 95 + Math.pow((gz * 20 + gridOffset) / 100, 2) * 85;
+      if (gy <= 180) {
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(320, gy);
+        ctx.stroke();
+      }
+    }
+
+    // Retro Logo Title
+    ctx.fillStyle = '#06B6D4';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.shadowColor = '#06B6D4';
+    ctx.shadowBlur = 8;
+    ctx.fillText('BAYOFFICE 3D V3', 105, 30);
+    ctx.fillStyle = '#F43F5E';
+    ctx.fillText('GAMING & LOUNGE CLUB', 82, 45);
+    ctx.shadowBlur = 0;
+  }
+
+  drawArcadeCRT(ctx, time) {
+    ctx.fillStyle = '#0A0A23';
+    ctx.fillRect(0, 0, 220, 220);
+
+    // CRT Scanline Vignette
+    ctx.strokeStyle = '#06B6D4';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(6, 6, 208, 208);
+
+    // Header scores
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 8px monospace';
+    ctx.fillText('1UP  2840', 16, 24);
+    ctx.fillStyle = '#FACC15';
+    ctx.fillText('HIGH 193328', 120, 24);
+
+    // Maze Corridor
+    ctx.strokeStyle = '#3B82F6';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 36, 180, 140);
+    ctx.strokeRect(45, 60, 130, 90);
+
+    // Food Dots
+    ctx.fillStyle = '#FDE68A';
+    for (let d = 32; d <= 188; d += 16) {
+      ctx.fillRect(d, 48, 3, 3);
+      ctx.fillRect(d, 164, 3, 3);
+    }
+
+    // Animated Pac-Agent
+    const pacX = 60 + ((time * 30) % 100);
+    const pacY = 105;
+    const mouth = Math.abs(Math.sin(time * 12)) * 0.35;
+
+    ctx.fillStyle = '#FACC15';
+    ctx.beginPath();
+    ctx.arc(pacX, pacY, 9, mouth * Math.PI, (2 - mouth) * Math.PI);
+    ctx.lineTo(pacX, pacY);
+    ctx.fill();
+
+    // Red Ghost Chasing
+    const ghostX = pacX - 25;
+    ctx.fillStyle = '#EF4444';
+    ctx.beginPath();
+    ctx.arc(ghostX, pacY - 1, 8, Math.PI, 0, false);
+    ctx.lineTo(ghostX + 8, pacY + 8);
+    ctx.lineTo(ghostX + 4, pacY + 5);
+    ctx.lineTo(ghostX, pacY + 8);
+    ctx.lineTo(ghostX - 4, pacY + 5);
+    ctx.lineTo(ghostX - 8, pacY + 8);
+    ctx.fill();
+
+    // Ghost Eyes
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(ghostX - 5, pacY - 4, 3, 4);
+    ctx.fillRect(ghostX + 1, pacY - 4, 3, 4);
+    ctx.fillStyle = '#1D4ED8';
+    ctx.fillRect(ghostX - 4, pacY - 3, 2, 2);
+    ctx.fillRect(ghostX + 2, pacY - 3, 2, 2);
+
+    // Blinking "INSERT COIN"
+    if (Math.floor(time * 2) % 2 === 0) {
+      ctx.fillStyle = '#EC4899';
+      ctx.font = 'bold 9px monospace';
+      ctx.fillText('INSERT COIN (0/2)', 58, 200);
+    }
+  }
+
+  updateAnimatedScreens(time) {
+    if (!this.screenCtxs || !this.screenCanvases) return;
+
+    if (this.screenCtxs['backend']) {
+      this.drawBackendScreen(this.screenCtxs['backend'], time);
+      if (this.screenTextures['backend']) this.screenTextures['backend'].needsUpdate = true;
+    }
+    if (this.screenCtxs['frontend_ui']) {
+      this.drawFrontendUIScreen(this.screenCtxs['frontend_ui'], time);
+      if (this.screenTextures['frontend_ui']) this.screenTextures['frontend_ui'].needsUpdate = true;
+    }
+    if (this.screenCtxs['frontend_code']) {
+      this.drawFrontendCodeScreen(this.screenCtxs['frontend_code'], time);
+      if (this.screenTextures['frontend_code']) this.screenTextures['frontend_code'].needsUpdate = true;
+    }
+    if (this.screenCtxs['qa_scope']) {
+      this.drawQAScopeScreen(this.screenCtxs['qa_scope'], time);
+      if (this.screenTextures['qa_scope']) this.screenTextures['qa_scope'].needsUpdate = true;
+    }
+    if (this.screenCtxs['qa_matrix']) {
+      this.drawQAMatrixScreen(this.screenCtxs['qa_matrix'], time);
+      if (this.screenTextures['qa_matrix']) this.screenTextures['qa_matrix'].needsUpdate = true;
+    }
+    if (this.screenCtxs['commander_radar']) {
+      this.drawCommanderRadar(this.screenCtxs['commander_radar'], time);
+      if (this.screenTextures['commander_radar']) this.screenTextures['commander_radar'].needsUpdate = true;
+    }
+    if (this.screenCtxs['commander_gauges']) {
+      this.drawCommanderGauges(this.screenCtxs['commander_gauges'], time);
+      if (this.screenTextures['commander_gauges']) this.screenTextures['commander_gauges'].needsUpdate = true;
+    }
+    if (this.screenCtxs['tv_synthwave']) {
+      this.drawTVSynthwave(this.screenCtxs['tv_synthwave'], time);
+      if (this.screenTextures['tv_synthwave']) this.screenTextures['tv_synthwave'].needsUpdate = true;
+    }
+    if (this.screenCtxs['arcade_crt']) {
+      this.drawArcadeCRT(this.screenCtxs['arcade_crt'], time);
+      if (this.screenTextures['arcade_crt']) this.screenTextures['arcade_crt'].needsUpdate = true;
+    }
   }
 
   loadAvatarAssets() {
@@ -1040,10 +1687,10 @@ class OfficeThree {
     blotter.position.set(0, 1.48, 0.1);
     group.add(blotter);
 
-    // Triple Curved Commander Screens with Red HUD
-    this.addMonitor(group, -1.1, 1.95, -0.2, 1.1, 0.75, 0x1E293B, 0xDC2626, 0.2);
-    this.addMonitor(group, 0, 1.95, -0.3, 1.3, 0.85, 0x1E293B, 0xEF4444, 0);
-    this.addMonitor(group, 1.1, 1.95, -0.2, 1.1, 0.75, 0x1E293B, 0xDC2626, -0.2);
+    // Triple Curved Commander Screens with Red HUD & Animated Topology
+    this.addMonitor(group, -1.1, 1.95, -0.2, 1.1, 0.75, 0x1E293B, 0xDC2626, 0.2, 'commander_radar', true, 0xDC2626);
+    this.addMonitor(group, 0, 1.95, -0.3, 1.3, 0.85, 0x1E293B, 0xEF4444, 0, 'commander_gauges', true, 0xEF4444);
+    this.addMonitor(group, 1.1, 1.95, -0.2, 1.1, 0.75, 0x1E293B, 0xDC2626, -0.2, 'commander_radar', true, 0xDC2626);
 
     // Executive Laptop
     const laptop = new THREE.Mesh(
@@ -1357,10 +2004,10 @@ class OfficeThree {
 
     this.addStandardDesk(group, 0x0284C7);
 
-    // Triple Terminal Code Monitors
-    this.addMonitor(group, -0.9, 1.85, -0.15, 0.95, 0.65, 0x0F172A, 0x10B981, 0.20);
-    this.addMonitor(group, 0, 1.9, -0.25, 1.15, 0.75, 0x0F172A, 0x0EA5E9, 0);
-    this.addMonitor(group, 0.9, 1.85, -0.15, 0.95, 0.65, 0x0F172A, 0x10B981, -0.20);
+    // Triple Terminal Code Monitors with Live Matrix / Log Canvas Shader
+    this.addMonitor(group, -0.9, 1.85, -0.15, 0.95, 0.65, 0x0F172A, 0x10B981, 0.20, 'backend', true, 0x10B981);
+    this.addMonitor(group, 0, 1.9, -0.25, 1.15, 0.75, 0x0F172A, 0x0EA5E9, 0, 'backend', true, 0x0EA5E9);
+    this.addMonitor(group, 0.9, 1.85, -0.15, 0.95, 0.65, 0x0F172A, 0x10B981, -0.20, 'backend', true, 0x10B981);
 
     // 3D Acrylic Desk Nameplate for JOKOWI
     this.addAcrylicDeskNameplate(group, 'JOKOWI', 'Backend Engineer', '#0EA5E9', 1.2, 1.45, 0.5);
@@ -1403,8 +2050,8 @@ class OfficeThree {
     this.addStandardDesk(group, 0xF97316);
 
     // Dual Ultra-Wide Curved Monitors (UI Mockups & CSS Artboards)
-    this.addMonitor(group, -0.65, 1.85, -0.2, 1.1, 0.7, 0x1E293B, 0xF97316, 0.15);
-    this.addMonitor(group, 0.65, 1.85, -0.2, 1.1, 0.7, 0x1E293B, 0xEC4899, -0.15);
+    this.addMonitor(group, -0.65, 1.85, -0.2, 1.1, 0.7, 0x1E293B, 0xF97316, 0.15, 'frontend_ui', true, 0xF97316);
+    this.addMonitor(group, 0.65, 1.85, -0.2, 1.1, 0.7, 0x1E293B, 0xEC4899, -0.15, 'frontend_code', true, 0xEC4899);
 
     // Wacom Graphics Tablet & Stylus Pen
     const tab = new THREE.Mesh(
@@ -1468,8 +2115,8 @@ class OfficeThree {
     this.addStandardDesk(group, 0x10B981);
 
     // Dual Vertical Monitors for Testing & Inspect
-    this.addMonitor(group, -0.65, 1.95, -0.2, 0.75, 1.15, 0x0F172A, 0x10B981, 0.15);
-    this.addMonitor(group, 0.65, 1.95, -0.2, 0.75, 1.15, 0x0F172A, 0x34D399, -0.15);
+    this.addMonitor(group, -0.65, 1.95, -0.2, 0.75, 1.15, 0x0F172A, 0x10B981, 0.15, 'qa_scope', true, 0x06B6D4);
+    this.addMonitor(group, 0.65, 1.95, -0.2, 0.75, 1.15, 0x0F172A, 0x34D399, -0.15, 'qa_matrix', true, 0x10B981);
 
     // Desktop Diagnostic Oscilloscope
     const oscBox = new THREE.Mesh(
@@ -1672,45 +2319,183 @@ class OfficeThree {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
-    // 1. CLASSIC BILLIARD / POOL TABLE
-    this.buildBilliardTable(group, -8.0, 7.0);
+    // 1. CLASSIC BILLIARD / POOL TABLE (Positioned under billiard lamp at world -8.0, 7.0)
+    this.buildBilliardTable(group, 3.5, 0.0);
 
-    // 2. RETRO ARCADE CABINET (Neon Synthwave Marquee)
-    this.buildArcadeCabinet(group, -17.0, 4.5);
+    // 2. RETRO ARCADE CABINET (Positioned under neon light at world -17.0, 5.5)
+    this.buildArcadeCabinet(group, -5.5, -1.5);
 
-    // 3. MUSTARD L-SHAPED LOUNGE SOFA
+    // 3. SNACK & SODA VENDING MACHINE (Next to arcade cabinet)
+    this.buildVendingMachine(group, -7.5, -1.5);
+
+    // 4. MUSTARD & CHARCOAL L-SHAPED LOUNGE SOFA
     const sofaSeatA = new THREE.Mesh(
       new THREE.BoxGeometry(4.2, 0.6, 1.6),
       new THREE.MeshLambertMaterial({ color: 0xD97706 })
     );
-    sofaSeatA.position.set(-14.0, 0.45, 10.5);
+    sofaSeatA.position.set(-2.5, 0.45, 3.2);
     sofaSeatA.castShadow = true;
     group.add(sofaSeatA);
 
     const sofaSeatB = new THREE.Mesh(
-      new THREE.BoxGeometry(1.6, 0.6, 3.2),
+      new THREE.BoxGeometry(1.6, 0.6, 3.0),
       new THREE.MeshLambertMaterial({ color: 0xD97706 })
     );
-    sofaSeatB.position.set(-16.0, 0.45, 8.1);
+    sofaSeatB.position.set(-4.5, 0.45, 1.2);
     sofaSeatB.castShadow = true;
     group.add(sofaSeatB);
 
-    // 4. 65" WALL SMART TV & CONSOLE
-    const tvScreen = new THREE.Mesh(
-      new THREE.BoxGeometry(3.4, 1.9, 0.15),
-      new THREE.MeshBasicMaterial({ color: 0x38BDF8 })
+    // Sofa Backrest A
+    const sofaBackA = new THREE.Mesh(
+      new THREE.BoxGeometry(4.2, 0.8, 0.3),
+      new THREE.MeshLambertMaterial({ color: 0xB45309 })
     );
-    tvScreen.position.set(-14.0, 2.4, 13.8);
+    sofaBackA.position.set(-2.5, 0.85, 3.9);
+    group.add(sofaBackA);
+
+    // Sofa Backrest B
+    const sofaBackB = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.8, 3.0),
+      new THREE.MeshLambertMaterial({ color: 0xB45309 })
+    );
+    sofaBackB.position.set(-5.2, 0.85, 1.2);
+    group.add(sofaBackB);
+
+    // 5. GLASS COFFEE TABLE WITH RETRO GAMEPADS
+    const coffeeTable = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 0.1, 1.2),
+      new THREE.MeshLambertMaterial({ color: 0x94A3B8, transparent: true, opacity: 0.85 })
+    );
+    coffeeTable.position.set(-2.5, 0.45, 1.5);
+    group.add(coffeeTable);
+
+    [-0.5, 0.5].forEach(gx => {
+      const pad = new THREE.Mesh(
+        new THREE.BoxGeometry(0.35, 0.06, 0.22),
+        new THREE.MeshBasicMaterial({ color: gx < 0 ? 0x06B6D4 : 0xEC4899 })
+      );
+      pad.position.set(-2.5 + gx, 0.53, 1.5);
+      group.add(pad);
+    });
+
+    // 6. 65" WALL SMART TV & CONSOLE
+    const tvMat = (this.screenTextures && this.screenTextures['tv_synthwave'])
+      ? new THREE.MeshBasicMaterial({ map: this.screenTextures['tv_synthwave'] })
+      : new THREE.MeshBasicMaterial({ color: 0x38BDF8 });
+    const tvScreen = new THREE.Mesh(
+      new THREE.BoxGeometry(3.6, 2.0, 0.15),
+      tvMat
+    );
+    tvScreen.position.set(-2.5, 2.4, 5.6);
     group.add(tvScreen);
 
+    const tvLight = new THREE.PointLight(0x38BDF8, 0.65, 5.0, 1.6);
+    tvLight.position.set(-2.5, 2.4, 5.1);
+    group.add(tvLight);
+    this.accentNightLights.push({ light: tvLight, nightIntensity: 0.80, dayIntensity: 0.30 });
+
     const tvConsole = new THREE.Mesh(
-      new THREE.BoxGeometry(0.8, 0.12, 0.5),
+      new THREE.BoxGeometry(1.6, 0.3, 0.6),
       new THREE.MeshLambertMaterial({ color: 0x0F172A })
     );
-    tvConsole.position.set(-14.0, 0.8, 13.5);
+    tvConsole.position.set(-2.5, 0.4, 5.3);
     group.add(tvConsole);
 
+    // 7. CYBERPUNK BEANBAG HIBERNATION REST ZONE
+    const beanbagColors = [0x8B5CF6, 0x06B6D4, 0xEC4899];
+    [-1.0, 0, 1.0].forEach((bx, idx) => {
+      const beanbag = new THREE.Mesh(
+        new THREE.SphereGeometry(0.65, 12, 10),
+        new THREE.MeshLambertMaterial({ color: beanbagColors[idx] })
+      );
+      beanbag.scale.set(1.0, 0.6, 1.1);
+      beanbag.position.set(5.5 + bx * 1.3, 0.35, 4.2);
+      beanbag.castShadow = true;
+      group.add(beanbag);
+    });
+
+    // 8. CORNER MONSTERA PLANT
+    this.buildMonsteraPlant(group, -7.8, 4.8);
+
     parent.add(group);
+  }
+
+  buildVendingMachine(parent, x, z) {
+    const vend = new THREE.Group();
+    vend.position.set(x, 0, z);
+
+    // Main Body (Vibrant Red)
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 3.4, 1.4),
+      new THREE.MeshLambertMaterial({ color: 0xDC2626 })
+    );
+    body.position.set(0, 1.7, 0);
+    body.castShadow = true;
+    vend.add(body);
+
+    // Glowing Glass Display
+    const glass = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 1.8, 0.1),
+      new THREE.MeshBasicMaterial({ color: 0x38BDF8, transparent: true, opacity: 0.9 })
+    );
+    glass.position.set(0, 2.1, 0.72);
+    vend.add(glass);
+
+    // Drink Cans Row
+    const canColors = [0xFACC15, 0x10B981, 0x3B82F6, 0xEC4899];
+    for (let r = 0; r < 3; r++) {
+      canColors.forEach((cc, cIdx) => {
+        const can = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.06, 0.06, 0.18, 8),
+          new THREE.MeshBasicMaterial({ color: cc })
+        );
+        can.position.set(-0.4 + cIdx * 0.26, 1.5 + r * 0.5, 0.65);
+        vend.add(can);
+      });
+    }
+
+    // Dispenser Slot at Bottom
+    const slot = new THREE.Mesh(
+      new THREE.BoxGeometry(0.9, 0.45, 0.15),
+      new THREE.MeshBasicMaterial({ color: 0x1E293B })
+    );
+    slot.position.set(0, 0.5, 0.72);
+    vend.add(slot);
+
+    parent.add(vend);
+  }
+
+  buildMonsteraPlant(parent, x, z) {
+    const plant = new THREE.Group();
+    plant.position.set(x, 0, z);
+
+    // Terracotta Pot
+    const pot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.3, 0.9, 12),
+      new THREE.MeshLambertMaterial({ color: 0xEA580C })
+    );
+    pot.position.set(0, 0.45, 0);
+    pot.castShadow = true;
+    plant.add(pot);
+
+    // Lush Monstera Leaves
+    const leafGeo = new THREE.SphereGeometry(0.4, 8, 8);
+    const leafMat = new THREE.MeshLambertMaterial({ color: 0x15803D });
+    leafGeo.scale(1.2, 0.25, 1.5);
+
+    [
+      { rx: 0.3, ry: 0, rz: 0.3, px: 0.2, py: 1.0, pz: 0.2 },
+      { rx: -0.3, ry: 1.2, rz: -0.2, px: -0.2, py: 1.1, pz: -0.1 },
+      { rx: 0.2, ry: 2.4, rz: -0.3, px: -0.2, py: 1.2, pz: 0.2 },
+      { rx: -0.1, ry: 3.6, rz: 0.4, px: 0.1, py: 1.3, pz: -0.2 }
+    ].forEach(lp => {
+      const leaf = new THREE.Mesh(leafGeo, leafMat);
+      leaf.position.set(lp.px, lp.py, lp.pz);
+      leaf.rotation.set(lp.rx, lp.ry, lp.rz);
+      plant.add(leaf);
+    });
+
+    parent.add(plant);
   }
 
   buildBilliardTable(parent, x, z) {
@@ -1816,13 +2601,21 @@ class OfficeThree {
     body.castShadow = true;
     arcade.add(body);
 
-    // Glowing CRT Screen
+    // Glowing CRT Screen with Live 8-Bit Retro Arcade Canvas
+    const arcadeMat = (this.screenTextures && this.screenTextures['arcade_crt'])
+      ? new THREE.MeshBasicMaterial({ map: this.screenTextures['arcade_crt'] })
+      : new THREE.MeshBasicMaterial({ color: 0x06B6D4 });
     const screen = new THREE.Mesh(
       new THREE.BoxGeometry(1.3, 0.9, 0.1),
-      new THREE.MeshBasicMaterial({ color: 0x06B6D4 })
+      arcadeMat
     );
     screen.position.set(0, 2.3, 0.82);
     arcade.add(screen);
+
+    const arcadeLight = new THREE.PointLight(0xEC4899, 0.60, 3.5, 1.6);
+    arcadeLight.position.set(0, 2.3, 1.3);
+    arcade.add(arcadeLight);
+    this.accentNightLights.push({ light: arcadeLight, nightIntensity: 0.80, dayIntensity: 0.30 });
 
     // Glowing Neon Synthwave Marquee
     const marquee = new THREE.Mesh(
@@ -2067,7 +2860,7 @@ class OfficeThree {
     });
   }
 
-  addMonitor(group, x, y, z, w, h, bezelColor, screenColor, rotY = 0) {
+  addMonitor(group, x, y, z, w, h, bezelColor, screenColor, rotY = 0, screenType = null, addBounceLight = false, bounceColor = 0xFFFFFF) {
     const monitor = new THREE.Group();
     monitor.position.set(x, y, z);
     monitor.rotation.y = rotY;
@@ -2079,11 +2872,25 @@ class OfficeThree {
     bezel.castShadow = true;
     monitor.add(bezel);
 
-    const screenMat = new THREE.MeshBasicMaterial({ color: screenColor });
+    let screenMat;
+    if (screenType && this.screenTextures && this.screenTextures[screenType]) {
+      screenMat = new THREE.MeshBasicMaterial({ map: this.screenTextures[screenType] });
+    } else {
+      screenMat = new THREE.MeshBasicMaterial({ color: screenColor });
+    }
+
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.1, h - 0.1), screenMat);
     screen.position.set(0, 0, 0.045);
     monitor.add(screen);
     this.monitors.push(screenMat);
+
+    // Subtle soft emissive bounce point light illuminating desk surface & avatar face
+    if (addBounceLight) {
+      const bounce = new THREE.PointLight(bounceColor, 0.50, 3.2, 1.8);
+      bounce.position.set(0, 0, 0.55);
+      monitor.add(bounce);
+      this.accentNightLights.push({ light: bounce, nightIntensity: 0.70, dayIntensity: 0.30 });
+    }
 
     const stand = new THREE.Mesh(
       new THREE.CylinderGeometry(0.04, 0.04, 0.5),
@@ -2093,6 +2900,7 @@ class OfficeThree {
     monitor.add(stand);
 
     group.add(monitor);
+    return monitor;
   }
 
   addCoffeeMug(group, x, y, z) {
@@ -2137,65 +2945,163 @@ class OfficeThree {
         role: 'Lead Orchestrator',
         color: '#EF4444',
         state: 'idle',
+        socialStatus: 'at_desk',
         bubble: 'Executive Suite',
         x: -15.5, z: -6.5,
         targetX: -15.5, targetZ: -6.5,
         targetY: 1.15,
         workPos: { x: -15.5, z: -6.5, y: 1.15 },
         breakPos: { x: -15.5, z: -2.0, y: 1.15 },
-        sleepPos: { x: -11.0, z: 6.5, y: 1.15 }
+        sleepPos: { x: -14.0, z: 10.2, y: 1.15 },
+        waypointsToBreak: [
+          { x: -15.5, z: -4.0 },
+          { x: -15.5, z: -2.0 }
+        ],
+        waypointsToDesk: [
+          { x: -15.5, z: -4.0 },
+          { x: -15.5, z: -6.5 }
+        ],
+        breakBubble: 'Executive review & santai sejenak 📋',
+        deskBubble: 'Executive Suite',
+        activePath: null,
+        nextSocialTimer: 35 + Math.random() * 25,
+        breakDuration: 0,
+        lastTypeSound: 0,
+        lastAmbientSound: 0
       },
       HABIBIE: {
         name: 'HABIBIE',
         role: 'Chief Architect',
         color: '#8B5CF6',
         state: 'idle',
+        socialStatus: 'at_desk',
         bubble: 'Studio Arsitek',
         x: -5.5, z: -6.5,
         targetX: -5.5, targetZ: -6.5,
         targetY: 1.25,
         workPos: { x: -5.5, z: -6.5, y: 1.25 },
         breakPos: { x: -5.5, z: -2.0, y: 1.25 },
-        sleepPos: { x: -5.5, z: -6.5, y: 1.25 }
+        sleepPos: { x: -5.5, z: -6.5, y: 1.25 },
+        waypointsToBreak: [
+          { x: -5.5, z: -4.0 },
+          { x: -5.5, z: -2.0 }
+        ],
+        waypointsToDesk: [
+          { x: -5.5, z: -4.0 },
+          { x: -5.5, z: -6.5 }
+        ],
+        breakBubble: 'Merancang arsitektur N-250 Gatotkaca ✈️',
+        deskBubble: 'Studio Arsitek',
+        activePath: null,
+        nextSocialTimer: 45 + Math.random() * 30,
+        breakDuration: 0,
+        lastTypeSound: 0,
+        lastAmbientSound: 0
       },
       JOKOWI: {
         name: 'JOKOWI',
         role: 'Backend Engineer',
         color: '#0EA5E9',
         state: 'idle',
+        socialStatus: 'at_desk',
         bubble: 'Backend Bay',
         x: 3.5, z: -6.5,
         targetX: 3.5, targetZ: -6.5,
         targetY: 1.15,
         workPos: { x: 3.5, z: -6.5, y: 1.15 },
-        breakPos: { x: 8.5, z: 7.0, y: 1.15 },
-        sleepPos: { x: -13.0, z: 6.5, y: 1.15 }
+        breakPos: { x: 11.5, z: 6.5, y: 1.15 }, // Kantin espresso bar
+        sleepPos: { x: -14.0, z: 10.2, y: 1.15 }, // Game room lounge sofa
+        waypointsToBreak: [
+          { x: 3.5, z: -3.5 },
+          { x: 0.5, z: -1.2 },
+          { x: 0.5, z: 1.2 },
+          { x: 6.0, z: 2.2 },
+          { x: 11.5, z: 6.5 }
+        ],
+        waypointsToDesk: [
+          { x: 6.0, z: 2.2 },
+          { x: 0.5, z: 1.2 },
+          { x: 0.5, z: -1.2 },
+          { x: 3.5, z: -3.5 },
+          { x: 3.5, z: -6.5 }
+        ],
+        breakBubble: 'Sedang rehat sejenak menikmati espresso homelab ☕',
+        deskBubble: 'Backend Bay',
+        activePath: null,
+        nextSocialTimer: 25 + Math.random() * 20,
+        breakDuration: 0,
+        lastTypeSound: 0,
+        lastAmbientSound: 0
       },
       PRABOWO: {
         name: 'PRABOWO',
         role: 'Frontend Engineer',
         color: '#F97316',
         state: 'idle',
+        socialStatus: 'at_desk',
         bubble: 'Frontend Bay',
         x: 11.5, z: -6.5,
         targetX: 11.5, targetZ: -6.5,
         targetY: 1.15,
         workPos: { x: 11.5, z: -6.5, y: 1.15 },
-        breakPos: { x: -9.5, z: 6.5, y: 1.15 },
-        sleepPos: { x: -8.0, z: 6.5, y: 1.15 }
+        breakPos: { x: -17.0, z: 5.5, y: 1.15 }, // Game Room arcade cabinet
+        sleepPos: { x: -6.0, z: 11.2, y: 1.15 }, // Game room beanbag
+        waypointsToBreak: [
+          { x: 11.5, z: -3.5 },
+          { x: 0.5, z: -1.2 },
+          { x: 0.5, z: 1.2 },
+          { x: -6.0, z: 2.2 },
+          { x: -17.0, z: 5.5 }
+        ],
+        waypointsToDesk: [
+          { x: -6.0, z: 2.2 },
+          { x: 0.5, z: 1.2 },
+          { x: 0.5, z: -1.2 },
+          { x: 11.5, z: -3.5 },
+          { x: 11.5, z: -6.5 }
+        ],
+        breakBubble: 'Mencoba rekor baru di Pac-Man arcade 🕹️',
+        deskBubble: 'Frontend Bay',
+        activePath: null,
+        nextSocialTimer: 30 + Math.random() * 25,
+        breakDuration: 0,
+        lastTypeSound: 0,
+        lastAmbientSound: 0
       },
       GIBRAN: {
         name: 'GIBRAN',
         role: 'QA & Security',
         color: '#10B981',
         state: 'idle',
+        socialStatus: 'at_desk',
         bubble: 'QA Terminal',
         x: 19.5, z: -6.5,
         targetX: 19.5, targetZ: -6.5,
         targetY: 1.15,
         workPos: { x: 19.5, z: -6.5, y: 1.15 },
-        breakPos: { x: 14.5, z: 7.0, y: 1.15 },
-        sleepPos: { x: -6.0, z: 6.5, y: 1.15 }
+        breakPos: { x: -8.0, z: 8.5, y: 1.15 }, // Billiard table side
+        sleepPos: { x: -6.0, z: 11.2, y: 1.15 }, // Game room beanbag
+        waypointsToBreak: [
+          { x: 19.5, z: -3.5 },
+          { x: 0.5, z: -1.2 },
+          { x: 0.5, z: 1.2 },
+          { x: -4.0, z: 2.2 },
+          { x: -8.0, z: 8.5 }
+        ],
+        waypointsToDesk: [
+          { x: -4.0, z: 2.2 },
+          { x: 0.5, z: 1.2 },
+          { x: 0.5, z: -1.2 },
+          { x: 19.5, z: -3.5 },
+          { x: 19.5, z: -6.5 }
+        ],
+        breakBubble: 'Rehat biliar trickshot & cek keamanan 🎱',
+        deskBubble: 'QA Terminal',
+        activePath: null,
+        nextSocialTimer: 35 + Math.random() * 30,
+        breakDuration: 0,
+        lastTypeSound: 0,
+        lastAmbientSound: 0
       }
     };
 
@@ -2740,31 +3646,54 @@ class OfficeThree {
     for (const [name, data] of Object.entries(agentsData)) {
       if (this.agents[name]) {
         const ag = this.agents[name];
+        const prevState = ag.state;
         ag.state = data.state || 'idle';
         ag.role = data.role || ag.role;
 
-        if (data.bubble_text && data.bubble_text !== ag.bubble) {
+        // Custom bubble update
+        if (data.bubble_text && ag.socialStatus === 'at_desk' && data.bubble_text !== ag.bubble) {
           ag.bubble = data.bubble_text;
+          ag.deskBubble = data.bubble_text;
           this.updateAgentBubble(name, ag.bubble);
         }
 
-        let target = ag.workPos;
+        // Active task assignment: working or reviewing
         if (ag.state === 'working' || ag.state === 'reviewing') {
-          target = ag.workPos;
+          if (ag.socialStatus !== 'at_desk' && ag.socialStatus !== 'walking_to_desk') {
+            // Abort break and path directly back to desk
+            ag.socialStatus = 'walking_to_desk';
+            ag.activePath = (ag.waypointsToDesk && ag.waypointsToDesk.length) ? ag.waypointsToDesk.slice() : null;
+          }
+          if (data.bubble_text) {
+            ag.bubble = data.bubble_text;
+            this.updateAgentBubble(name, ag.bubble);
+          }
         } else if (ag.state === 'sleeping') {
-          target = ag.sleepPos;
-        } else {
-          target = ag.breakPos;
+          ag.socialStatus = 'sleeping';
+          ag.targetX = ag.sleepPos.x;
+          ag.targetZ = ag.sleepPos.z;
+          ag.targetY = ag.sleepPos.y || 1.15;
+          ag.activePath = null;
+        } else if (ag.state === 'idle') {
+          if (prevState === 'sleeping') {
+            ag.socialStatus = 'at_desk';
+            ag.targetX = ag.workPos.x;
+            ag.targetZ = ag.workPos.z;
+            ag.targetY = ag.workPos.y || 1.15;
+            ag.activePath = null;
+          }
         }
-
-        ag.targetX = target.x;
-        ag.targetZ = target.z;
-        ag.targetY = target.y || 1.15;
       }
     }
   }
 
   updateAnimations(time) {
+    // 0. Update Animated Screen Textures (~12 FPS Throttle)
+    if (time - this.lastScreenUpdate > 0.08) {
+      this.lastScreenUpdate = time;
+      this.updateAnimatedScreens(time);
+    }
+
     // 1. Smooth Camera Transition
     if (this.camTransition.active) {
       const elapsed = performance.now() - this.camTransition.startTime;
@@ -2796,19 +3725,24 @@ class OfficeThree {
 
     // 3. Interactive Doors Proximity & Swing Logic
     this.doors.forEach(door => {
-      // Check if any agent is near (< 2.2 units)
+      // Check if any agent is near (< 2.4 units)
       let agentNear = false;
       for (const ag of Object.values(this.agents)) {
         const mesh = this.agentMeshes[ag.name];
         if (mesh) {
           const dist = Math.hypot(mesh.position.x - door.worldX, mesh.position.z - door.worldZ);
-          if (dist < 2.2) {
+          if (dist < 2.4) {
             agentNear = true;
             break;
           }
         }
       }
 
+      if (!door.isAutoOpen && agentNear) {
+        if (window.soundFx && typeof window.soundFx.playDoorSwing === 'function') {
+          window.soundFx.playDoorSwing();
+        }
+      }
       door.isAutoOpen = agentNear;
       const shouldOpen = door.isAutoOpen || door.isManualToggle;
       door.targetAngle = shouldOpen ? door.openAngle : 0;
@@ -2850,23 +3784,138 @@ class OfficeThree {
       });
     }
 
-    // 6. Agent Figurines & Procedural Blinking
+    // 6. Agent Figurines, Autonomous Social Pathing & Procedural Animations
     for (const [name, ag] of Object.entries(this.agents)) {
       const mesh = this.agentMeshes[name];
       if (!mesh) continue;
 
-      // Position Lerp toward target
-      const dx = ag.targetX - mesh.position.x;
-      const dz = ag.targetZ - mesh.position.z;
-      if (Math.abs(dx) > 0.05 || Math.abs(dz) > 0.05) {
-        mesh.position.x += dx * 0.06;
-        mesh.position.z += dz * 0.06;
-      } else {
-        mesh.position.x = ag.targetX;
-        mesh.position.z = ag.targetZ;
+      // Autonomous Social Pathing Transition for Idle Agents
+      if (ag.state === 'idle') {
+        if (ag.socialStatus === 'at_desk') {
+          if (time > ag.nextSocialTimer) {
+            ag.socialStatus = 'walking_to_break';
+            ag.activePath = (ag.waypointsToBreak && ag.waypointsToBreak.length) ? ag.waypointsToBreak.slice() : null;
+          }
+        } else if (ag.socialStatus === 'at_break') {
+          if (time > ag.breakDuration) {
+            ag.socialStatus = 'walking_to_desk';
+            ag.activePath = (ag.waypointsToDesk && ag.waypointsToDesk.length) ? ag.waypointsToDesk.slice() : null;
+          }
+        }
       }
 
-      // Procedural Eye Blinking (Every 3.5 - 6s for 150ms)
+      // Waypoint Navigation
+      if (ag.activePath && ag.activePath.length > 0) {
+        const nextPt = ag.activePath[0];
+        const dx = nextPt.x - mesh.position.x;
+        const dz = nextPt.z - mesh.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist > 0.15) {
+          const walkSpeed = 0.065;
+          mesh.position.x += (dx / dist) * walkSpeed;
+          mesh.position.z += (dz / dist) * walkSpeed;
+
+          // Rotate to face movement direction
+          const targetRot = Math.atan2(dx, dz);
+          let diff = targetRot - mesh.rotation.y;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          mesh.rotation.y += diff * 0.15;
+
+          // Walking body bob & arm swing
+          mesh.position.y = ag.targetY + Math.abs(Math.sin(time * 11)) * 0.08;
+          if (mesh.hands && mesh.hands.length === 2) {
+            mesh.hands[0].position.z = Math.sin(time * 11) * 0.14;
+            mesh.hands[1].position.z = -Math.sin(time * 11) * 0.14;
+            mesh.hands[0].position.y = 0.22;
+            mesh.hands[1].position.y = 0.22;
+          }
+        } else {
+          // Waypoint reached
+          ag.activePath.shift();
+          if (ag.activePath.length === 0) {
+            ag.activePath = null;
+            if (ag.socialStatus === 'walking_to_break') {
+              ag.socialStatus = 'at_break';
+              ag.breakDuration = time + 25 + Math.random() * 20; // 25-45s break
+              this.updateAgentBubble(name, ag.breakBubble);
+            } else if (ag.socialStatus === 'walking_to_desk') {
+              ag.socialStatus = 'at_desk';
+              ag.nextSocialTimer = time + 35 + Math.random() * 35;
+              mesh.rotation.y = 0; // face desk monitors
+              this.updateAgentBubble(name, ag.deskBubble);
+            }
+          }
+        }
+      } else if (ag.socialStatus === 'at_desk') {
+        mesh.position.x = ag.workPos.x;
+        mesh.position.z = ag.workPos.z;
+        mesh.rotation.y = 0; // face desk monitors
+
+        if (ag.state === 'working' || ag.state === 'reviewing') {
+          if (mesh.hands && mesh.hands.length === 2) {
+            mesh.hands[0].position.y = 0.25 + Math.sin(time * 14) * 0.04;
+            mesh.hands[1].position.y = 0.25 + Math.cos(time * 14) * 0.04;
+            mesh.hands[0].position.z = 0.25;
+            mesh.hands[1].position.z = 0.25;
+          }
+          if (mesh.headMesh) {
+            mesh.headMesh.rotation.x = 0.12 + Math.sin(time * 5) * 0.04;
+          }
+          mesh.position.y = ag.targetY + Math.sin(time * 6) * 0.02;
+
+          // Keyboard clicks
+          if (window.soundFx && typeof window.soundFx.playKeyboardClick === 'function') {
+            if (!ag.lastTypeSound || time - ag.lastTypeSound > 2.5 + Math.random() * 2.0) {
+              ag.lastTypeSound = time;
+              window.soundFx.playKeyboardClick();
+            }
+          }
+        } else {
+          // Idle sitting at desk
+          mesh.position.y = ag.targetY + Math.sin(time * 2.2) * 0.03;
+          if (mesh.headMesh) {
+            mesh.headMesh.rotation.x = Math.sin(time * 1.2) * 0.02;
+            mesh.headMesh.rotation.y = Math.sin(time * 0.6) * 0.08;
+          }
+          if (mesh.hands && mesh.hands.length === 2) {
+            mesh.hands[0].position.y = 0.22;
+            mesh.hands[1].position.y = 0.22;
+            mesh.hands[0].position.z = 0.22;
+            mesh.hands[1].position.z = 0.22;
+          }
+        }
+      } else if (ag.socialStatus === 'at_break') {
+        mesh.position.y = ag.targetY + Math.sin(time * 1.8) * 0.025;
+        if (mesh.headMesh) {
+          mesh.headMesh.rotation.x = Math.sin(time * 1.0) * 0.04;
+          mesh.headMesh.rotation.y = Math.sin(time * 0.8) * 0.12;
+        }
+
+        // Ambient soundscapes when at break
+        if (window.soundFx && window.soundFx.isEnabled()) {
+          if (name === 'JOKOWI' && (!ag.lastAmbientSound || time - ag.lastAmbientSound > 16.0)) {
+            ag.lastAmbientSound = time;
+            if (typeof window.soundFx.playEspressoHiss === 'function') window.soundFx.playEspressoHiss();
+          } else if (name === 'PRABOWO' && (!ag.lastAmbientSound || time - ag.lastAmbientSound > 12.0)) {
+            ag.lastAmbientSound = time;
+            if (typeof window.soundFx.playArcadeBeep === 'function') window.soundFx.playArcadeBeep();
+          } else if (name === 'GIBRAN' && (!ag.lastAmbientSound || time - ag.lastAmbientSound > 15.0)) {
+            ag.lastAmbientSound = time;
+            if (typeof window.soundFx.playBilliardClack === 'function') window.soundFx.playBilliardClack();
+          }
+        }
+      } else if (ag.state === 'sleeping') {
+        mesh.position.x += (ag.sleepPos.x - mesh.position.x) * 0.06;
+        mesh.position.z += (ag.sleepPos.z - mesh.position.z) * 0.06;
+        mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
+        if (mesh.headMesh) {
+          mesh.headMesh.rotation.x = 0.45;
+        }
+      }
+
+      // Procedural Eye Blinking (Every 3.5 - 6s for 140ms)
       if (mesh.eyes && mesh.blinkState) {
         if (!mesh.blinkState.isBlinking && time > mesh.blinkState.nextBlink) {
           mesh.blinkState.isBlinking = true;
@@ -2876,31 +3925,6 @@ class OfficeThree {
           mesh.blinkState.isBlinking = false;
           mesh.blinkState.nextBlink = time + Math.random() * 3 + 3;
           mesh.eyes.forEach(e => e.scale.y = 1.0);
-        }
-      }
-
-      // State Specific Animations
-      if (ag.state === 'working' || ag.state === 'reviewing') {
-        if (mesh.hands && mesh.hands.length === 2) {
-          mesh.hands[0].position.y = 0.25 + Math.sin(time * 14) * 0.04;
-          mesh.hands[1].position.y = 0.25 + Math.cos(time * 14) * 0.04;
-        }
-        if (mesh.headMesh) {
-          mesh.headMesh.rotation.x = 0.12 + Math.sin(time * 5) * 0.04;
-        }
-        mesh.position.y = ag.targetY + Math.sin(time * 6) * 0.02;
-
-      } else if (ag.state === 'sleeping') {
-        mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
-        if (mesh.headMesh) {
-          mesh.headMesh.rotation.x = 0.45;
-        }
-      } else {
-        // Idle Standby
-        mesh.position.y = ag.targetY + Math.sin(time * 2.2) * 0.03;
-        if (mesh.headMesh) {
-          mesh.headMesh.rotation.x = Math.sin(time * 1.2) * 0.02;
-          mesh.headMesh.rotation.y = Math.sin(time * 0.6) * 0.08;
         }
       }
     }
@@ -3115,6 +4139,15 @@ class OfficeThree {
     this.stopLoop();
     if (this.atmosphereInterval) {
       clearInterval(this.atmosphereInterval);
+    }
+
+    if (this.screenTextures) {
+      Object.values(this.screenTextures).forEach(t => {
+        if (t && typeof t.dispose === 'function') t.dispose();
+      });
+      this.screenTextures = {};
+      this.screenCanvases = {};
+      this.screenCtxs = {};
     }
 
     if (this.renderer && this.renderer.domElement) {
