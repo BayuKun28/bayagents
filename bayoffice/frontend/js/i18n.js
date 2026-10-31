@@ -61,6 +61,9 @@
       },
       canvas: {
         title: '2D Virtual Office',
+        title_3d: '3D Isometric Office',
+        mode_2d: '2D Canvas',
+        mode_3d: '3D Low-Poly',
         live_view: 'Live View',
         rooms_subtitle: '5 Rooms: Executive Suite • Architect Studio • Engineering Bay • Game Room • Cafeteria Bar',
         fullscreen: 'Fullscreen',
@@ -394,6 +397,9 @@
       },
       canvas: {
         title: 'Kantor Virtual 2D',
+        title_3d: 'Kantor Virtual 3D',
+        mode_2d: '2D Klasik',
+        mode_3d: '3D Isometrik',
         live_view: 'Live View',
         rooms_subtitle: '5 Ruangan: Ruang Pimpinan • Studio Arsitek • Lab Engineer • Game Room • Kantin Kafe',
         fullscreen: 'Fullscreen',

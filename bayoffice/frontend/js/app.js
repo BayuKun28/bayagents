@@ -17,46 +17,120 @@ document.addEventListener('DOMContentLoaded', () => {
   window.canvas = canvas;
   window.soundFx = soundFx;
 
-  // 1b. Canvas 2D Hit Detection Callback
+  // 1b. Hit Detection Callback (Shared by 2D Canvas & 3D Three.js)
+  const handleAgentClick = (agentName) => {
+    if (soundFx) soundFx.playClick();
+
+    // Khusus klik Agen HABIBIE: Langsung alihkan ke Plans Studio
+    if (agentName === 'HABIBIE') {
+      switchWorkspaceView('plans');
+      return;
+    }
+
+    // Filter kanban to agent
+    const fBtns = document.querySelectorAll('.filter-btn');
+    fBtns.forEach(b => {
+      if (b.getAttribute('data-assignee') === agentName) {
+        b.classList.add('neo-btn-primary');
+        b.classList.remove('neo-btn-secondary');
+      } else {
+        b.classList.remove('neo-btn-primary');
+        b.classList.add('neo-btn-secondary');
+      }
+    });
+    kanban.setFilter(agentName);
+
+    // Smooth scroll to Kanban board
+    const kanbanSection = document.getElementById('kanbanContainer');
+    if (kanbanSection) {
+      kanbanSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Visual pulse pada kartu agen di bawah canvas
+    const cards = document.querySelectorAll('#agentsGrid .neo-box-sm');
+    cards.forEach(card => {
+      if (card.textContent.includes(agentName)) {
+        card.style.outline = '3px solid var(--border-color)';
+        setTimeout(() => { card.style.outline = 'none'; }, 1500);
+      }
+    });
+  };
+
   if (canvas) {
-    canvas.onAgentClick = (agentName) => {
-      if (soundFx) soundFx.playClick();
-
-      // Khusus klik Agen HABIBIE: Langsung alihkan ke Plans Studio
-      if (agentName === 'HABIBIE') {
-        switchWorkspaceView('plans');
-        return;
-      }
-
-      // Filter kanban to agent
-      const fBtns = document.querySelectorAll('.filter-btn');
-      fBtns.forEach(b => {
-        if (b.getAttribute('data-assignee') === agentName) {
-          b.classList.add('neo-btn-primary');
-          b.classList.remove('neo-btn-secondary');
-        } else {
-          b.classList.remove('neo-btn-primary');
-          b.classList.add('neo-btn-secondary');
-        }
-      });
-      kanban.setFilter(agentName);
-
-      // Smooth scroll to Kanban board
-      const kanbanSection = document.getElementById('kanbanContainer');
-      if (kanbanSection) {
-        kanbanSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-
-      // Visual pulse pada kartu agen di bawah canvas
-      const cards = document.querySelectorAll('#agentsGrid .neo-box-sm');
-      cards.forEach(card => {
-        if (card.textContent.includes(agentName)) {
-          card.style.outline = '3px solid var(--border-color)';
-          setTimeout(() => { card.style.outline = 'none'; }, 1500);
-        }
-      });
-    };
+    canvas.onAgentClick = handleAgentClick;
   }
+
+  // 1c. Inisialisasi 3D Low-Poly Isometric Office Engine (Three.js)
+  let officeThree = null;
+  if (typeof OfficeThree === 'function') {
+    try {
+      officeThree = new OfficeThree('officeThreeContainer');
+      officeThree.onAgentClick = handleAgentClick;
+      window.officeThree = officeThree;
+    } catch (e) {
+      console.warn('[app.js] OfficeThree initialization failed, fallback to 2D:', e);
+    }
+  }
+
+  // 1d. View Mode Switcher (2D / 3D Hybrid)
+  function setOfficeViewMode(mode, savePreference = true) {
+    const officeCanvasEl = document.getElementById('officeCanvas');
+    const officeThreeEl = document.getElementById('officeThreeContainer');
+    const toggle2dBtn = document.getElementById('toggle2dBtn');
+    const toggle3dBtn = document.getElementById('toggle3dBtn');
+    const officeViewTitle = document.getElementById('officeViewTitle');
+
+    if (mode === '3d' && officeThree) {
+      if (officeCanvasEl) officeCanvasEl.style.display = 'none';
+      if (officeThreeEl) officeThreeEl.style.display = 'block';
+      if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(false);
+      if (officeThree && typeof officeThree.setViewActive === 'function') {
+        officeThree.setViewActive(true);
+        if (window.latestAgentsData) officeThree.updateAgents(window.latestAgentsData);
+      }
+      if (toggle3dBtn) {
+        toggle3dBtn.classList.add('neo-btn-primary');
+        toggle3dBtn.classList.remove('neo-btn-secondary');
+      }
+      if (toggle2dBtn) {
+        toggle2dBtn.classList.remove('neo-btn-primary');
+        toggle2dBtn.classList.add('neo-btn-secondary');
+      }
+      if (officeViewTitle) {
+        officeViewTitle.setAttribute('data-i18n', 'canvas.title_3d');
+        officeViewTitle.textContent = window.I18n ? window.I18n.t('canvas.title_3d') : '3D Isometric Office';
+      }
+      if (savePreference) localStorage.setItem('bayoffice_view_mode', '3d');
+    } else {
+      if (officeCanvasEl) officeCanvasEl.style.display = 'block';
+      if (officeThreeEl) officeThreeEl.style.display = 'none';
+      if (officeThree && typeof officeThree.setViewActive === 'function') officeThree.setViewActive(false);
+      if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(true);
+      if (toggle2dBtn) {
+        toggle2dBtn.classList.add('neo-btn-primary');
+        toggle2dBtn.classList.remove('neo-btn-secondary');
+      }
+      if (toggle3dBtn) {
+        toggle3dBtn.classList.remove('neo-btn-primary');
+        toggle3dBtn.classList.add('neo-btn-secondary');
+      }
+      if (officeViewTitle) {
+        officeViewTitle.setAttribute('data-i18n', 'canvas.title');
+        officeViewTitle.textContent = window.I18n ? window.I18n.t('canvas.title') : '2D Virtual Office';
+      }
+      if (savePreference) localStorage.setItem('bayoffice_view_mode', '2d');
+    }
+  }
+  window.setOfficeViewMode = setOfficeViewMode;
+
+  const toggle2dBtn = document.getElementById('toggle2dBtn');
+  const toggle3dBtn = document.getElementById('toggle3dBtn');
+  if (toggle2dBtn) toggle2dBtn.addEventListener('click', () => setOfficeViewMode('2d'));
+  if (toggle3dBtn) toggle3dBtn.addEventListener('click', () => setOfficeViewMode('3d'));
+
+  // Muat preferensi awal (Default ke 3D jika didukung Three.js)
+  const initialMode = localStorage.getItem('bayoffice_view_mode') || '3d';
+  setOfficeViewMode(initialMode, false);
 
   // Cache data terakhir untuk re-render saat bahasa berubah
   window.latestAgentsData = null;
@@ -206,8 +280,13 @@ document.addEventListener('DOMContentLoaded', () => {
             prevDoneTaskIds = currentDoneIds;
           }
 
-          // Update Canvas
-          canvas.updateAgents(payload.agents);
+          // Update Canvas (2D & 3D)
+          if (canvas && typeof canvas.updateAgents === 'function') {
+            canvas.updateAgents(payload.agents);
+          }
+          if (officeThree && typeof officeThree.updateAgents === 'function') {
+            officeThree.updateAgents(payload.agents);
+          }
 
           // Update Kanban
           kanban.setTasks(payload.kanban.tasks);
@@ -974,6 +1053,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.OfficePlans && typeof window.OfficePlans.fetchPlans === 'function') {
       window.OfficePlans.fetchPlans(false);
     }
+    // Update Office View Title
+    const officeViewTitle = document.getElementById('officeViewTitle');
+    const currentMode = localStorage.getItem('bayoffice_view_mode') || '3d';
+    if (officeViewTitle && window.I18n) {
+      officeViewTitle.textContent = currentMode === '3d'
+        ? window.I18n.t('canvas.title_3d')
+        : window.I18n.t('canvas.title');
+    }
+
     // Update Live Office Insights
     if (typeof updateOfficeLiveInsights === 'function') {
       updateOfficeLiveInsights();
@@ -1042,6 +1130,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (canvasOverlayControls) {
       canvasOverlayControls.style.display = isFs ? 'flex' : 'none';
+    }
+    if (officeThree && typeof officeThree.onWindowResize === 'function') {
+      setTimeout(() => officeThree.onWindowResize(), 100);
     }
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
@@ -1395,6 +1486,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (viewName === 'kanban') {
       if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(false);
+      if (officeThree && typeof officeThree.setViewActive === 'function') officeThree.setViewActive(false);
       if (navKanbanBtn) navKanbanBtn.classList.add('active');
       if (kanbanBoardView) kanbanBoardView.style.display = 'flex';
       window.location.hash = 'kanban';
@@ -1402,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (viewName === 'plans') {
       if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(false);
+      if (officeThree && typeof officeThree.setViewActive === 'function') officeThree.setViewActive(false);
       if (navPlansBtn) navPlansBtn.classList.add('active');
       if (plansStudioView) plansStudioView.style.display = 'block';
       window.location.hash = 'plans';
@@ -1411,7 +1504,15 @@ document.addEventListener('DOMContentLoaded', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // Default: 'office'
-      if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(true);
+      const activeMode = localStorage.getItem('bayoffice_view_mode') || '3d';
+      if (activeMode === '3d' && officeThree) {
+        if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(false);
+        officeThree.setViewActive(true);
+        if (window.latestAgentsData) officeThree.updateAgents(window.latestAgentsData);
+      } else {
+        if (officeThree && typeof officeThree.setViewActive === 'function') officeThree.setViewActive(false);
+        if (canvas && typeof canvas.setViewActive === 'function') canvas.setViewActive(true);
+      }
       if (navOfficeBtn) navOfficeBtn.classList.add('active');
       if (mainDashboardView) mainDashboardView.style.display = 'flex';
       if (window.location.hash === '#plans' || window.location.hash === '#kanban') {

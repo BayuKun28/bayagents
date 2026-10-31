@@ -156,6 +156,20 @@ canvas#officeCanvas {
   image-rendering: crisp-edges;
 }
 
+#officeThreeContainer {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  background: #13171C;
+  overflow: hidden;
+}
+
+#officeThreeContainer canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -1481,7 +1495,9 @@ body.dark-mode .topbar-btn {
 }
 
 .canvas-container:fullscreen canvas#officeCanvas,
-.canvas-container:-webkit-full-screen canvas#officeCanvas {
+.canvas-container:-webkit-full-screen canvas#officeCanvas,
+.canvas-container:fullscreen #officeThreeContainer,
+.canvas-container:-webkit-full-screen #officeThreeContainer {
   width: min(97vw, calc(95vh * 2)) !important;
   height: min(95vh, calc(97vw / 2)) !important;
   max-width: 98vw !important;
@@ -1512,7 +1528,9 @@ body.dark-mode .topbar-btn {
   }
 
   .canvas-container:fullscreen canvas#officeCanvas,
-  .canvas-container:-webkit-full-screen canvas#officeCanvas {
+  .canvas-container:-webkit-full-screen canvas#officeCanvas,
+  .canvas-container:fullscreen #officeThreeContainer,
+  .canvas-container:-webkit-full-screen #officeThreeContainer {
     width: min(96vh, calc(94vw * 2)) !important;
     height: min(94vw, calc(96vh / 2)) !important;
   }

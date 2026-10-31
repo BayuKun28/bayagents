@@ -143,17 +143,28 @@
     <!-- VIEW 1: LIVE VIRTUAL OFFICE WORKSPACE (CANVAS + AGENT CARDS ONLY) -->
     <div id="mainDashboardView" class="workspace-view active" style="display: flex; flex-direction: column; gap: 20px;">
 
-      <!-- 2D PIXEL CANVAS VIRTUAL OFFICE -->
+      <!-- 2D / 3D VIRTUAL OFFICE -->
       <section>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <i data-lucide="monitor" class="lucide-sm"></i>
-            <h2 style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;" data-i18n="canvas.title">
+            <h2 id="officeViewTitle" style="font-size: 1.15rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.2px;" data-i18n="canvas.title">
               2D Virtual Office
             </h2>
             <span class="neo-badge badge-done" style="font-size: 0.7rem;" data-i18n="canvas.live_view">Live View</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- 2D / 3D Switcher Toggle -->
+            <div id="officeViewModeToggle" class="neo-box-sm" style="display: inline-flex; padding: 2px; border-radius: 6px; background: var(--bg-card); gap: 2px;">
+              <button id="toggle2dBtn" class="neo-btn neo-btn-primary" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="layout" class="lucide-sm" style="width: 13px; height: 13px;"></i>
+                <span data-i18n="canvas.mode_2d">2D Canvas</span>
+              </button>
+              <button id="toggle3dBtn" class="neo-btn neo-btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="box" class="lucide-sm" style="width: 13px; height: 13px;"></i>
+                <span data-i18n="canvas.mode_3d">3D Low-Poly</span>
+              </button>
+            </div>
             <span style="font-size: 0.8rem; color: #64748B; font-weight: 600;" data-i18n="canvas.rooms_subtitle">
               5 Rooms: Executive Suite • Architect Studio • Engineering Bay • Game Room • Cafeteria Bar
             </span>
@@ -173,6 +184,7 @@
             </button>
           </div>
           <canvas id="officeCanvas"></canvas>
+          <div id="officeThreeContainer" style="display: none; width: 100%; height: 480px; position: relative;"></div>
         </div>
 
         <!-- Agent Status Grid Cards below Canvas (Luhut, Jokowi, Prabowo, Gibran, Habibie) -->
@@ -1427,6 +1439,8 @@
   <script src="/static/js/i18n.js?v=20261030_06"></script>
   <script src="/static/js/sound-fx.js?v=20261030_03"></script>
   <script src="/static/js/office-canvas.js?v=20261030_03"></script>
+  <script src="/static/js/three.min.js?v=r128"></script>
+  <script src="/static/js/office-three.js?v=20261031_01"></script>
   <script src="/static/js/kanban.js?v=20261030_06"></script>
   <script src="/static/js/office-health.js?v=20261030_01"></script>
   <script src="/static/js/office-insights.js?v=20261030_02"></script>
