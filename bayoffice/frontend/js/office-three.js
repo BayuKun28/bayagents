@@ -2354,55 +2354,76 @@ class OfficeThree {
     // 3. SNACK & SODA VENDING MACHINE (Next to arcade cabinet)
     this.buildVendingMachine(group, -7.5, -1.5);
 
-    // 4. MUSTARD & CHARCOAL L-SHAPED LOUNGE SOFA
+    // 4. MUSTARD & CHARCOAL L-SHAPED LOUNGE SOFA (tv_couch_set - Facing TV at z = 5.6)
+    const tvCouchSet = new THREE.Group();
+    tvCouchSet.name = 'tv_couch_set';
+
     const sofaSeatA = new THREE.Mesh(
       new THREE.BoxGeometry(4.2, 0.6, 1.6),
       new THREE.MeshLambertMaterial({ color: 0xD97706 })
     );
-    sofaSeatA.position.set(-2.5, 0.45, 3.2);
+    sofaSeatA.position.set(-2.5, 0.45, 1.9);
     sofaSeatA.castShadow = true;
-    group.add(sofaSeatA);
+    tvCouchSet.add(sofaSeatA);
 
     const sofaSeatB = new THREE.Mesh(
-      new THREE.BoxGeometry(1.6, 0.6, 3.0),
+      new THREE.BoxGeometry(1.6, 0.6, 2.6),
       new THREE.MeshLambertMaterial({ color: 0xD97706 })
     );
-    sofaSeatB.position.set(-4.5, 0.45, 1.2);
+    sofaSeatB.position.set(-4.5, 0.45, 3.1);
     sofaSeatB.castShadow = true;
-    group.add(sofaSeatB);
+    tvCouchSet.add(sofaSeatB);
 
-    // Sofa Backrest A
+    // Sofa Backrest A (Positioned at North side z = 1.15 so seated agents face TV South at z = 5.6)
     const sofaBackA = new THREE.Mesh(
       new THREE.BoxGeometry(4.2, 0.8, 0.3),
       new THREE.MeshLambertMaterial({ color: 0xB45309 })
     );
-    sofaBackA.position.set(-2.5, 0.85, 3.9);
-    group.add(sofaBackA);
+    sofaBackA.position.set(-2.5, 0.85, 1.15);
+    tvCouchSet.add(sofaBackA);
 
-    // Sofa Backrest B
+    // Sofa Backrest B (West flank)
     const sofaBackB = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.8, 3.0),
+      new THREE.BoxGeometry(0.3, 0.8, 2.6),
       new THREE.MeshLambertMaterial({ color: 0xB45309 })
     );
-    sofaBackB.position.set(-5.2, 0.85, 1.2);
-    group.add(sofaBackB);
+    sofaBackB.position.set(-5.2, 0.85, 3.1);
+    tvCouchSet.add(sofaBackB);
 
-    // 5. GLASS COFFEE TABLE WITH RETRO GAMEPADS
+    // 5. GLASS COFFEE TABLE WITH RETRO GAMEPADS (Positioned between sofa and TV)
     const coffeeTable = new THREE.Mesh(
       new THREE.BoxGeometry(2.4, 0.1, 1.2),
       new THREE.MeshLambertMaterial({ color: 0x94A3B8, transparent: true, opacity: 0.85 })
     );
-    coffeeTable.position.set(-2.5, 0.45, 1.5);
-    group.add(coffeeTable);
+    coffeeTable.position.set(-2.5, 0.45, 3.6);
+    tvCouchSet.add(coffeeTable);
 
     [-0.5, 0.5].forEach(gx => {
       const pad = new THREE.Mesh(
         new THREE.BoxGeometry(0.35, 0.06, 0.22),
         new THREE.MeshBasicMaterial({ color: gx < 0 ? 0x06B6D4 : 0xEC4899 })
       );
-      pad.position.set(-2.5 + gx, 0.53, 1.5);
-      group.add(pad);
+      pad.position.set(-2.5 + gx, 0.53, 3.6);
+      tvCouchSet.add(pad);
     });
+
+    group.add(tvCouchSet);
+
+    // DEDICATED GAMING CHAIRS (chair_gamecenter) - Oriented directly towards TV screen at z = 5.6
+    const chairGroup = new THREE.Group();
+    chairGroup.name = 'chair_gamecenter';
+
+    const gamingChair1 = this.buildErgonomicOfficeChair(0x8B5CF6, true);
+    gamingChair1.position.set(-0.8, 0, 2.8);
+    gamingChair1.rotation.y = 0.15; // Menghadap langsung ke arah layar monitor/TV (z = 5.6)
+    chairGroup.add(gamingChair1);
+
+    const gamingChair2 = this.buildErgonomicOfficeChair(0x06B6D4, true);
+    gamingChair2.position.set(-4.2, 0, 2.8);
+    gamingChair2.rotation.y = -0.15; // Menghadap langsung ke arah layar monitor/TV (z = 5.6)
+    chairGroup.add(gamingChair2);
+
+    group.add(chairGroup);
 
     // 6. 65" WALL SMART TV & CONSOLE
     const tvMat = (this.screenTextures && this.screenTextures['tv_synthwave'])
@@ -3431,7 +3452,7 @@ class OfficeThree {
         targetY: 1.15,
         workPos: { x: -15.5, z: -6.5, y: 1.15 },
         breakPos: { x: -15.5, z: -2.0, y: 1.15 },
-        sleepPos: { x: -16.0, z: 10.2, y: 1.15 }, // Sofa Game Room Sisi Barat
+        sleepPos: { x: -15.3, z: 8.9, y: 1.15 }, // Sofa Game Room Sisi Barat (Menghadap TV)
         waypointsToBreak: [
           { x: -15.5, z: -4.0 },
           { x: -15.5, z: -2.0 }
@@ -3489,7 +3510,7 @@ class OfficeThree {
         targetY: 1.15,
         workPos: { x: 3.5, z: -6.5, y: 1.15 },
         breakPos: { x: 13.0, z: 8.5, y: 1.15 }, // Cafeteria communal dining chair
-        sleepPos: { x: -12.2, z: 10.2, y: 1.15 }, // Sofa Game Room Sisi Timur
+        sleepPos: { x: -12.7, z: 8.9, y: 1.15 }, // Sofa Game Room Sisi Timur (Menghadap TV)
         waypointsToBreak: [
           { x: 3.5, z: -3.5 },
           { x: 0.5, z: -1.2 },
@@ -4062,7 +4083,7 @@ class OfficeThree {
 
   resetCamera() {
     this.currentFocusAgent = null;
-    this.startCameraTransition(this.defaultCamPos, this.defaultCamTarget, 800);
+    this.startCameraTransition(this.defaultCamPos, this.defaultCamTarget, 500);
     const selectEl = document.getElementById('threeFocusSelect');
     if (selectEl) selectEl.value = '';
     this.hideAgentInspectionCard();
@@ -4072,7 +4093,57 @@ class OfficeThree {
     this.currentFocusAgent = null;
     const topDownPos = new THREE.Vector3(1, 35, 0.01);
     const topDownTarget = new THREE.Vector3(1, 0, 0);
-    this.startCameraTransition(topDownPos, topDownTarget, 850);
+    this.startCameraTransition(topDownPos, topDownTarget, 500);
+    const selectEl = document.getElementById('threeFocusSelect');
+    if (selectEl) selectEl.value = '';
+    this.hideAgentInspectionCard();
+  }
+
+  snapCameraDirection(dir) {
+    if (!this.camera || !this.controls) return;
+    this.currentFocusAgent = null;
+    const selectEl = document.getElementById('threeFocusSelect');
+    if (selectEl) selectEl.value = '';
+    this.hideAgentInspectionCard();
+
+    // Sound effect
+    if (window.soundFx && typeof window.soundFx.playButtonClick === 'function') {
+      window.soundFx.playButtonClick();
+    }
+
+    const target = this.controls.target.clone();
+    const elevation = 22;
+    const distance = 35;
+    let targetCamPos;
+
+    switch (dir) {
+      case 'N': // Pandangan dari Utara (-Z) menghadap ke Selatan (+Z)
+        targetCamPos = new THREE.Vector3(target.x, target.y + elevation, target.z - distance);
+        break;
+      case 'S': // Pandangan dari Selatan (+Z) menghadap ke Utara (-Z)
+        targetCamPos = new THREE.Vector3(target.x, target.y + elevation, target.z + distance);
+        break;
+      case 'E': // Pandangan dari Timur (+X) menghadap ke Barat (-X)
+        targetCamPos = new THREE.Vector3(target.x + distance, target.y + elevation, target.z);
+        break;
+      case 'W': // Pandangan dari Barat (-X) menghadap ke Timur (+X)
+        targetCamPos = new THREE.Vector3(target.x - distance, target.y + elevation, target.z);
+        break;
+      default:
+        targetCamPos = this.defaultCamPos.clone();
+    }
+
+    this.startCameraTransition(targetCamPos, target, 350);
+  }
+
+  updateCompassHeading() {
+    const needle = document.getElementById('threeCompassNeedle');
+    if (!needle || !this.camera || !this.controls) return;
+    const dx = this.camera.position.x - this.controls.target.x;
+    const dz = this.camera.position.z - this.controls.target.z;
+    const rad = Math.atan2(dx, dz);
+    const deg = rad * (180 / Math.PI);
+    needle.style.transform = `rotate(${-deg}deg)`;
   }
 
   zoomCamera(delta) {
@@ -4274,6 +4345,9 @@ class OfficeThree {
         this.controls.update();
       }
     }
+
+    // Update Floating Compass Heading
+    this.updateCompassHeading();
 
     // 2. Real-time Wall Clock Hands Rotation
     if (this.wallClock.hourHand && this.wallClock.minuteHand && this.wallClock.secondHand) {
@@ -4525,6 +4599,10 @@ class OfficeThree {
         mesh.position.x += (ag.sleepPos.x - mesh.position.x) * 0.06;
         mesh.position.z += (ag.sleepPos.z - mesh.position.z) * 0.06;
         mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
+        // Orientasikan avatar di sofa/kursi Game Room langsung menghadap ke layar TV Gaming (+Z)
+        if (ag.sleepPos.z > 6.0) {
+          mesh.rotation.y = 0; // Menghadap langsung ke arah TV 65" di dinding selatan
+        }
         if (mesh.legs) {
           mesh.legs.left.hip.rotation.x = 0;
           mesh.legs.right.hip.rotation.x = 0;
@@ -4572,6 +4650,30 @@ class OfficeThree {
     if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => this.zoomCamera(-3));
     if (resetBtn) resetBtn.addEventListener('click', () => this.resetCamera());
     if (topDownBtn) topDownBtn.addEventListener('click', () => this.setTopDownView());
+
+    // Floating Camera Compass Widget Events
+    const compassBtns = document.querySelectorAll('.three-compass-btn');
+    compassBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dir = btn.getAttribute('data-dir');
+        if (dir) this.snapCameraDirection(dir);
+      });
+    });
+
+    const compassNeedle = document.getElementById('threeCompassNeedle');
+    if (compassNeedle) {
+      compassNeedle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.resetCamera();
+      });
+    }
+
+    const compassIsoBtn = document.getElementById('compassIsoBtn');
+    if (compassIsoBtn) compassIsoBtn.addEventListener('click', () => this.resetCamera());
+
+    const compassTopBtn = document.getElementById('compassTopBtn');
+    if (compassTopBtn) compassTopBtn.addEventListener('click', () => this.setTopDownView());
 
     // Click on atmosphere badge cycles through the 5 time schemes for live preview!
     if (atmosphereBadge) {

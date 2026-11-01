@@ -138,7 +138,7 @@
   </header>
 
   <!-- MAIN CONTAINER -->
-  <main id="mainContainer" style="max-width: 1400px; margin: 20px auto; padding: 0 16px;">
+  <main id="mainContainer" class="dynamic-view-container" style="max-width: 1400px; margin: 20px auto; padding: 0 16px;">
 
     <!-- VIEW 1: LIVE VIRTUAL OFFICE WORKSPACE (CANVAS + AGENT CARDS ONLY) -->
     <div id="mainDashboardView" class="workspace-view active" style="display: flex; flex-direction: column; gap: 20px;">
@@ -225,6 +225,25 @@
                     <option value="cafe">☕ Cafeteria & Espresso</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <!-- 3D Camera Floating Compass & Navigation Controller Widget -->
+            <div id="threeCompassWidget" class="three-compass-widget" title="Navigasi Arah Kamera & Kompas 3D">
+              <div class="three-compass-dial">
+                <button class="three-compass-btn compass-btn-n" data-dir="N" title="Pandangan Utara (North Snap)">N</button>
+                <button class="three-compass-btn compass-btn-e" data-dir="E" title="Pandangan Timur (East Snap)">E</button>
+                <button class="three-compass-btn compass-btn-s" data-dir="S" title="Pandangan Selatan (South Snap)">S</button>
+                <button class="three-compass-btn compass-btn-w" data-dir="W" title="Pandangan Barat (West Snap)">W</button>
+                <div id="threeCompassNeedle" class="three-compass-needle" title="Klik untuk Reset Kamera (Isometrik)">
+                  <div class="needle-tip-n"></div>
+                  <div class="needle-pivot"></div>
+                  <div class="needle-tip-s"></div>
+                </div>
+              </div>
+              <div class="three-compass-shortcuts">
+                <button id="compassIsoBtn" class="compass-pill-btn" title="Pandangan Isometrik">ISO</button>
+                <button id="compassTopBtn" class="compass-pill-btn" title="Pandangan Atas (Top-Down)">TOP</button>
               </div>
             </div>
 

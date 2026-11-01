@@ -262,7 +262,7 @@ class KanbanBoard {
         const cardTitleHint = window.I18n ? window.I18n.t('kanban.card_click_hint') : 'Click to view full details';
         colTasks.forEach(task => {
           const assigneeClass = this.getAssigneeBadgeClass(task.assignee);
-          const notesText = task.notes ? `<div class="kanban-task-notes" style="margin-top: 8px; font-size: 0.78rem; padding: 6px 8px; border-radius: 4px; border-left: 3px solid var(--border-color); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${this.escapeHtml(task.notes)}</div>` : '';
+          const notesText = task.notes ? `<div class="kanban-task-notes break-words" style="margin-top: 8px; font-size: 0.78rem; padding: 6px 8px; border-radius: 4px; border-left: 3px solid var(--border-color); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; word-break: break-word;">${this.escapeHtml(task.notes)}</div>` : '';
           const timeText = task.started_at || task.created_at || task.completed_at || '';
           let displayTime = '';
           if (timeText) {
@@ -279,26 +279,26 @@ class KanbanBoard {
           }
 
           html += `
-            <div class="neo-box-sm kanban-task-card" data-task-id="${this.escapeHtml(task.id)}" style="padding: 12px; cursor: pointer;" title="${cardTitleHint}">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div style="display: flex; gap: 4px; align-items: center;">
-                  <span class="neo-badge badge-task-id" style="font-size: 0.7rem;">${task.id || 'TASK'}</span>
-                  ${task.project ? `<span class="neo-badge badge-project" style="font-size: 0.65rem;">${(task.project === 'none' || task.project === 'general') ? '🌐 Umum' : this.escapeHtml(task.project)}</span>` : ''}
+            <div class="neo-box-sm kanban-task-card min-w-0 w-full" data-task-id="${this.escapeHtml(task.id)}" style="padding: 12px; cursor: pointer; min-width: 0; box-sizing: border-box;" title="${cardTitleHint}">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; min-width: 0;">
+                <div style="display: flex; gap: 4px; align-items: center; min-width: 0; flex-wrap: wrap;">
+                  <span class="neo-badge badge-task-id truncate" style="font-size: 0.7rem; max-width: 140px;">${task.id || 'TASK'}</span>
+                  ${task.project ? `<span class="neo-badge badge-project truncate" style="font-size: 0.65rem; max-width: 120px;">${(task.project === 'none' || task.project === 'general') ? '🌐 Umum' : this.escapeHtml(task.project)}</span>` : ''}
                 </div>
-                <span class="neo-badge ${assigneeClass}" style="font-size: 0.7rem;">${task.assignee || 'AGENT'}</span>
+                <span class="neo-badge ${assigneeClass}" style="font-size: 0.7rem; flex-shrink: 0;">${task.assignee || 'AGENT'}</span>
               </div>
-              <h4 style="font-weight: 700; font-size: 0.9rem; line-height: 1.35; margin-bottom: 6px;">
+              <h4 class="break-words" style="font-weight: 700; font-size: 0.9rem; line-height: 1.35; margin-bottom: 6px; overflow-wrap: break-word; word-break: break-word;">
                 ${this.escapeHtml(task.title || 'Untitled Task')}
               </h4>
               ${notesText}
-              <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #94A3B8; font-weight: 600;">
-                <span style="display: flex; align-items: center; gap: 4px;">
-                  <i data-lucide="folder" class="lucide-sm"></i>
-                  ${task.target_dir ? task.target_dir.replace('/home/bay', '~') : ''}
+              <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #94A3B8; font-weight: 600; gap: 6px; min-width: 0;">
+                <span class="truncate" style="display: flex; align-items: center; gap: 4px; min-width: 0; max-width: 60%;">
+                  <i data-lucide="folder" class="lucide-sm" style="flex-shrink: 0;"></i>
+                  <span class="truncate">${task.target_dir ? task.target_dir.replace('/home/bay', '~') : ''}</span>
                 </span>
-                <span style="display: flex; align-items: center; gap: 4px;">
+                <span style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                   <i data-lucide="clock" class="lucide-sm"></i>
-                  ${displayTime}
+                  <span>${displayTime}</span>
                 </span>
               </div>
             </div>
