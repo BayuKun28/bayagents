@@ -2773,4 +2773,292 @@ body.dark-mode .compass-pill-btn {
   box-shadow: 0px 0px 0px #000000;
 }
 
+/* ==========================================================
+   🎮 3D GAME MODE (WASD POV & POINTER LOCK HUD)
+   ========================================================== */
+.three-game-mode-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.three-game-btn {
+  background: #FEF08A;
+  color: #0F172A;
+  font-weight: 800;
+  transition: transform 0.08s ease, background 0.12s ease, box-shadow 0.08s ease;
+}
+
+.three-game-btn.active {
+  background: #10B981 !important;
+  color: #FFFFFF !important;
+}
+
+body.dark-mode .three-game-btn {
+  background: #334155;
+  color: #F8FAFC;
+  border-color: #38BDF8;
+}
+
+body.dark-mode .three-game-btn.active {
+  background: #059669 !important;
+  color: #FFFFFF !important;
+}
+
+.three-pov-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid #000000;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px #000000;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+body.dark-mode .three-pov-toggle-group {
+  border-color: #38BDF8;
+  background: #1E293B;
+}
+
+.pov-pill-btn {
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  user-select: none;
+}
+
+.pov-pill-btn.active {
+  background: #3B82F6;
+  color: #FFFFFF;
+}
+
+body.dark-mode .pov-pill-btn {
+  color: #94A3B8;
+}
+
+body.dark-mode .pov-pill-btn.active {
+  background: #0284C7;
+  color: #FFFFFF;
+}
+
+/* Floating Game HUD */
+.three-game-hud {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+  max-width: 95%;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: hudSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes hudSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.three-game-hud-bar {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  border-radius: 6px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: #F8FAFC;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+body.dark-mode .three-game-hud-bar {
+  border-color: #38BDF8;
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hud-pill kbd {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 1px solid #000000;
+  box-shadow: 1px 1px 0px #000000;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 0.7rem;
+  font-family: monospace;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hud-pill-esc {
+  color: #FCA5A5;
+}
+
+.hud-pill-esc kbd {
+  background: #FEE2E2;
+  color: #991B1B;
+  border-color: #EF4444;
+}
+
+.three-exit-game-btn {
+  background: #EF4444;
+  color: #FFFFFF;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.12s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.three-exit-game-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000000;
+  background: #DC2626;
+}
+
+.three-exit-game-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+/* Pointer Lock Overlay */
+.three-pointer-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 16px;
+}
+
+.pointer-lock-card {
+  background: #FFFFFF;
+  border: 3px solid #000000;
+  box-shadow: 5px 5px 0px #000000;
+  border-radius: 8px;
+  padding: 20px 24px;
+  text-align: center;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  animation: pointerCardPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pointerCardPop {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+body.dark-mode .pointer-lock-card {
+  background: #0F172A;
+  color: #F8FAFC;
+  border-color: #38BDF8;
+  box-shadow: 5px 5px 0px #000000;
+}
+
+body.dark-mode .pointer-lock-card p {
+  color: #94A3B8 !important;
+}
+
+.pointer-lock-icon {
+  width: 44px;
+  height: 44px;
+  background: #FEF08A;
+  color: #0F172A;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark-mode .pointer-lock-icon {
+  background: #38BDF8;
+  color: #0F172A;
+  border-color: #000000;
+}
+
+.pointer-lock-card kbd {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: monospace;
+  font-weight: 700;
+}
+
+body.dark-mode .pointer-lock-card kbd {
+  background: #1E293B;
+  border-color: #475569;
+  color: #F8FAFC;
+}
+
+.lock-tip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748B;
+}
+
+body.dark-mode .lock-tip {
+  color: #94A3B8;
+}
+
+@media screen and (max-width: 768px) {
+  .three-game-hud-bar {
+    font-size: 0.68rem;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  .three-exit-game-btn {
+    font-size: 0.68rem;
+    padding: 4px 8px;
+  }
+}
+
 

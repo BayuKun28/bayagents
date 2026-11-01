@@ -195,6 +195,17 @@
                 <span id="threeFpsBadge" class="three-badge three-badge-subtle" title="Target Frame Rate">
                   <span>60 FPS</span>
                 </span>
+                <!-- 🎮 Game POV Mode (WASD & Mouse Look) -->
+                <div class="three-game-mode-wrapper">
+                  <button id="threeGameModeBtn" class="neo-btn-sm three-game-btn" title="Terjun ke Kantor 3D (WASD & Mouse Look)">
+                    <i data-lucide="gamepad-2" class="lucide-xs"></i>
+                    <span id="threeGameModeBtnText">Game Mode</span>
+                  </button>
+                  <div id="threePovToggleGroup" class="three-pov-toggle-group" style="display: none;">
+                    <button id="threePovFpvBtn" class="pov-pill-btn active" title="First-Person View (Sudut Pandang Mata Avatar)">👁️ FPV</button>
+                    <button id="threePovTpvBtn" class="pov-pill-btn" title="Third-Person View (Kamera Belakang Punggung)">🏃 TPV</button>
+                  </div>
+                </div>
               </div>
               <div class="three-controls-right">
                 <div class="three-btn-group">
@@ -288,6 +299,34 @@
                   <i data-lucide="kanban" class="lucide-xs"></i>
                   <span>Filter Kanban</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- 🎮 3D Game Mode Floating HUD Bar & Quick Exit -->
+            <div id="threeGameHud" class="three-game-hud" style="display: none;">
+              <div class="three-game-hud-bar">
+                <span class="hud-pill"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Gerak</span>
+                <span class="hud-pill"><kbd>Shift</kbd> Sprint</span>
+                <span class="hud-pill"><kbd>🖱️ Mouse</kbd> Putar Pandangan</span>
+                <span class="hud-pill"><kbd>V</kbd> POV: <strong id="threeHudPovLabel">FPV</strong></span>
+                <span class="hud-pill hud-pill-esc"><kbd>ESC</kbd> Keluar</span>
+              </div>
+              <button id="threeExitGameBtn" class="three-exit-game-btn" title="Keluar Mode Game (ESC)">
+                ✕ Keluar Mode Game (ESC)
+              </button>
+            </div>
+
+            <!-- 🖱️ Click to Lock Mouse Pointer Overlay -->
+            <div id="threePointerLockOverlay" class="three-pointer-lock-overlay" style="display: none;">
+              <div class="pointer-lock-card">
+                <div class="pointer-lock-icon">
+                  <i data-lucide="mouse-pointer" class="lucide-md"></i>
+                </div>
+                <h4 style="margin: 0; font-size: 1rem; font-weight: 800;">Klik Layar untuk Mengunci Mouse</h4>
+                <p style="margin: 0; font-size: 0.8rem; color: #64748B;">Gerakkan mouse untuk memutar pandangan 360°, gunakan keyboard <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> untuk berjalan di miniatur kantor.</p>
+                <div class="pointer-lock-actions">
+                  <span class="lock-tip">Tekan <kbd>ESC</kbd> untuk keluar ke mode normal kapan saja.</span>
+                </div>
               </div>
             </div>
           </div>

@@ -341,8 +341,11 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
 
             # Verifikasi dynamic resolver saat break & transit
             loc_break, bubble_break = service.resolve_agent_bubble_and_location("JOKOWI", "break")
-            self.assertEqual(loc_break["room_id"], "cafeteria")
-            self.assertIn("kopi homelab", bubble_break)
+            self.assertIn(loc_break["room_id"], ["cafeteria", "game_room"])
+            self.assertTrue(
+                "kopi" in bubble_break or "biliar" in bubble_break,
+                f"Bubble break '{bubble_break}' harus relevan dengan destinasi santai"
+            )
 
             loc_transit, bubble_transit = service.resolve_agent_bubble_and_location("JOKOWI", "walking_to_break")
             self.assertEqual(loc_transit["room_id"], "hallway")

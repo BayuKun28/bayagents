@@ -106,6 +106,22 @@ class OfficeThree {
     this.avatarImages = {};
     this.wallOfFamePortraits = {};
 
+    // 🎮 Game Mode (WASD & Mouse Look POV)
+    this.gameMode = {
+      active: false,
+      pov: 'FPV', // 'FPV' | 'TPV'
+      playerPos: new THREE.Vector3(0, 0, 0),
+      yaw: 0,
+      pitch: 0,
+      moveSpeed: 0.12,
+      sprintSpeed: 0.22,
+      lookSpeed: 0.0024,
+      keys: { forward: false, backward: false, left: false, right: false, sprint: false },
+      avatarMesh: null,
+      isLocked: false,
+      lastStepSound: 0
+    };
+
     this.init();
   }
 
@@ -124,6 +140,7 @@ class OfficeThree {
       this.loadAvatarAssets();
       this.buildOfficeEnvironment();
       this.initAgents();
+      this.initPlayerAvatar();
       this.setupUIControls();
       this.setupEvents();
       this.updateDayNightAtmosphere();
@@ -3463,6 +3480,69 @@ class OfficeThree {
         ],
         breakBubble: 'Executive review & santai sejenak 📋',
         deskBubble: 'Memantau sprint dari Executive Suite 📋',
+        socialDestinations: [
+          {
+            id: 'executive_sofa',
+            name: 'Executive Sofa',
+            pos: { x: -15.5, z: -2.0, y: 1.15 },
+            bubble: 'Executive review & santai sejenak 📋',
+            weight: 0.50,
+            waypointsToBreak: [
+              { x: -15.5, z: -4.0 },
+              { x: -15.5, z: -2.0 }
+            ],
+            waypointsToDesk: [
+              { x: -15.5, z: -4.0 },
+              { x: -15.5, z: -6.5 }
+            ]
+          },
+          {
+            id: 'cafeteria_table',
+            name: 'Cafeteria Table',
+            pos: { x: 10.5, z: 5.5, y: 1.15 },
+            bubble: 'Inspeksi logistik & pasokan kopi tim ☕',
+            weight: 0.25,
+            waypointsToBreak: [
+              { x: -15.5, z: -4.0 },
+              { x: -15.5, z: -2.0 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 }
+            ],
+            waypointsToDesk: [
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: -15.5, z: -2.0 },
+              { x: -15.5, z: -4.0 },
+              { x: -15.5, z: -6.5 }
+            ]
+          },
+          {
+            id: 'game_room_sofa_west',
+            name: 'Game Room Lounge Sofa',
+            pos: { x: -14.0, z: 8.9, y: 1.15 },
+            bubble: 'Evaluasi sprint santai di lounge 🎮',
+            weight: 0.25,
+            waypointsToBreak: [
+              { x: -15.5, z: -4.0 },
+              { x: -15.5, z: -2.0 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -14.0, z: 8.9 }
+            ],
+            waypointsToDesk: [
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: -15.5, z: -2.0 },
+              { x: -15.5, z: -4.0 },
+              { x: -15.5, z: -6.5 }
+            ]
+          }
+        ],
         activePath: null,
         nextSocialTimer: 30 + (0 * 18) + Math.random() * 5,
         breakDuration: 0,
@@ -3492,6 +3572,65 @@ class OfficeThree {
         ],
         breakBubble: 'Merancang arsitektur N-250 Gatotkaca ✈️',
         deskBubble: 'Menganalisis arsitektur sistem & performa 🏛️',
+        socialDestinations: [
+          {
+            id: 'game_room_lounge',
+            name: 'Game Lounge',
+            pos: { x: -14.0, z: 8.9, y: 1.15 },
+            bubble: 'Mencari inspirasi arsitektur di Game Lounge 🕹️',
+            weight: 0.35,
+            waypointsToBreak: [
+              { x: -5.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -14.0, z: 8.9 }
+            ],
+            waypointsToDesk: [
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: -5.5, z: -3.5 },
+              { x: -5.5, z: -6.5 }
+            ]
+          },
+          {
+            id: 'cafeteria_espresso',
+            name: 'Cafeteria Espresso Bar',
+            pos: { x: 12.5, z: 8.5, y: 1.15 },
+            bubble: 'Menikmati espresso homelab sambil merancang cetak biru ☕',
+            weight: 0.35,
+            waypointsToBreak: [
+              { x: -5.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 12.5, z: 8.5 }
+            ],
+            waypointsToDesk: [
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: -5.5, z: -3.5 },
+              { x: -5.5, z: -6.5 }
+            ]
+          },
+          {
+            id: 'architect_studio_recliner',
+            name: 'Studio Recliner',
+            pos: { x: -5.5, z: -2.8, y: 1.25 },
+            bubble: 'Introspeksi rancangan Gatotkaca & efisiensi cluster ✈️',
+            weight: 0.30,
+            waypointsToBreak: [
+              { x: -5.5, z: -4.0 },
+              { x: -5.5, z: -2.8 }
+            ],
+            waypointsToDesk: [
+              { x: -5.5, z: -4.0 },
+              { x: -5.5, z: -6.5 }
+            ]
+          }
+        ],
         activePath: null,
         nextSocialTimer: 30 + (1 * 18) + Math.random() * 5,
         breakDuration: 0,
@@ -3529,6 +3668,52 @@ class OfficeThree {
         ],
         breakBubble: 'Sedang rehat sejenak menikmati espresso homelab ☕',
         deskBubble: 'Backend Bay siap. API & DB optimal ⚡',
+        socialDestinations: [
+          {
+            id: 'cafeteria_bar',
+            name: 'Cafeteria Bar & Dining',
+            pos: { x: 13.0, z: 8.5, y: 1.15 },
+            bubble: 'Rehat kopi tubruk homelab & cek latency DB ☕⚡',
+            weight: 0.60,
+            waypointsToBreak: [
+              { x: 3.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 },
+              { x: 13.0, z: 8.5 }
+            ],
+            waypointsToDesk: [
+              { x: 10.5, z: 5.5 },
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: 3.5, z: -3.5 },
+              { x: 3.5, z: -6.5 }
+            ]
+          },
+          {
+            id: 'game_room_billiard',
+            name: 'Game Room Billiard',
+            pos: { x: -8.0, z: 8.5, y: 1.15 },
+            bubble: 'Main biliar tipis-tipis menyegarkan logika query 🎱',
+            weight: 0.40,
+            waypointsToBreak: [
+              { x: 3.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -4.0, z: 2.2 },
+              { x: -8.0, z: 8.5 }
+            ],
+            waypointsToDesk: [
+              { x: -4.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: 3.5, z: -3.5 },
+              { x: 3.5, z: -6.5 }
+            ]
+          }
+        ],
         activePath: null,
         nextSocialTimer: 30 + (2 * 18) + Math.random() * 5,
         breakDuration: 0,
@@ -3564,6 +3749,46 @@ class OfficeThree {
         ],
         breakBubble: 'Mencoba rekor baru di Pac-Man arcade 🕹️',
         deskBubble: 'Frontend Bay siap. UI/UX responsif 🎨',
+        socialDestinations: [
+          {
+            id: 'game_room_arcade',
+            name: 'Game Room Arcade',
+            pos: { x: -17.0, z: 5.5, y: 1.15 },
+            bubble: 'Push rank skor Pac-Man arcade kabinet 🕹️',
+            weight: 0.60,
+            waypointsToBreak: [
+              { x: 11.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -17.0, z: 5.5 }
+            ],
+            waypointsToDesk: [
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: 11.5, z: -3.5 },
+              { x: 11.5, z: -6.5 }
+            ]
+          },
+          {
+            id: 'cafeteria_table',
+            name: 'Cafeteria Table',
+            pos: { x: 10.5, z: 5.5, y: 1.15 },
+            bubble: 'Camilan croissant & espresso santai 🥐☕',
+            weight: 0.40,
+            waypointsToBreak: [
+              { x: 11.5, z: -3.5 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 }
+            ],
+            waypointsToDesk: [
+              { x: 6.0, z: 2.2 },
+              { x: 11.5, z: -3.5 },
+              { x: 11.5, z: -6.5 }
+            ]
+          }
+        ],
         activePath: null,
         nextSocialTimer: 30 + (3 * 18) + Math.random() * 5,
         breakDuration: 0,
@@ -3599,6 +3824,46 @@ class OfficeThree {
         ],
         breakBubble: 'Rehat biliar trickshot & cek keamanan 🎱',
         deskBubble: 'QA Terminal siap audit & testing 🛡️',
+        socialDestinations: [
+          {
+            id: 'game_room_billiard',
+            name: 'Game Room Billiard',
+            pos: { x: -8.0, z: 8.5, y: 1.15 },
+            bubble: 'Trickshot biliar & verifikasi kestabilan meja 🎱',
+            weight: 0.55,
+            waypointsToBreak: [
+              { x: 19.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -4.0, z: 2.2 },
+              { x: -8.0, z: 8.5 }
+            ],
+            waypointsToDesk: [
+              { x: -4.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: 19.5, z: -3.5 },
+              { x: 19.5, z: -6.5 }
+            ]
+          },
+          {
+            id: 'cafeteria_bar',
+            name: 'Cafeteria Bar Counter',
+            pos: { x: 12.5, z: 8.5, y: 1.15 },
+            bubble: 'Audit aroma kopi homelab, zero vulnerability ☕🛡️',
+            weight: 0.45,
+            waypointsToBreak: [
+              { x: 19.5, z: -3.5 },
+              { x: 6.0, z: 2.2 },
+              { x: 12.5, z: 8.5 }
+            ],
+            waypointsToDesk: [
+              { x: 6.0, z: 2.2 },
+              { x: 19.5, z: -3.5 },
+              { x: 19.5, z: -6.5 }
+            ]
+          }
+        ],
         activePath: null,
         nextSocialTimer: 30 + (4 * 18) + Math.random() * 5,
         breakDuration: 0,
@@ -3612,6 +3877,24 @@ class OfficeThree {
       this.agentMeshes[name] = agentGroup;
       this.scene.add(agentGroup);
     }
+  }
+
+  chooseAgentBreakDestination(ag) {
+    if (!ag || !ag.socialDestinations || ag.socialDestinations.length === 0) return;
+    const totalWeight = ag.socialDestinations.reduce((acc, d) => acc + (d.weight || 1), 0);
+    let r = Math.random() * totalWeight;
+    let chosen = ag.socialDestinations[0];
+    for (const d of ag.socialDestinations) {
+      if (r < (d.weight || 1)) {
+        chosen = d;
+        break;
+      }
+      r -= (d.weight || 1);
+    }
+    ag.breakPos = chosen.pos;
+    ag.breakBubble = chosen.bubble;
+    ag.waypointsToBreak = chosen.waypointsToBreak;
+    ag.waypointsToDesk = chosen.waypointsToDesk;
   }
 
   createExpressiveSittingAgent(config) {
@@ -4313,8 +4596,10 @@ class OfficeThree {
       this.updateAnimatedScreens(time);
     }
 
-    // 1. Smooth Camera Transition & Dynamic Mesh-Targeting Camera Focus
-    if (this.camTransition.active) {
+    // 1. Smooth Camera Transition & Dynamic Mesh-Targeting Camera Focus (or 3D Game Controller POV)
+    if (this.gameMode && this.gameMode.active) {
+      this.updateGameMode(time);
+    } else if (this.camTransition.active) {
       const elapsed = performance.now() - this.camTransition.startTime;
       const progress = Math.min(elapsed / this.camTransition.duration, 1);
       const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
@@ -4376,6 +4661,14 @@ class OfficeThree {
         }
       }
 
+      // Check if Player in Game Mode is near door (< 2.5 units)
+      if (this.gameMode && this.gameMode.active) {
+        const playerDist = Math.hypot(this.gameMode.playerPos.x - door.worldX, this.gameMode.playerPos.z - door.worldZ);
+        if (playerDist < 2.5) {
+          agentNear = true;
+        }
+      }
+
       if (!door.isAutoOpen && agentNear) {
         if (window.soundFx && typeof window.soundFx.playDoorSwing === 'function') {
           window.soundFx.playDoorSwing();
@@ -4431,11 +4724,21 @@ class OfficeThree {
       if (ag.state === 'idle') {
         if (ag.socialStatus === 'at_desk') {
           if (time > ag.nextSocialTimer) {
+            this.chooseAgentBreakDestination(ag);
             ag.socialStatus = 'walking_to_break';
             ag.activePath = (ag.waypointsToBreak && ag.waypointsToBreak.length) ? ag.waypointsToBreak.slice() : null;
-            const transitBubble = (name === 'JOKOWI')
-              ? 'Menuju Kantin... ☕'
-              : ((name === 'LUHUT' || name === 'HABIBIE') ? 'Rehat sejenak... 🚶' : 'Menuju Game Room... 🎮');
+            let transitBubble = 'Rehat sejenak... 🚶';
+            if (ag.breakPos && ag.breakPos.z > 4.0) {
+              if (ag.breakPos.x > 5.0) {
+                transitBubble = 'Menuju Kantin... ☕';
+              } else {
+                transitBubble = 'Menuju Game Room... 🎮';
+              }
+            } else if (ag.breakPos && ag.breakPos.x < -10.0) {
+              transitBubble = 'Menuju Executive Sofa... 📋';
+            } else if (ag.breakPos && ag.breakPos.x < 0.0) {
+              transitBubble = 'Menuju Studio Recliner... ✈️';
+            }
             this.updateAgentBubble(name, transitBubble);
           }
         } else if (ag.socialStatus === 'at_break') {
@@ -4712,6 +5015,52 @@ class OfficeThree {
       });
     }
 
+    // 🎮 3D Game Mode (WASD POV) Toolbar Controls
+    const gameModeBtn = document.getElementById('threeGameModeBtn');
+    const povFpvBtn = document.getElementById('threePovFpvBtn');
+    const povTpvBtn = document.getElementById('threePovTpvBtn');
+    const exitGameBtn = document.getElementById('threeExitGameBtn');
+    const pointerLockOverlay = document.getElementById('threePointerLockOverlay');
+
+    if (gameModeBtn) {
+      gameModeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.gameMode.active) {
+          this.exitGameMode();
+        } else {
+          this.enterGameMode();
+        }
+      });
+    }
+
+    if (povFpvBtn) {
+      povFpvBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setGamePOV('FPV');
+      });
+    }
+
+    if (povTpvBtn) {
+      povTpvBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setGamePOV('TPV');
+      });
+    }
+
+    if (exitGameBtn) {
+      exitGameBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.exitGameMode();
+      });
+    }
+
+    if (pointerLockOverlay) {
+      pointerLockOverlay.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.requestGamePointerLock();
+      });
+    }
+
     // Refresh Day/Night atmosphere every 30 seconds
     this.atmosphereInterval = setInterval(() => {
       this.updateDayNightAtmosphere();
@@ -4751,6 +5100,57 @@ class OfficeThree {
 
     this.setupVisibilityHandler();
 
+    // 🎮 Game Mode Pointer Lock & Keyboard Listeners
+    this.onPointerLockChange = () => {
+      const isLocked = document.pointerLockElement === this.renderer.domElement ||
+                       document.pointerLockElement === this.container;
+      this.gameMode.isLocked = isLocked;
+      const overlay = document.getElementById('threePointerLockOverlay');
+      if (overlay) {
+        overlay.style.display = (this.gameMode.active && !isLocked) ? 'flex' : 'none';
+      }
+    };
+
+    this.onGameMouseMove = (e) => {
+      if (this.gameMode.active && this.gameMode.isLocked) {
+        this.gameMode.yaw -= e.movementX * this.gameMode.lookSpeed;
+        this.gameMode.pitch -= e.movementY * this.gameMode.lookSpeed;
+        this.gameMode.pitch = Math.max(-1.3, Math.min(1.3, this.gameMode.pitch));
+      }
+    };
+
+    this.onGameKeyDown = (e) => {
+      if (!this.gameMode.active) return;
+      if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        e.preventDefault();
+      }
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') this.gameMode.keys.forward = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') this.gameMode.keys.backward = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.gameMode.keys.left = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') this.gameMode.keys.right = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.gameMode.keys.sprint = true;
+      if (e.code === 'KeyV') {
+        this.setGamePOV(this.gameMode.pov === 'FPV' ? 'TPV' : 'FPV');
+      }
+      if (e.code === 'Escape') {
+        this.exitGameMode();
+      }
+    };
+
+    this.onGameKeyUp = (e) => {
+      if (!this.gameMode.active) return;
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') this.gameMode.keys.forward = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') this.gameMode.keys.backward = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.gameMode.keys.left = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') this.gameMode.keys.right = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.gameMode.keys.sprint = false;
+    };
+
+    document.addEventListener('pointerlockchange', this.onPointerLockChange);
+    window.addEventListener('mousemove', this.onGameMouseMove);
+    window.addEventListener('keydown', this.onGameKeyDown);
+    window.addEventListener('keyup', this.onGameKeyUp);
+
     this.renderer.domElement.addEventListener('mousemove', this.onPointerMove);
     this.renderer.domElement.addEventListener('click', this.onPointerClick);
     window.addEventListener('resize', this.onWindowResize);
@@ -4768,6 +5168,7 @@ class OfficeThree {
 
   checkHover() {
     if (!this.camera) return;
+    if (this.gameMode && this.gameMode.active && this.gameMode.isLocked) return;
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects(this.interactiveObjects);
 
@@ -4793,6 +5194,13 @@ class OfficeThree {
 
   checkClick() {
     if (!this.camera) return;
+
+    // 🎮 In Game Mode: click on canvas requests/locks mouse pointer
+    if (this.gameMode && this.gameMode.active && !this.gameMode.isLocked) {
+      this.requestGamePointerLock();
+      return;
+    }
+
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects(this.interactiveObjects);
 
@@ -4864,6 +5272,398 @@ class OfficeThree {
   }
 
   // =========================================================================
+  // 🎮 3D GAME MODE ENGINE (WASD MOVEMENT, MOUSE LOOK & FPV/TPV POV)
+  // =========================================================================
+
+  initPlayerAvatar() {
+    if (this.gameMode.avatarMesh) return;
+
+    const group = new THREE.Group();
+    group.name = 'PLAYER_MAS_BAY';
+    group.position.set(0, 1.15, 0);
+
+    // 1. Torso: Stylish Royal Blue / Navy Hoodie
+    const torsoGeo = new THREE.BoxGeometry(0.85, 0.95, 0.55);
+    const torsoMat = new THREE.MeshLambertMaterial({ color: 0x1E40AF });
+    const torso = new THREE.Mesh(torsoGeo, torsoMat);
+    torso.position.set(0, 0.18, -0.42);
+    torso.castShadow = true;
+    group.add(torso);
+    group.torsoMesh = torso;
+
+    // Torso Accent: Neubrutalist yellow zipper stripe
+    const zipGeo = new THREE.BoxGeometry(0.06, 0.90, 0.04);
+    const zipMat = new THREE.MeshBasicMaterial({ color: 0xFBBF24 });
+    const zipMesh = new THREE.Mesh(zipGeo, zipMat);
+    zipMesh.position.set(0, 0.18, -0.14);
+    group.add(zipMesh);
+
+    // 2. Kinematic Articulated Legs (Dark Slate Pants + Crisp White Sneakers)
+    const pantMat = new THREE.MeshLambertMaterial({ color: 0x0F172A });
+    const shoeMat = new THREE.MeshLambertMaterial({ color: 0xF8FAFC });
+    const legs = {};
+
+    [-0.24, 0.24].forEach((lx, idx) => {
+      const legSide = idx === 0 ? 'left' : 'right';
+      const hipJoint = new THREE.Group();
+      hipJoint.position.set(lx, -0.28, -0.42);
+
+      const thighGroup = new THREE.Group();
+      hipJoint.add(thighGroup);
+
+      const thighMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.46, 0.24), pantMat);
+      thighMesh.position.set(0, -0.23, 0);
+      thighMesh.castShadow = true;
+      thighGroup.add(thighMesh);
+
+      const kneeGroup = new THREE.Group();
+      kneeGroup.position.set(0, -0.46, 0);
+      thighGroup.add(kneeGroup);
+
+      const lowerLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.48, 0.22), pantMat);
+      lowerLegMesh.position.set(0, -0.24, 0);
+      lowerLegMesh.castShadow = true;
+      kneeGroup.add(lowerLegMesh);
+
+      const shoeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.38), shoeMat);
+      shoeMesh.position.set(0, -0.48, 0.08);
+      shoeMesh.castShadow = true;
+      kneeGroup.add(shoeMesh);
+
+      group.add(hipJoint);
+      legs[legSide] = { hip: hipJoint, thigh: thighGroup, knee: kneeGroup };
+    });
+    group.legs = legs;
+
+    // 3. Hands
+    const skinMat = new THREE.MeshLambertMaterial({ color: 0xFBD38D });
+    const handL = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.15, 0.28), skinMat);
+    handL.position.set(-0.35, 0.25, 0.28);
+    group.add(handL);
+
+    const handR = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.15, 0.28), skinMat);
+    handR.position.set(0.35, 0.25, 0.28);
+    group.add(handR);
+    group.hands = [handL, handR];
+
+    // 4. Head, Hair, & Visor Glasses
+    const headGroup = new THREE.Group();
+    headGroup.position.set(0, 1.05, -0.42);
+
+    const headGeo = new THREE.BoxGeometry(0.72, 0.72, 0.72);
+    const head = new THREE.Mesh(headGeo, skinMat);
+    head.castShadow = true;
+    headGroup.add(head);
+
+    const hairGeo = new THREE.BoxGeometry(0.76, 0.28, 0.76);
+    const hair = new THREE.Mesh(hairGeo, new THREE.MeshLambertMaterial({ color: 0x18181B }));
+    hair.position.set(0, 0.28, 0);
+    headGroup.add(hair);
+
+    // Stylish Cyber Visor Glasses (Teal / Cyan Neubrutalist)
+    const visorGeo = new THREE.BoxGeometry(0.56, 0.14, 0.12);
+    const visorMat = new THREE.MeshBasicMaterial({ color: 0x06B6D4 });
+    const visor = new THREE.Mesh(visorGeo, visorMat);
+    visor.position.set(0, 0.06, 0.38);
+    headGroup.add(visor);
+
+    group.add(headGroup);
+    group.headGroup = headGroup;
+
+    // 5. Overhead Floating Badge Sprite: "MAS BAY (Player)"
+    const badgeCanvas = document.createElement('canvas');
+    badgeCanvas.width = 256;
+    badgeCanvas.height = 64;
+    const ctx = badgeCanvas.getContext('2d');
+    ctx.fillStyle = '#0F172A';
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(8, 8, 240, 48, 8);
+    } else {
+      ctx.rect(8, 8, 240, 48);
+    }
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#38BDF8';
+    ctx.stroke();
+
+    ctx.fillStyle = '#F8FAFC';
+    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('👑 MAS BAY (Player)', 128, 32);
+
+    const badgeTex = new THREE.CanvasTexture(badgeCanvas);
+    const badgeMat = new THREE.SpriteMaterial({ map: badgeTex, depthTest: false, transparent: true });
+    const badgeSprite = new THREE.Sprite(badgeMat);
+    badgeSprite.position.set(0, 2.0, -0.42);
+    badgeSprite.scale.set(2.2, 0.55, 1);
+    group.add(badgeSprite);
+
+    group.visible = false; // Hidden in FPV, visible only in TPV
+    this.scene.add(group);
+    this.gameMode.avatarMesh = group;
+  }
+
+  enterGameMode() {
+    this.gameMode.active = true;
+    if (this.controls) this.controls.enabled = false;
+
+    // Set starting position in central hallway if unset
+    if (this.gameMode.playerPos.lengthSq() < 0.1) {
+      this.gameMode.playerPos.set(0.5, 0, 1.0);
+    }
+    this.gameMode.yaw = 0;
+    this.gameMode.pitch = 0;
+
+    // Update UI Elements
+    const gameModeBtn = document.getElementById('threeGameModeBtn');
+    const gameModeBtnText = document.getElementById('threeGameModeBtnText');
+    const povGroup = document.getElementById('threePovToggleGroup');
+    const gameHud = document.getElementById('threeGameHud');
+    const hudPovLabel = document.getElementById('threeHudPovLabel');
+    const fpvBtn = document.getElementById('threePovFpvBtn');
+    const tpvBtn = document.getElementById('threePovTpvBtn');
+
+    if (gameModeBtn) gameModeBtn.classList.add('active');
+    if (gameModeBtnText) gameModeBtnText.textContent = 'Keluar Game (ESC)';
+    if (povGroup) povGroup.style.display = 'inline-flex';
+    if (gameHud) gameHud.style.display = 'flex';
+
+    if (hudPovLabel) hudPovLabel.textContent = this.gameMode.pov;
+    if (fpvBtn) fpvBtn.classList.toggle('active', this.gameMode.pov === 'FPV');
+    if (tpvBtn) tpvBtn.classList.toggle('active', this.gameMode.pov === 'TPV');
+
+    if (this.gameMode.avatarMesh) {
+      this.gameMode.avatarMesh.visible = (this.gameMode.pov === 'TPV');
+    }
+
+    this.requestGamePointerLock();
+
+    if (window.soundFx && typeof window.soundFx.playCameraSnap === 'function') {
+      window.soundFx.playCameraSnap();
+    }
+  }
+
+  exitGameMode() {
+    if (!this.gameMode.active) return;
+    this.gameMode.active = false;
+
+    // Reset pressed keys
+    this.gameMode.keys.forward = false;
+    this.gameMode.keys.backward = false;
+    this.gameMode.keys.left = false;
+    this.gameMode.keys.right = false;
+    this.gameMode.keys.sprint = false;
+
+    // Release Pointer Lock
+    if (document.pointerLockElement) {
+      try {
+        document.exitPointerLock();
+      } catch (err) {
+        console.warn('[OfficeThree] Exit pointer lock exception:', err);
+      }
+    }
+
+    // Hide UI
+    const gameModeBtn = document.getElementById('threeGameModeBtn');
+    const gameModeBtnText = document.getElementById('threeGameModeBtnText');
+    const povGroup = document.getElementById('threePovToggleGroup');
+    const gameHud = document.getElementById('threeGameHud');
+    const pointerOverlay = document.getElementById('threePointerLockOverlay');
+
+    if (gameModeBtn) gameModeBtn.classList.remove('active');
+    if (gameModeBtnText) gameModeBtnText.textContent = '🎮 Game Mode';
+    if (povGroup) povGroup.style.display = 'none';
+    if (gameHud) gameHud.style.display = 'none';
+    if (pointerOverlay) pointerOverlay.style.display = 'none';
+
+    if (this.gameMode.avatarMesh) {
+      this.gameMode.avatarMesh.visible = false;
+    }
+
+    // Re-enable OrbitControls & smooth return to default isometric view
+    if (this.controls) {
+      this.controls.enabled = true;
+    }
+    this.resetCamera();
+  }
+
+  setGamePOV(pov) {
+    this.gameMode.pov = (pov === 'TPV') ? 'TPV' : 'FPV';
+
+    const fpvBtn = document.getElementById('threePovFpvBtn');
+    const tpvBtn = document.getElementById('threePovTpvBtn');
+    const hudPovLabel = document.getElementById('threeHudPovLabel');
+
+    if (fpvBtn) fpvBtn.classList.toggle('active', this.gameMode.pov === 'FPV');
+    if (tpvBtn) tpvBtn.classList.toggle('active', this.gameMode.pov === 'TPV');
+    if (hudPovLabel) hudPovLabel.textContent = this.gameMode.pov;
+
+    if (this.gameMode.avatarMesh) {
+      this.gameMode.avatarMesh.visible = (this.gameMode.pov === 'TPV');
+    }
+
+    if (window.soundFx && typeof window.soundFx.playCameraSnap === 'function') {
+      window.soundFx.playCameraSnap();
+    }
+  }
+
+  requestGamePointerLock() {
+    if (!this.container || !this.renderer) return;
+    try {
+      const el = this.renderer.domElement || this.container;
+      const promise = el.requestPointerLock();
+      if (promise && typeof promise.catch === 'function') {
+        promise.catch((err) => {
+          console.warn('[OfficeThree] Pointer lock request rejected:', err);
+        });
+      }
+    } catch (err) {
+      console.warn('[OfficeThree] Pointer lock error:', err);
+    }
+  }
+
+  updateGameMode(time) {
+    if (!this.gameMode.active || !this.camera) return;
+
+    // 1. Calculate Movement Vector from Yaw
+    const speed = this.gameMode.keys.sprint ? this.gameMode.sprintSpeed : this.gameMode.moveSpeed;
+    let moveX = 0;
+    let moveZ = 0;
+
+    // Three.js forward direction (-Z at yaw 0)
+    const forwardX = -Math.sin(this.gameMode.yaw);
+    const forwardZ = -Math.cos(this.gameMode.yaw);
+    const rightX = Math.cos(this.gameMode.yaw);
+    const rightZ = -Math.sin(this.gameMode.yaw);
+
+    if (this.gameMode.keys.forward) {
+      moveX += forwardX;
+      moveZ += forwardZ;
+    }
+    if (this.gameMode.keys.backward) {
+      moveX -= forwardX;
+      moveZ -= forwardZ;
+    }
+    if (this.gameMode.keys.left) {
+      moveX -= rightX;
+      moveZ -= rightZ;
+    }
+    if (this.gameMode.keys.right) {
+      moveX += rightX;
+      moveZ += rightZ;
+    }
+
+    const moveLen = Math.hypot(moveX, moveZ);
+    const isMoving = moveLen > 0.001;
+
+    if (isMoving) {
+      const stepX = (moveX / moveLen) * speed;
+      const stepZ = (moveZ / moveLen) * speed;
+
+      let nextX = this.gameMode.playerPos.x + stepX;
+      let nextZ = this.gameMode.playerPos.z + stepZ;
+
+      // Outer Bounds Clamping (Floor bounds: x: [-21.5, 22.5], z: [-11.0, 13.5])
+      nextX = Math.max(-21.5, Math.min(22.5, nextX));
+      nextZ = Math.max(-11.0, Math.min(13.5, nextZ));
+
+      // Middle Partition Cutaway Wall Collision at z = 0 (Doorway aperture at x: [-2.0, 3.0])
+      const currentZ = this.gameMode.playerPos.z;
+      if (nextX < -2.0 || nextX > 3.0) {
+        if (currentZ < -0.3 && nextZ >= -0.3) {
+          nextZ = -0.3; // Block passing from North to South through wall
+        } else if (currentZ > 0.3 && nextZ <= 0.3) {
+          nextZ = 0.3; // Block passing from South to North through wall
+        }
+      }
+
+      this.gameMode.playerPos.x = nextX;
+      this.gameMode.playerPos.z = nextZ;
+
+      // Footstep Sound FX
+      if (window.soundFx) {
+        const stepInterval = this.gameMode.keys.sprint ? 0.28 : 0.42;
+        if (!this.gameMode.lastStepSound || time - this.gameMode.lastStepSound > stepInterval) {
+          this.gameMode.lastStepSound = time;
+          if (typeof window.soundFx.playFootstep === 'function') {
+            window.soundFx.playFootstep();
+          }
+        }
+      }
+    }
+
+    // 2. Camera Positioning & Avatar Handling (FPV vs TPV)
+    const pX = this.gameMode.playerPos.x;
+    const pZ = this.gameMode.playerPos.z;
+
+    if (this.gameMode.pov === 'FPV') {
+      // First-Person View: Eye height at 1.65m with subtle walking head bob
+      const headBob = isMoving ? Math.sin(time * 12) * 0.04 : 0;
+      this.camera.position.set(pX, 1.65 + headBob, pZ);
+
+      // Look direction vector from yaw & pitch
+      const lookDirX = -Math.sin(this.gameMode.yaw) * Math.cos(this.gameMode.pitch);
+      const lookDirY = Math.sin(this.gameMode.pitch);
+      const lookDirZ = -Math.cos(this.gameMode.yaw) * Math.cos(this.gameMode.pitch);
+
+      const lookTarget = new THREE.Vector3(
+        this.camera.position.x + lookDirX * 10,
+        this.camera.position.y + lookDirY * 10,
+        this.camera.position.z + lookDirZ * 10
+      );
+      this.camera.lookAt(lookTarget);
+
+      if (this.gameMode.avatarMesh) {
+        this.gameMode.avatarMesh.visible = false;
+      }
+    } else {
+      // Third-Person View: Show Mas Bay figurine and place camera over the shoulder (2.8m behind)
+      if (this.gameMode.avatarMesh) {
+        this.gameMode.avatarMesh.visible = true;
+        this.gameMode.avatarMesh.position.set(pX, 1.15, pZ);
+        this.gameMode.avatarMesh.rotation.y = this.gameMode.yaw;
+
+        // Kinematic walking leg & arm swing
+        if (this.gameMode.avatarMesh.legs) {
+          if (isMoving) {
+            const swing = Math.sin(time * 12) * 0.45;
+            this.gameMode.avatarMesh.legs.left.hip.rotation.x = swing;
+            this.gameMode.avatarMesh.legs.right.hip.rotation.x = -swing;
+            if (this.gameMode.avatarMesh.hands && this.gameMode.avatarMesh.hands.length === 2) {
+              this.gameMode.avatarMesh.hands[0].position.z = -0.42 + swing * 0.35;
+              this.gameMode.avatarMesh.hands[1].position.z = -0.42 - swing * 0.35;
+            }
+          } else {
+            this.gameMode.avatarMesh.legs.left.hip.rotation.x = 0;
+            this.gameMode.avatarMesh.legs.right.hip.rotation.x = 0;
+            if (this.gameMode.avatarMesh.hands && this.gameMode.avatarMesh.hands.length === 2) {
+              this.gameMode.avatarMesh.hands[0].position.z = -0.42;
+              this.gameMode.avatarMesh.hands[1].position.z = -0.42;
+            }
+          }
+        }
+      }
+
+      // Backward direction vector based on yaw & pitch
+      const backX = Math.sin(this.gameMode.yaw) * Math.cos(this.gameMode.pitch);
+      const backY = -Math.sin(this.gameMode.pitch);
+      const backZ = Math.cos(this.gameMode.yaw) * Math.cos(this.gameMode.pitch);
+
+      const camDist = 2.8;
+      const camHeight = 1.85;
+
+      const camX = pX + backX * camDist;
+      const camY = Math.max(0.6, camHeight + backY * 2.0);
+      const camZ = pZ + backZ * camDist;
+
+      this.camera.position.set(camX, camY, camZ);
+      this.camera.lookAt(new THREE.Vector3(pX, 1.4, pZ));
+    }
+  }
+
+  // =========================================================================
   // 🧹 WEBGL MEMORY CLEANUP (SAFE DISPOSAL)
   // =========================================================================
 
@@ -4881,6 +5681,11 @@ class OfficeThree {
       this.screenCanvases = {};
       this.screenCtxs = {};
     }
+
+    document.removeEventListener('pointerlockchange', this.onPointerLockChange);
+    window.removeEventListener('mousemove', this.onGameMouseMove);
+    window.removeEventListener('keydown', this.onGameKeyDown);
+    window.removeEventListener('keyup', this.onGameKeyUp);
 
     if (this.renderer && this.renderer.domElement) {
       this.renderer.domElement.removeEventListener('mousemove', this.onPointerMove);

@@ -4,6 +4,7 @@ import time
 import glob
 import csv
 import io
+import random
 import subprocess
 import threading
 from datetime import datetime
@@ -163,7 +164,27 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "sleep_room": "game_room",
         "sleep_sub_area": "lounge_sofa_west",
         "sleep_bubble": "Hibernasi di Lounge Sofa Barat (hemat RAM) 💤",
-        "desk": {"x": 220, "y": 125, "color": "#FF6B6B"}
+        "desk": {"x": 220, "y": 125, "color": "#FF6B6B"},
+        "break_destinations": [
+            {
+                "room_id": "executive_suite",
+                "sub_area": "lounge_sofa",
+                "weight": 0.50,
+                "bubble": "Executive review & santai sejenak 📋"
+            },
+            {
+                "room_id": "cafeteria",
+                "sub_area": "dining_table",
+                "weight": 0.25,
+                "bubble": "Inspeksi logistik & pasokan kopi tim ☕"
+            },
+            {
+                "room_id": "game_room",
+                "sub_area": "lounge_sofa_west",
+                "weight": 0.25,
+                "bubble": "Evaluasi sprint santai di lounge 🎮"
+            }
+        ]
     },
     "HABIBIE": {
         "name": "HABIBIE",
@@ -178,7 +199,27 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "sleep_room": "architect_studio",
         "sleep_sub_area": "studio_recliner",
         "sleep_bubble": "Standby pasif di Studio Recliner (0% CPU) 💤",
-        "desk": {"x": 345, "y": 88, "color": "#8B5CF6"}
+        "desk": {"x": 345, "y": 88, "color": "#8B5CF6"},
+        "break_destinations": [
+            {
+                "room_id": "game_room",
+                "sub_area": "lounge_sofa",
+                "weight": 0.35,
+                "bubble": "Mencari inspirasi arsitektur di Game Lounge 🕹️"
+            },
+            {
+                "room_id": "cafeteria",
+                "sub_area": "bar_counter",
+                "weight": 0.35,
+                "bubble": "Menikmati espresso homelab sambil merancang cetak biru ☕"
+            },
+            {
+                "room_id": "architect_studio",
+                "sub_area": "studio_recliner",
+                "weight": 0.30,
+                "bubble": "Introspeksi rancangan Gatotkaca & efisiensi cluster ✈️"
+            }
+        ]
     },
     "JOKOWI": {
         "name": "JOKOWI",
@@ -193,7 +234,21 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "sleep_room": "game_room",
         "sleep_sub_area": "lounge_sofa_east",
         "sleep_bubble": "Standby pasif di Lounge Sofa Timur (0% CPU) 💤",
-        "desk": {"x": 540, "y": 125, "color": "#45B7D1"}
+        "desk": {"x": 540, "y": 125, "color": "#45B7D1"},
+        "break_destinations": [
+            {
+                "room_id": "cafeteria",
+                "sub_area": "bar_counter",
+                "weight": 0.60,
+                "bubble": "Rehat kopi tubruk homelab & cek latency DB ☕⚡"
+            },
+            {
+                "room_id": "game_room",
+                "sub_area": "billiard",
+                "weight": 0.40,
+                "bubble": "Main biliar tipis-tipis menyegarkan logika query 🎱"
+            }
+        ]
     },
     "PRABOWO": {
         "name": "PRABOWO",
@@ -208,7 +263,21 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "sleep_room": "game_room",
         "sleep_sub_area": "beanbag_orange",
         "sleep_bubble": "Standby pasif di Beanbag Oranye (0% CPU) 💤",
-        "desk": {"x": 700, "y": 125, "color": "#FFA07A"}
+        "desk": {"x": 700, "y": 125, "color": "#FFA07A"},
+        "break_destinations": [
+            {
+                "room_id": "game_room",
+                "sub_area": "arcade",
+                "weight": 0.60,
+                "bubble": "Push rank skor Pac-Man arcade kabinet 🕹️"
+            },
+            {
+                "room_id": "cafeteria",
+                "sub_area": "dining_table",
+                "weight": 0.40,
+                "bubble": "Camilan croissant & espresso santai 🥐☕"
+            }
+        ]
     },
     "GIBRAN": {
         "name": "GIBRAN",
@@ -223,9 +292,36 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "sleep_room": "game_room",
         "sleep_sub_area": "beanbag_teal",
         "sleep_bubble": "Standby pasif di Beanbag Toska (0% CPU) 💤",
-        "desk": {"x": 860, "y": 125, "color": "#4ECDC4"}
+        "desk": {"x": 860, "y": 125, "color": "#4ECDC4"},
+        "break_destinations": [
+            {
+                "room_id": "game_room",
+                "sub_area": "billiard",
+                "weight": 0.55,
+                "bubble": "Trickshot biliar & verifikasi kestabilan meja 🎱"
+            },
+            {
+                "room_id": "cafeteria",
+                "sub_area": "bar_counter",
+                "weight": 0.45,
+                "bubble": "Audit aroma kopi homelab, zero vulnerability ☕🛡️"
+            }
+        ]
     }
 }
+
+def resolve_break_target(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Memilih salah satu destinasi santai berdasarkan bobot (weighted random)."""
+    dests = cfg.get("break_destinations", [])
+    if not dests:
+        return {
+            "room_id": cfg.get("break_room", "cafeteria"),
+            "sub_area": cfg.get("break_sub_area", "dining_table"),
+            "bubble": cfg.get("break_bubble", "Rehat sejenak menikmati kopi homelab ☕")
+        }
+    weights = [float(d.get("weight", 1.0)) for d in dests]
+    chosen = random.choices(dests, weights=weights, k=1)[0]
+    return chosen
 
 def resolve_agent_bubble_and_location(
     name: str,
@@ -266,16 +362,20 @@ def resolve_agent_bubble_and_location(
             "is_seated": True
         }
     elif state in ["break", "at_break"]:
+        chosen_break = resolve_break_target(cfg)
+        b_room = chosen_break.get("room_id", cfg.get("break_room", "cafeteria"))
+        b_sub = chosen_break.get("sub_area", cfg.get("break_sub_area", "dining_table"))
         loc = {
-            "room_id": cfg["break_room"],
-            "sub_area": cfg["break_sub_area"],
+            "room_id": b_room,
+            "sub_area": b_sub,
             "slot_id": agent_slot,
-            "is_seated": True if cfg["break_sub_area"] in [
+            "is_seated": True if b_sub in [
                 "bar_counter", "dining_table", "lounge_sofa", "beanbag",
                 "studio_recliner", "lounge_sofa_west", "lounge_sofa_east",
                 "beanbag_orange", "beanbag_teal"
             ] else False
         }
+        bubble = chosen_break.get("bubble", cfg.get("break_bubble", "Rehat sejenak menikmati kopi homelab ☕"))
     elif state in ["walking_to_break", "transit_break"]:
         loc = {
             "room_id": "hallway",
@@ -317,10 +417,7 @@ def resolve_agent_bubble_and_location(
     elif state in ["walking_to_desk", "transit_desk"]:
         bubble = "Kembali ke meja kerja... 🚶"
     elif state in ["break", "at_break"]:
-        if loc["room_id"] == "cafeteria":
-            bubble = "Rehat sejenak menikmati kopi homelab ☕"
-        else:
-            bubble = cfg["break_bubble"]
+        pass  # bubble already resolved contextually above with weighted break destination
     else:  # idle
         bubble = cfg["idle_bubble"]
 
@@ -337,6 +434,7 @@ def get_agents_status() -> Dict[str, Any]:
     for name, cfg in AGENT_CONFIGS.items():
         initial_state = "sleeping" if (not tmux_active and name != "HABIBIE") else "idle"
         loc, bubble = resolve_agent_bubble_and_location(name, initial_state)
+        chosen_break = resolve_break_target(cfg)
         agents[name] = {
             "name": cfg["name"],
             "role": cfg["role"],
@@ -345,7 +443,13 @@ def get_agents_status() -> Dict[str, Any]:
             "current_task": None,
             "bubble_text": bubble,
             "location": loc,
-            "desk": dict(cfg["desk"])
+            "desk": dict(cfg["desk"]),
+            "break_destinations": cfg.get("break_destinations", []),
+            "current_break_target": {
+                "room_id": chosen_break.get("room_id", cfg.get("break_room", "cafeteria")),
+                "sub_area": chosen_break.get("sub_area", cfg.get("break_sub_area", "dining_table")),
+                "bubble": chosen_break.get("bubble", cfg.get("break_bubble", "Rehat sejenak menikmati kopi homelab ☕"))
+            }
         }
 
     # Jika tmux aktif (atau untuk agen standalone), cari tugas aktif di kanban
