@@ -130,7 +130,30 @@ class OfficeThree {
       right: false
     };
 
+    // 👆 Touch Swipe Look Engine (Game Mode / FPV / TPP)
+    let initialSens = 0.004;
+    try {
+      const savedSens = localStorage.getItem('bayoffice_swipe_sensitivity');
+      if (savedSens !== null) initialSens = parseFloat(savedSens) || 0.004;
+    } catch (e) {}
+
+    this.touchLook = {
+      active: false,
+      touchId: null,
+      startX: 0,
+      startY: 0,
+      lastX: 0,
+      lastY: 0,
+      sensitivity: initialSens
+    };
+
     this.init();
+  }
+
+  isTouchDevice() {
+    return ('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0) ||
+           (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   }
 
   // =========================================================================
@@ -5181,12 +5204,17 @@ class OfficeThree {
     if (pointerLockOverlay) {
       pointerLockOverlay.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.requestGamePointerLock();
+        if (!this.isTouchDevice()) {
+      this.requestGamePointerLock();
+    }
       });
     }
 
     // 📱 Virtual Mobile D-Pad Directional Arrow Controls
     this.setupMobileControls();
+
+    // ⚙️ Unified Canvas Settings Modal Setup
+    this.setupCanvasSettingsModal();
 
     // Refresh Day/Night atmosphere every 30 seconds
     this.atmosphereInterval = setInterval(() => {
@@ -5200,6 +5228,21 @@ class OfficeThree {
     const leftBtn = document.getElementById('mobileArrowLeft');
     const rightBtn = document.getElementById('mobileArrowRight');
     const centerBtn = document.getElementById('mobileArrowCenter');
+
+    // Inisialisasi status tampilan D-Pad dari preferensi tersimpan
+    try {
+      const showDpad = localStorage.getItem('bayoffice_show_dpad');
+      const dpadEl = document.getElementById('mobileArrowControls');
+      if (dpadEl && showDpad !== null) {
+        if (showDpad === 'false') {
+          dpadEl.classList.add('dpad-hidden');
+          dpadEl.classList.remove('dpad-force-show');
+        } else {
+          dpadEl.classList.remove('dpad-hidden');
+          dpadEl.classList.add('dpad-force-show');
+        }
+      }
+    } catch (e) {}
 
     const bindButton = (btn, dirKey) => {
       if (!btn) return;
@@ -5270,6 +5313,251 @@ class OfficeThree {
   }
 
   // =========================================================================
+  // ⚙️ UNIFIED CANVAS SETTINGS MODAL / POPOVER CONTROLLER
+  // =========================================================================
+
+  setupCanvasSettingsModal() {
+    const settingsBtn = document.getElementById('threeSettingsBtn');
+    const modal = document.getElementById('canvasSettingsModal');
+    const closeBtn = document.getElementById('canvasSettingsCloseBtn');
+
+    if (!settingsBtn || !modal) return;
+
+    // Sub-elemen dalam popover pengaturan kanvas
+    const isoBtn = document.getElementById('settingsIsoBtn');
+    const topDownBtn = document.getElementById('settingsTopDownBtn');
+    const fpvBtn = document.getElementById('settingsFpvBtn');
+    const tpvBtn = document.getElementById('settingsTpvBtn');
+    const toggleDpad = document.getElementById('settingsToggleDpad');
+    const swipeSensRange = document.getElementById('settingsSwipeSensRange');
+    const swipeSensLabel = document.getElementById('settingsSwipeSensLabel');
+    const toggleSound = document.getElementById('settingsToggleSound');
+    const focusSelect = document.getElementById('settingsFocusSelect');
+    const atmoBtns = modal.querySelectorAll('.settings-atmo-btn');
+
+    const updateSensLabel = (val) => {
+      const sens = val * 0.001;
+      let tag = 'Normal';
+      if (val <= 2) tag = 'Lambat';
+      else if (val <= 5) tag = 'Normal';
+      else if (val <= 8) tag = 'Cepat';
+      else tag = 'Sangat Cepat';
+      if (swipeSensLabel) {
+        swipeSensLabel.textContent = `${tag} (${sens.toFixed(3)})`;
+      }
+    };
+
+    const syncModalState = () => {
+      // 1. Sync POV mode buttons
+      if (isoBtn && topDownBtn && fpvBtn && tpvBtn) {
+        isoBtn.classList.remove('active');
+        topDownBtn.classList.remove('active');
+        fpvBtn.classList.remove('active');
+        tpvBtn.classList.remove('active');
+
+        if (this.gameMode && this.gameMode.active) {
+          if (this.gameMode.pov === 'TPV') {
+            tpvBtn.classList.add('active');
+          } else {
+            fpvBtn.classList.add('active');
+          }
+        } else {
+          if (this.camera && Math.abs(this.camera.position.x - 1) < 2 && this.camera.position.y > 25) {
+            topDownBtn.classList.add('active');
+          } else {
+            isoBtn.classList.add('active');
+          }
+        }
+      }
+
+      // 2. Sync D-Pad toggle switch
+      if (toggleDpad) {
+        const saved = localStorage.getItem('bayoffice_show_dpad');
+        toggleDpad.checked = (saved !== null) ? (saved === 'true') : true;
+      }
+
+      // 3. Sync Sensitivity range
+      if (swipeSensRange) {
+        const currentSens = this.touchLook ? this.touchLook.sensitivity : 0.004;
+        const rangeVal = Math.round(currentSens * 1000);
+        swipeSensRange.value = Math.max(1, Math.min(10, rangeVal));
+        updateSensLabel(swipeSensRange.value);
+      }
+
+      // 4. Sync Sound FX toggle switch
+      if (toggleSound) {
+        const soundEnabled = window.soundFx && typeof window.soundFx.isEnabled === 'function'
+          ? window.soundFx.isEnabled()
+          : true;
+        toggleSound.checked = soundEnabled;
+      }
+
+      // 5. Sync Atmosphere buttons
+      const curPeriod = this.forcedPeriod || this.currentPeriod || 'day';
+      atmoBtns.forEach(b => {
+        const atmo = b.getAttribute('data-atmo');
+        b.classList.toggle('active', atmo === curPeriod);
+      });
+
+      // 6. Sync Focus Agent select
+      if (focusSelect) {
+        focusSelect.value = this.currentFocusAgent || '';
+      }
+    };
+
+    const openModal = () => {
+      syncModalState();
+      modal.style.display = 'flex';
+      if (window.soundFx && typeof window.soundFx.playButtonClick === 'function') {
+        window.soundFx.playButtonClick();
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    const closeModal = () => {
+      modal.style.display = 'none';
+      if (window.soundFx && typeof window.soundFx.playButtonClick === 'function') {
+        window.soundFx.playButtonClick();
+      }
+    };
+
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (modal.style.display === 'flex') {
+        closeModal();
+      } else {
+        openModal();
+      }
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeModal();
+      });
+    }
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // POV buttons click events
+    if (isoBtn) {
+      isoBtn.addEventListener('click', () => {
+        this.exitGameMode();
+        this.resetCamera();
+        syncModalState();
+      });
+    }
+
+    if (topDownBtn) {
+      topDownBtn.addEventListener('click', () => {
+        this.exitGameMode();
+        this.setTopDownView();
+        syncModalState();
+      });
+    }
+
+    if (fpvBtn) {
+      fpvBtn.addEventListener('click', () => {
+        this.enterGameMode();
+        this.setGamePOV('FPV');
+        syncModalState();
+      });
+    }
+
+    if (tpvBtn) {
+      tpvBtn.addEventListener('click', () => {
+        this.enterGameMode();
+        this.setGamePOV('TPV');
+        syncModalState();
+      });
+    }
+
+    // D-Pad toggle switch change event
+    if (toggleDpad) {
+      toggleDpad.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        const dpadEl = document.getElementById('mobileArrowControls');
+        if (dpadEl) {
+          if (isChecked) {
+            dpadEl.classList.remove('dpad-hidden');
+            dpadEl.classList.add('dpad-force-show');
+          } else {
+            dpadEl.classList.add('dpad-hidden');
+            dpadEl.classList.remove('dpad-force-show');
+          }
+        }
+        localStorage.setItem('bayoffice_show_dpad', isChecked ? 'true' : 'false');
+        if (window.soundFx && typeof window.soundFx.playButtonClick === 'function') {
+          window.soundFx.playButtonClick();
+        }
+      });
+    }
+
+    // Swipe sensitivity range input event
+    if (swipeSensRange) {
+      swipeSensRange.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        const sens = val * 0.001;
+        if (this.touchLook) {
+          this.touchLook.sensitivity = sens;
+        }
+        updateSensLabel(val);
+        localStorage.setItem('bayoffice_swipe_sensitivity', sens.toString());
+      });
+    }
+
+    // Atmosphere selection buttons click events
+    atmoBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const atmo = btn.getAttribute('data-atmo');
+        this.setAtmosphere(atmo);
+        syncModalState();
+        if (window.soundFx && typeof window.soundFx.playButtonClick === 'function') {
+          window.soundFx.playButtonClick();
+        }
+      });
+    });
+
+    // Sound FX toggle switch change event
+    if (toggleSound) {
+      toggleSound.addEventListener('change', () => {
+        if (window.soundFx && typeof window.soundFx.toggle === 'function') {
+          window.soundFx.toggle();
+        }
+      });
+    }
+
+    // Focus agent dropdown change event
+    if (focusSelect) {
+      focusSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        const hudFocus = document.getElementById('threeFocusSelect');
+        if (hudFocus) hudFocus.value = val;
+        if (val) {
+          this.focusAgent(val);
+        } else {
+          this.resetCamera();
+        }
+      });
+    }
+  }
+
+  setAtmosphere(period) {
+    if (period === 'auto') {
+      this.forcedPeriod = null;
+    } else {
+      this.forcedPeriod = period;
+    }
+    this.updateDayNightAtmosphere();
+  }
+
+  // =========================================================================
   // 🎯 RAYCASTING & INTERACTION EVENTS
   // =========================================================================
 
@@ -5309,7 +5597,8 @@ class OfficeThree {
       this.gameMode.isLocked = isLocked;
       const overlay = document.getElementById('threePointerLockOverlay');
       if (overlay) {
-        overlay.style.display = (this.gameMode.active && !isLocked) ? 'flex' : 'none';
+        // Layar sentuh langsung dapat bernavigasi tanpa konfirmasi penguncian mouse
+        overlay.style.display = (this.gameMode.active && !isLocked && !this.isTouchDevice()) ? 'flex' : 'none';
       }
     };
 
@@ -5319,6 +5608,73 @@ class OfficeThree {
         this.gameMode.pitch -= e.movementY * this.gameMode.lookSpeed;
         this.gameMode.pitch = Math.max(-1.3, Math.min(1.3, this.gameMode.pitch));
       }
+    };
+
+    // 👆 Touch Swipe Look Engine (Game Mode / FPV / TPP)
+    this.onTouchStart = (e) => {
+      if (!this.gameMode.active) return;
+      if (e.target.closest && (
+        e.target.closest('#mobileArrowControls') ||
+        e.target.closest('#canvasSettingsModal') ||
+        e.target.closest('#threeGameHud') ||
+        e.target.closest('.three-controls-overlay') ||
+        e.target.closest('#threeAgentCard') ||
+        e.target.closest('#threeCompassWidget') ||
+        e.target.closest('.fullscreen-controls')
+      )) {
+        return;
+      }
+
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (!this.touchLook.active) {
+          this.touchLook.active = true;
+          this.touchLook.touchId = touch.identifier;
+          this.touchLook.startX = touch.clientX;
+          this.touchLook.startY = touch.clientY;
+          this.touchLook.lastX = touch.clientX;
+          this.touchLook.lastY = touch.clientY;
+          break;
+        }
+      }
+    };
+
+    this.onTouchMove = (e) => {
+      if (!this.gameMode.active || !this.touchLook.active) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === this.touchLook.touchId) {
+          const deltaX = touch.clientX - this.touchLook.lastX;
+          const deltaY = touch.clientY - this.touchLook.lastY;
+          this.touchLook.lastX = touch.clientX;
+          this.touchLook.lastY = touch.clientY;
+
+          this.gameMode.yaw -= deltaX * this.touchLook.sensitivity;
+          this.gameMode.pitch -= deltaY * this.touchLook.sensitivity;
+          this.gameMode.pitch = Math.max(-1.3, Math.min(1.3, this.gameMode.pitch));
+
+          if (e.cancelable) {
+            e.preventDefault();
+          }
+          break;
+        }
+      }
+    };
+
+    this.onTouchEnd = (e) => {
+      if (!this.touchLook.active) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === this.touchLook.touchId) {
+          this.touchLook.active = false;
+          this.touchLook.touchId = null;
+          break;
+        }
+      }
+    };
+
+    this.onTouchCancel = (e) => {
+      this.onTouchEnd(e);
     };
 
     this.onGameKeyDown = (e) => {
@@ -5353,8 +5709,14 @@ class OfficeThree {
     window.addEventListener('keydown', this.onGameKeyDown);
     window.addEventListener('keyup', this.onGameKeyUp);
 
-    this.renderer.domElement.addEventListener('mousemove', this.onPointerMove);
-    this.renderer.domElement.addEventListener('click', this.onPointerClick);
+    if (this.renderer && this.renderer.domElement) {
+      this.renderer.domElement.addEventListener('mousemove', this.onPointerMove);
+      this.renderer.domElement.addEventListener('click', this.onPointerClick);
+      this.renderer.domElement.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    }
+    window.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    window.addEventListener('touchend', this.onTouchEnd, { passive: false });
+    window.addEventListener('touchcancel', this.onTouchCancel, { passive: false });
     window.addEventListener('resize', this.onWindowResize);
   }
 
@@ -5370,7 +5732,7 @@ class OfficeThree {
 
   checkHover() {
     if (!this.camera) return;
-    if (this.gameMode && this.gameMode.active && this.gameMode.isLocked) return;
+    if (this.gameMode && this.gameMode.active && (this.gameMode.isLocked || this.isTouchDevice())) return;
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects(this.interactiveObjects);
 
@@ -5397,9 +5759,11 @@ class OfficeThree {
   checkClick() {
     if (!this.camera) return;
 
-    // 🎮 In Game Mode: click on canvas requests/locks mouse pointer
+    // 🎮 In Game Mode: click on canvas requests/locks mouse pointer (hanya untuk perangkat mouse desktop)
     if (this.gameMode && this.gameMode.active && !this.gameMode.isLocked) {
-      this.requestGamePointerLock();
+      if (!this.isTouchDevice()) {
+        this.requestGamePointerLock();
+      }
       return;
     }
 
@@ -5640,7 +6004,9 @@ class OfficeThree {
       this.gameMode.avatarMesh.visible = (this.gameMode.pov === 'TPV');
     }
 
-    this.requestGamePointerLock();
+    if (!this.isTouchDevice()) {
+      this.requestGamePointerLock();
+    }
 
     if (window.soundFx && typeof window.soundFx.playCameraSnap === 'function') {
       window.soundFx.playCameraSnap();
@@ -5892,7 +6258,11 @@ class OfficeThree {
     if (this.renderer && this.renderer.domElement) {
       this.renderer.domElement.removeEventListener('mousemove', this.onPointerMove);
       this.renderer.domElement.removeEventListener('click', this.onPointerClick);
+      this.renderer.domElement.removeEventListener('touchstart', this.onTouchStart);
     }
+    window.removeEventListener('touchmove', this.onTouchMove);
+    window.removeEventListener('touchend', this.onTouchEnd);
+    window.removeEventListener('touchcancel', this.onTouchCancel);
     window.removeEventListener('resize', this.onWindowResize);
 
     if (this.controls && typeof this.controls.dispose === 'function') {

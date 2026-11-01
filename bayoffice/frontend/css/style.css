@@ -3157,13 +3157,35 @@ body.dark-mode .lock-tip {
   touch-action: none;
 }
 
-@media screen and (max-width: 768px) {
+/* Aktifkan D-Pad pada layar sentuh (touchscreen) atau resolusi mobile/tablet */
+@media (pointer: coarse), (max-width: 900px) {
   .mobile-arrow-controls {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
   }
+}
+
+/* Pastikan D-Pad selalu tampil di mode Fullscreen kanvas jika tidak disembunyikan pengguna */
+.canvas-container:fullscreen .mobile-arrow-controls,
+.canvas-container:-webkit-full-screen .mobile-arrow-controls,
+:fullscreen .mobile-arrow-controls,
+:-webkit-full-screen .mobile-arrow-controls {
+  display: flex !important;
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  z-index: 60;
+}
+
+/* Preferensi toggle pengguna untuk D-Pad */
+.mobile-arrow-controls.dpad-hidden {
+  display: none !important;
+}
+
+.mobile-arrow-controls.dpad-force-show {
+  display: flex !important;
 }
 
 .mobile-dpad-container {
@@ -3243,5 +3265,397 @@ body.dark-mode .mobile-dpad-btn.dpad-center {
   background: #1E293B;
   color: #38BDF8;
 }
+
+/* ==========================================================
+   📱 3D CANVAS HUD RESPONSIVE & UNIFIED SETTINGS
+   ========================================================== */
+@media (pointer: coarse), (max-width: 899px) {
+  .three-desktop-only {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .three-badge-subtle {
+    display: none !important;
+  }
+  .three-settings-btn-text {
+    display: none !important;
+  }
+}
+
+.three-settings-btn {
+  background: var(--yellow) !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+}
+
+body.dark-mode .three-settings-btn {
+  background: #8B5CF6 !important;
+  color: #FFFFFF !important;
+  border-color: #A78BFA !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+}
+
+.three-settings-btn:hover {
+  background: #FEF08A !important;
+}
+
+body.dark-mode .three-settings-btn:hover {
+  background: #9333EA !important;
+}
+
+/* ==========================================================
+   ⚙️ UNIFIED CANVAS SETTINGS MODAL / POPOVER (NEUBRUTALISM)
+   ========================================================== */
+.canvas-settings-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  pointer-events: auto;
+}
+
+:fullscreen .canvas-settings-modal,
+.canvas-container:fullscreen .canvas-settings-modal,
+:-webkit-full-screen .canvas-settings-modal,
+.canvas-container:-webkit-full-screen .canvas-settings-modal {
+  z-index: 75 !important;
+}
+
+.canvas-settings-card {
+  width: 100%;
+  max-width: 440px;
+  max-height: 92%;
+  overflow-y: auto;
+  background: #FFFFFF;
+  border: 3px solid #000000;
+  box-shadow: 6px 6px 0px #000000;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #0F172A;
+  user-select: none;
+}
+
+body.dark-mode .canvas-settings-card {
+  background: #181E26;
+  border-color: #38BDF8;
+  box-shadow: 6px 6px 0px #000000;
+  color: #F8FAFC;
+}
+
+.canvas-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #000000;
+  padding-bottom: 10px;
+}
+
+body.dark-mode .canvas-settings-header {
+  border-bottom-color: #333F50;
+}
+
+.canvas-settings-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  cursor: pointer;
+  color: #0F172A;
+  transition: transform 0.08s ease, background 0.1s ease;
+  padding: 0;
+}
+
+body.dark-mode .canvas-settings-close-btn {
+  background: #1E293B;
+  color: #F8FAFC;
+  border-color: #475569;
+}
+
+.canvas-settings-close-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px #000000;
+}
+
+.canvas-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #F8FAFC;
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+body.dark-mode .settings-section {
+  background: #1E293B;
+  border-color: #475569;
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0F172A;
+  letter-spacing: 0.3px;
+}
+
+body.dark-mode .settings-section-title {
+  color: #38BDF8;
+}
+
+.settings-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.settings-pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.1s ease, box-shadow 0.08s ease;
+}
+
+body.dark-mode .settings-pill-btn {
+  background: #0F172A;
+  color: #F8FAFC;
+  border-color: #475569;
+}
+
+.settings-pill-btn:hover {
+  background: #FEF08A;
+}
+
+body.dark-mode .settings-pill-btn:hover {
+  background: #334155;
+}
+
+.settings-pill-btn.active {
+  background: var(--yellow);
+  color: #000000;
+  box-shadow: 0px 0px 0px #000000;
+  transform: translate(1px, 1px);
+}
+
+body.dark-mode .settings-pill-btn.active {
+  background: #8B5CF6;
+  color: #FFFFFF;
+  border-color: #A78BFA;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-row-slider {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.settings-row-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-row-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+body.dark-mode .settings-row-label {
+  color: #F8FAFC;
+}
+
+.settings-row-desc {
+  font-size: 0.7rem;
+  color: #64748B;
+}
+
+body.dark-mode .settings-row-desc {
+  color: #94A3B8;
+}
+
+/* Custom Neubrutalism Toggle Switch */
+.neo-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.neo-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.neo-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #CBD5E1;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  transition: 0.15s ease;
+  border-radius: 24px;
+}
+
+body.dark-mode .neo-toggle-slider {
+  background-color: #475569;
+}
+
+.neo-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #FFFFFF;
+  border: 1.5px solid #000000;
+  transition: 0.15s ease;
+  border-radius: 50%;
+}
+
+.neo-toggle-switch input:checked + .neo-toggle-slider {
+  background-color: var(--neo-mint);
+}
+
+body.dark-mode .neo-toggle-switch input:checked + .neo-toggle-slider {
+  background-color: #10B981;
+}
+
+.neo-toggle-switch input:checked + .neo-toggle-slider:before {
+  transform: translateX(20px);
+  background-color: #FFFFFF;
+}
+
+/* Custom Neubrutalism Range Slider */
+.neo-range-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: #E2E8F0;
+  border: 2px solid #000000;
+  outline: none;
+}
+
+body.dark-mode .neo-range-slider {
+  background: #334155;
+  border-color: #475569;
+}
+
+.neo-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 2px solid #000000;
+  box-shadow: 1px 1px 0px #000000;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.neo-range-slider::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+}
+
+.settings-atmosphere-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.settings-atmo-btn {
+  padding: 6px 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 1.5px solid #000000;
+  box-shadow: 1px 1px 0px #000000;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.1s ease;
+}
+
+body.dark-mode .settings-atmo-btn {
+  background: #0F172A;
+  color: #F8FAFC;
+  border-color: #475569;
+}
+
+.settings-atmo-btn.active {
+  background: var(--cyan);
+  color: #000000;
+  font-weight: 800;
+  box-shadow: 0px 0px 0px #000000;
+  transform: translate(1px, 1px);
+}
+
+body.dark-mode .settings-atmo-btn.active {
+  background: #06B6D4;
+  color: #FFFFFF;
+}
+
 
 

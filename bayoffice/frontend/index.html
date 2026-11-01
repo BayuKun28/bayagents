@@ -215,16 +215,20 @@
                   <button id="threeZoomOutBtn" class="neo-btn-sm" title="Zoom Out (-)">
                     <i data-lucide="zoom-out" class="lucide-xs"></i>
                   </button>
-                  <button id="threeResetBtn" class="neo-btn-sm" title="Reset Pandangan Isometrik">
+                  <button id="threeResetBtn" class="neo-btn-sm three-desktop-only" title="Reset Pandangan Isometrik">
                     <i data-lucide="rotate-ccw" class="lucide-xs"></i>
                     <span data-i18n="canvas.reset">Reset</span>
                   </button>
-                  <button id="threeTopDownBtn" class="neo-btn-sm" title="Pandangan Atas (Top-Down Floorplan)">
+                  <button id="threeTopDownBtn" class="neo-btn-sm three-desktop-only" title="Pandangan Atas (Top-Down Floorplan)">
                     <i data-lucide="layout-grid" class="lucide-xs"></i>
                     <span>Top-Down</span>
                   </button>
+                  <button id="threeSettingsBtn" class="neo-btn-sm three-settings-btn" title="Pengaturan Kanvas & Navigasi (Mode Kamera, Suasana, Kontrol Sentuh, Audio)">
+                    <i data-lucide="sliders" class="lucide-xs"></i>
+                    <span class="three-settings-btn-text">Pengaturan</span>
+                  </button>
                 </div>
-                <div class="three-focus-dropdown-wrapper">
+                <div class="three-focus-dropdown-wrapper three-desktop-only">
                   <select id="threeFocusSelect" class="neo-select-sm" title="Fokus Kamera ke Figur Avatar Agen">
                     <option value="">🎯 Fokus Agen / Area...</option>
                     <option value="LUHUT">👨‍💼 LUHUT (Executive Suite)</option>
@@ -299,6 +303,116 @@
                   <i data-lucide="kanban" class="lucide-xs"></i>
                   <span>Filter Kanban</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- ⚙️ Unified Canvas Settings Popover / Modal (Neubrutalism) -->
+            <div id="canvasSettingsModal" class="canvas-settings-modal" style="display: none;">
+              <div class="canvas-settings-card">
+                <div class="canvas-settings-header">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="sliders" class="lucide-sm" style="color: #0F172A;"></i>
+                    <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; text-transform: uppercase;">Pengaturan Kanvas 3D</h4>
+                  </div>
+                  <button type="button" id="canvasSettingsCloseBtn" class="canvas-settings-close-btn" title="Tutup">✕</button>
+                </div>
+                
+                <div class="canvas-settings-body">
+                  <!-- Section 1: Mode Pandangan (POV & Kamera) -->
+                  <div class="settings-section">
+                    <label class="settings-section-title">
+                      <i data-lucide="camera" class="lucide-xs"></i> Mode Pandangan Kamera
+                    </label>
+                    <div class="settings-btn-grid">
+                      <button type="button" id="settingsIsoBtn" class="settings-pill-btn active" title="Pandangan Isometrik Standar">
+                        <i data-lucide="rotate-ccw" class="lucide-xs"></i> Isometrik
+                      </button>
+                      <button type="button" id="settingsTopDownBtn" class="settings-pill-btn" title="Pandangan Atas Lantai (2D Floorplan)">
+                        <i data-lucide="layout-grid" class="lucide-xs"></i> Top-Down
+                      </button>
+                      <button type="button" id="settingsFpvBtn" class="settings-pill-btn" title="First-Person View (Sudut Pandang Mata)">
+                        👁️ FPV (Game)
+                      </button>
+                      <button type="button" id="settingsTpvBtn" class="settings-pill-btn" title="Third-Person View (Kamera Belakang Figur)">
+                        🏃 TPV (Game)
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Section 2: Kontrol Sentuh & D-Pad (Touch Devices) -->
+                  <div class="settings-section">
+                    <label class="settings-section-title">
+                      <i data-lucide="gamepad-2" class="lucide-xs"></i> Kontrol Sentuh & D-Pad
+                    </label>
+                    <div class="settings-row">
+                      <div class="settings-row-info">
+                        <span class="settings-row-label">Tampilkan Tombol D-Pad</span>
+                        <span class="settings-row-desc">Panah navigasi arah virtual di layar sentuh</span>
+                      </div>
+                      <label class="neo-toggle-switch" title="Aktif / Nonaktif D-Pad">
+                        <input type="checkbox" id="settingsToggleDpad" checked>
+                        <span class="neo-toggle-slider"></span>
+                      </label>
+                    </div>
+                    <div class="settings-row settings-row-slider">
+                      <div class="settings-row-info">
+                        <span class="settings-row-label">Sensitivitas Usap Layar (Swipe Look)</span>
+                        <span id="settingsSwipeSensLabel" class="settings-row-desc">Normal (0.004)</span>
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                        <span style="font-size: 0.7rem; color: #64748B; font-weight: 700;">Lambat</span>
+                        <input type="range" id="settingsSwipeSensRange" min="1" max="10" step="1" value="4" class="neo-range-slider" style="flex: 1;" title="Sensitivitas Usap">
+                        <span style="font-size: 0.7rem; color: #64748B; font-weight: 700;">Cepat</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Section 3: Suasana & Pencahayaan Kantor (Day / Night) -->
+                  <div class="settings-section">
+                    <label class="settings-section-title">
+                      <i data-lucide="sun-medium" class="lucide-xs"></i> Suasana & Pencahayaan Kantor
+                    </label>
+                    <div class="settings-atmosphere-grid">
+                      <button type="button" class="settings-atmo-btn" data-atmo="dawn" title="Suasana Fajar">🌅 Fajar</button>
+                      <button type="button" class="settings-atmo-btn" data-atmo="day" title="Suasana Siang">☀️ Siang</button>
+                      <button type="button" class="settings-atmo-btn" data-atmo="sunset" title="Suasana Sore">🌇 Sore</button>
+                      <button type="button" class="settings-atmo-btn" data-atmo="night" title="Suasana Malam">🌙 Malam</button>
+                      <button type="button" class="settings-atmo-btn" data-atmo="midnight" title="Suasana Larut Malam">🌌 Larut</button>
+                    </div>
+                  </div>
+
+                  <!-- Section 4: Audio & Sound FX -->
+                  <div class="settings-section">
+                    <div class="settings-row">
+                      <div class="settings-row-info">
+                        <span class="settings-row-label">🔊 Efek Suara (Sound FX)</span>
+                        <span class="settings-row-desc">Langkah kaki, klik tombol, suasana retro 8-bit</span>
+                      </div>
+                      <label class="neo-toggle-switch" title="Aktifkan / Bisukan Efek Suara">
+                        <input type="checkbox" id="settingsToggleSound" checked>
+                        <span class="neo-toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Section 5: Fokus Figur Agen & Ruangan -->
+                  <div class="settings-section">
+                    <label class="settings-section-title">
+                      <i data-lucide="crosshair" class="lucide-xs"></i> Fokus Figur Agen & Ruangan
+                    </label>
+                    <select id="settingsFocusSelect" class="neo-select-sm" style="width: 100%;" title="Pilih Agen atau Ruangan">
+                      <option value="">🎯 Pilih Agen atau Ruangan...</option>
+                      <option value="LUHUT">👨‍💼 LUHUT (Executive Suite)</option>
+                      <option value="HABIBIE">📐 HABIBIE (Architect Studio)</option>
+                      <option value="JOKOWI">⚙️ JOKOWI (Backend Bay)</option>
+                      <option value="PRABOWO">🎨 PRABOWO (Frontend Bay)</option>
+                      <option value="GIBRAN">🛡️ GIBRAN (QA Terminal)</option>
+                      <option value="arcade">🕹️ Game Room (Arcade)</option>
+                      <option value="cafe">☕ Cafeteria & Espresso</option>
+                    </select>
+                  </div>
+
+                </div>
               </div>
             </div>
 
