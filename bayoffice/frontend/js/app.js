@@ -138,6 +138,79 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cache data terakhir untuk re-render saat bahasa berubah
   window.latestAgentsData = null;
   window.latestSystemData = null;
+
+  // Global Neobrutalist Toast Notification Dispatcher
+  window.showOfficeToast = function (opts = {}) {
+    const {
+      title = 'Notification',
+      message = '',
+      type = 'info', // 'success', 'error', 'info'
+      icon = null,
+      actionText = null,
+      actionCallback = null,
+      duration = 6000
+    } = opts;
+
+    const container = document.getElementById('officeToastContainer');
+    if (!container) return;
+
+    let iconName = icon;
+    if (!iconName) {
+      if (type === 'success') iconName = 'check-circle';
+      else if (type === 'error') iconName = 'alert-triangle';
+      else iconName = 'info';
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `office-toast toast-${type}`;
+    toast.innerHTML = `
+      <div style="flex-shrink: 0; color: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#8B5CF6'}; margin-top: 2px;">
+        <i data-lucide="${iconName}" class="lucide-sm"></i>
+      </div>
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-weight: 800; font-size: 0.88rem; color: #1E293B; line-height: 1.3;">
+          ${escapeHtml(title)}
+        </div>
+        ${message ? `<div style="font-size: 0.78rem; color: #64748B; margin-top: 3px; line-height: 1.4;">${escapeHtml(message)}</div>` : ''}
+        ${actionText ? `<div style="margin-top: 8px;"><button type="button" class="neo-btn neo-btn-primary toast-action-btn" style="padding: 4px 10px; font-size: 0.74rem; font-weight: 800; background: #8B5CF6; color: #FFFFFF; cursor: pointer;">${escapeHtml(actionText)}</button></div>` : ''}
+      </div>
+      <button type="button" class="office-toast-close" title="Dismiss">
+        <i data-lucide="x" class="lucide-xs"></i>
+      </button>
+    `;
+
+    container.appendChild(toast);
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+
+    let isDismissed = false;
+    const dismiss = () => {
+      if (isDismissed) return;
+      isDismissed = true;
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(12px) scale(0.95)';
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 200);
+    };
+
+    const closeBtn = toast.querySelector('.office-toast-close');
+    if (closeBtn) closeBtn.addEventListener('click', dismiss);
+
+    const actionBtn = toast.querySelector('.toast-action-btn');
+    if (actionBtn && typeof actionCallback === 'function') {
+      actionBtn.addEventListener('click', () => {
+        actionCallback();
+        dismiss();
+      });
+    }
+
+    if (duration > 0) {
+      setTimeout(dismiss, duration);
+    }
+  };
+
   let prevDoneTaskIds = null;
   let currentDetailTaskId = null;
   let currentDetailTask = null;
@@ -331,6 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.OfficeSchedules.fetchSchedules(false);
               }
             }
+          }
+
+          // Update Habibie Implementation Plan Background Generation
+          if (payload.plan_generation && window.OfficePlans && typeof window.OfficePlans.handlePlanJobSync === 'function') {
+            window.OfficePlans.handlePlanJobSync(payload.plan_generation);
           }
         }
       } catch (err) {

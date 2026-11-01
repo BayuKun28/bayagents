@@ -2365,4 +2365,95 @@ body.dark-mode .office-workload-row:hover {
   }
 }
 
+/* ==========================================================
+   HABIBIE BACKGROUND DRAFTING & FLOATING TOAST NOTIFICATIONS
+   ========================================================== */
+.studio-drafting-banner {
+  border-radius: 8px;
+  animation: bannerSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bannerSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body.dark-mode .studio-drafting-banner {
+  background: #201735 !important;
+  border-color: #8B5CF6 !important;
+}
+
+body.dark-mode #studioDraftingIdeaPreview {
+  color: #CBD5E1 !important;
+}
+
+.office-toast {
+  pointer-events: auto;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-left: 6px solid #8B5CF6;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 420px;
+  animation: toastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
+}
+
+.office-toast.toast-success {
+  border-left-color: #10B981;
+}
+
+.office-toast.toast-error {
+  border-left-color: #EF4444;
+}
+
+.office-toast.toast-info {
+  border-left-color: #8B5CF6;
+}
+
+.office-toast-close {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.office-toast-close:hover {
+  color: #1E293B;
+  background: #E2E8F0;
+}
+
+body.dark-mode .office-toast-close:hover {
+  color: #F8FAFC;
+  background: #334155;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 

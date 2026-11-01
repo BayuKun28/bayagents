@@ -13,6 +13,7 @@ import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+import threading
 import yaml
 import httpx
 
@@ -368,6 +369,124 @@ def generate_plan_ai(idea: str,
         "content": plan_markdown
     }
     return saved
+
+
+# ==========================================================
+# ASYNCHRONOUS BACKGROUND PLAN GENERATION WORKER
+# ==========================================================
+_plan_job_lock = threading.Lock()
+_active_plan_job = {
+    "is_generating": False,
+    "idea": None,
+    "project": None,
+    "engine": None,
+    "model": None,
+    "started_at": None,
+    "status": "idle",  # "idle", "generating", "completed", "failed"
+    "result": None,
+    "error": None
+}
+
+
+def get_plan_generation_status() -> Dict[str, Any]:
+    """Mengambil status pekerjaan perancangan plan di latar belakang."""
+    with _plan_job_lock:
+        return dict(_active_plan_job)
+
+
+def clear_plan_generation_status() -> Dict[str, Any]:
+    """Mereset status pekerjaan perancangan plan."""
+    with _plan_job_lock:
+        _active_plan_job["is_generating"] = False
+        _active_plan_job["status"] = "idle"
+        _active_plan_job["idea"] = None
+        _active_plan_job["project"] = None
+        _active_plan_job["engine"] = None
+        _active_plan_job["model"] = None
+        _active_plan_job["started_at"] = None
+        _active_plan_job["result"] = None
+        _active_plan_job["error"] = None
+        return {"success": True}
+
+
+def start_background_plan_generation(idea: str,
+                                     project: str = "bayoffice",
+                                     engine: str = "agy",
+                                     model: Optional[str] = None) -> Dict[str, Any]:
+    """Memulai proses perancangan plan AI secara asinkron di latar belakang."""
+    idea = idea.strip()
+    if not idea:
+        return {"success": False, "error": "Ide atau instruksi fitur wajib diisi"}
+
+    with _plan_job_lock:
+        if _active_plan_job.get("is_generating"):
+            started_at_str = _active_plan_job.get("started_at")
+            is_stale = False
+            if started_at_str:
+                try:
+                    started_dt = datetime.fromisoformat(started_at_str)
+                    if (_get_local_now() - started_dt).total_seconds() > 600:
+                        is_stale = True
+                except Exception:
+                    pass
+            if not is_stale:
+                return {
+                    "success": False,
+                    "error": "HABIBIE saat ini sedang merancang plan lain di latar belakang. Silakan tunggu hingga selesai."
+                }
+        _active_plan_job["is_generating"] = True
+        _active_plan_job["status"] = "generating"
+        _active_plan_job["idea"] = idea
+        _active_plan_job["project"] = project
+        _active_plan_job["engine"] = engine
+        _active_plan_job["model"] = model
+        _active_plan_job["started_at"] = _get_local_now().isoformat()
+        _active_plan_job["result"] = None
+        _active_plan_job["error"] = None
+
+    def _worker():
+        try:
+            res = generate_plan_ai(idea=idea, project=project, engine=engine, model=model)
+            with _plan_job_lock:
+                _active_plan_job["is_generating"] = False
+                if res.get("success"):
+                    _active_plan_job["status"] = "completed"
+                    _active_plan_job["result"] = res
+                    _active_plan_job["error"] = None
+                    # Broadcast notifikasi kelulusan perancangan ke Telegram via bot.py
+                    try:
+                        plan_id = res.get("id", "PLAN")
+                        plan_title = res.get("title", idea[:50])
+                        telebot_script = BAYAGENTS_DIR / "telebot" / "bot.py"
+                        telebot_venv_python = BAYAGENTS_DIR / "telebot" / ".venv" / "bin" / "python"
+                        py_bin = str(telebot_venv_python) if telebot_venv_python.exists() else "python3"
+                        if telebot_script.exists():
+                            tele_msg = f"[HABIBIE]: 🏛️ Implementation Plan *{plan_id}* '{plan_title}' untuk proyek `{project}` selesai dirancang di Plan Studio."
+                            subprocess.Popen([py_bin, str(telebot_script), tele_msg])
+                    except Exception as ex:
+                        print(f"⚠️ Gagal kirim notif telegram HABIBIE: {ex}")
+                else:
+                    _active_plan_job["status"] = "failed"
+                    _active_plan_job["error"] = res.get("error", "Gagal merancang plan")
+        except Exception as e:
+            with _plan_job_lock:
+                _active_plan_job["is_generating"] = False
+                _active_plan_job["status"] = "failed"
+                _active_plan_job["error"] = str(e)
+
+    th = threading.Thread(target=_worker, daemon=True)
+    th.start()
+
+    return {
+        "success": True,
+        "status": "drafting",
+        "message": "HABIBIE sedang merancang Implementation Plan di latar belakang...",
+        "project": project,
+        "idea": idea[:60],
+        "engine": engine,
+        "model": model,
+        "started_at": _active_plan_job["started_at"]
+    }
 
 
 def dispatch_plan_to_kanban(plan_id: str, dispatch_fn) -> Dict[str, Any]:

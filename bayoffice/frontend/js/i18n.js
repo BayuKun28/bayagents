@@ -330,7 +330,13 @@
         status_draft: 'Draft',
         status_dispatched: 'Dispatched',
         author: 'Author: {name}',
-        created: 'Created: {time}'
+        created: 'Created: {time}',
+        drafting_bg_title: 'HABIBIE is drafting Implementation Plan in background...',
+        drafting_multitask_badge: 'Multi-tasking Mode',
+        drafting_toast_started_title: 'HABIBIE Drafting in Background',
+        drafting_toast_started_msg: 'Architecture blueprint is being formulated. You can freely switch to Live Office or Kanban.',
+        drafting_toast_done_title: 'Implementation Plan Ready!',
+        drafting_toast_open_btn: 'Open Blueprint'
       },
       login: {
         title: 'BayOffice',
@@ -666,7 +672,13 @@
         status_draft: 'Draf',
         status_dispatched: 'Terdireksi',
         author: 'Penulis: {name}',
-        created: 'Dibuat: {time}'
+        created: 'Dibuat: {time}',
+        drafting_bg_title: 'HABIBIE sedang merancang Implementation Plan di latar belakang...',
+        drafting_multitask_badge: 'Mode Multi-tasking',
+        drafting_toast_started_title: 'HABIBIE Merancang di Latar Belakang',
+        drafting_toast_started_msg: 'Rencana arsitektur sedang dirancang. Anda bebas beralih ke Live Office atau Kanban.',
+        drafting_toast_done_title: 'Implementation Plan Selesai!',
+        drafting_toast_open_btn: 'Buka Dokumen'
       },
       login: {
         title: 'BayOffice',

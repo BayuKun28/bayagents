@@ -35,6 +35,15 @@ window.OfficePlans = (function () {
   let studioProjectSelect;
   let studioPeriodSelect;
   let studioRefreshBtn;
+  let studioDraftingBanner;
+  let studioDraftingModelBadge;
+  let studioDraftingProjectText;
+  let studioDraftingIdeaPreview;
+  let studioDraftingTimer;
+
+  let activeDraftingJob = null;
+  let draftingTimerInterval = null;
+  let draftingPollInterval = null;
 
   let loadedStudioPlans = [];
   let currentSelectedStudioPlan = null;
@@ -412,6 +421,188 @@ window.OfficePlans = (function () {
     }
   }
 
+  // ==========================================================
+  // HABIBIE ASYNC BACKGROUND DRAFTING & LIVE MONITORING
+  // ==========================================================
+  function showDraftingBanner(job) {
+    if (!studioDraftingBanner) return;
+    studioDraftingBanner.style.display = 'flex';
+
+    if (studioDraftingProjectText) {
+      studioDraftingProjectText.textContent = job.project || 'bayoffice';
+    }
+    if (studioDraftingIdeaPreview) {
+      const rawIdea = job.idea || '';
+      studioDraftingIdeaPreview.textContent = rawIdea.length > 60 ? (rawIdea.slice(0, 60) + '...') : rawIdea;
+    }
+    if (studioDraftingModelBadge) {
+      const isAgy = (job.engine === 'agy');
+      const modelLabel = isAgy ? `AGY • ${(job.model || 'flash').replace(/^gemini-3.8-/, '').replace(/-high/, ' (High)')}` : '9Router';
+      studioDraftingModelBadge.textContent = modelLabel;
+    }
+
+    if (draftingTimerInterval) clearInterval(draftingTimerInterval);
+    const startMs = job.started_at ? new Date(job.started_at).getTime() : Date.now();
+    const updateTimer = () => {
+      const elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const s = String(elapsed % 60).padStart(2, '0');
+      if (studioDraftingTimer) studioDraftingTimer.textContent = `${m}:${s}`;
+    };
+    updateTimer();
+    draftingTimerInterval = setInterval(updateTimer, 1000);
+
+    if (studioToggleNewPlanText) {
+      studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('plans.generating') : 'HABIBIE is Drafting Plan...';
+    }
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  function hideDraftingBanner() {
+    if (studioDraftingBanner) studioDraftingBanner.style.display = 'none';
+    if (draftingTimerInterval) {
+      clearInterval(draftingTimerInterval);
+      draftingTimerInterval = null;
+    }
+    if (studioToggleNewPlanText) {
+      studioToggleNewPlanText.textContent = window.I18n ? window.I18n.t('studio.new_plan_btn') : '+ Draft Architecture Plan';
+    }
+    if (studioSubmitPlanBtn) studioSubmitPlanBtn.disabled = false;
+    if (studioSubmitPlanBtnText) {
+      studioSubmitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generate_btn') : 'Ask HABIBIE';
+    }
+  }
+
+  function startDraftingMonitoring() {
+    if (draftingPollInterval) clearInterval(draftingPollInterval);
+    draftingPollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/plans/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        handlePlanJobSync(data);
+      } catch (err) {
+        // silent retry
+      }
+    }, 3000);
+  }
+
+  function stopDraftingMonitoring() {
+    if (draftingPollInterval) {
+      clearInterval(draftingPollInterval);
+      draftingPollInterval = null;
+    }
+    if (draftingTimerInterval) {
+      clearInterval(draftingTimerInterval);
+      draftingTimerInterval = null;
+    }
+  }
+
+  async function onDraftingCompleted(job) {
+    hideDraftingBanner();
+    stopDraftingMonitoring();
+
+    if (window.soundFx) window.soundFx.playSuccess();
+
+    // Reset status di backend
+    fetch('/api/plans/clear-status', { method: 'POST' }).catch(() => {});
+
+    // Reload project list jika ada custom project
+    if (typeof window.loadProjects === 'function') {
+      window.loadProjects();
+    }
+
+    // Refresh blueprints list
+    await fetchStudioPlans(false);
+
+    const newPlan = job.result ? (job.result.plan || job.result) : null;
+    const newPlanId = newPlan ? newPlan.id : null;
+    const planTitle = newPlan ? (newPlan.title || newPlanId) : 'New Blueprint';
+
+    // Show floating toast notification
+    if (window.showOfficeToast) {
+      window.showOfficeToast({
+        title: window.I18n ? window.I18n.t('plans.drafting_toast_done_title') : 'Implementation Plan Ready!',
+        message: `HABIBIE: [${newPlanId || 'PLAN'}] "${planTitle}"`,
+        type: 'success',
+        icon: 'check-circle',
+        actionText: window.I18n ? window.I18n.t('plans.drafting_toast_open_btn') : 'Open Blueprint',
+        actionCallback: () => {
+          const navPlansBtn = document.getElementById('navPlansBtn');
+          if (navPlansBtn) navPlansBtn.click();
+          if (newPlanId) selectStudioPlan(newPlanId);
+        },
+        duration: 12000
+      });
+    }
+
+    // Browser Desktop Notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('Plan Studio - HABIBIE', {
+          body: `Blueprint [${newPlanId || 'PLAN'}] "${planTitle}" selesai dirancang!`,
+          icon: '/static/assets/avatars/habibie.jpg'
+        });
+      } catch (e) {}
+    }
+
+    // Auto-select and show
+    if (newPlanId) {
+      selectStudioPlan(newPlanId);
+    }
+  }
+
+  function onDraftingFailed(job) {
+    hideDraftingBanner();
+    stopDraftingMonitoring();
+
+    if (window.soundFx) window.soundFx.playError();
+    fetch('/api/plans/clear-status', { method: 'POST' }).catch(() => {});
+
+    if (window.showOfficeToast) {
+      window.showOfficeToast({
+        title: 'Drafting Plan Gagal',
+        message: job.error || 'Terjadi kesalahan sistem saat menghubungi model AI.',
+        type: 'error',
+        icon: 'alert-triangle',
+        duration: 8000
+      });
+    } else {
+      alert(`Drafting Plan Gagal: ${job.error || 'Terjadi kesalahan'}`);
+    }
+  }
+
+  function handlePlanJobSync(job) {
+    if (!job) return;
+
+    if (job.status === 'generating' || job.is_generating) {
+      activeDraftingJob = job;
+      showDraftingBanner(job);
+      if (!draftingPollInterval) startDraftingMonitoring();
+    } else if (job.status === 'completed') {
+      if (activeDraftingJob || job.result) {
+        const completedJob = Object.assign({}, job);
+        activeDraftingJob = null;
+        onDraftingCompleted(completedJob);
+      }
+    } else if (job.status === 'failed') {
+      if (activeDraftingJob) {
+        const failedJob = Object.assign({}, job);
+        activeDraftingJob = null;
+        onDraftingFailed(failedJob);
+      }
+    } else if (job.status === 'idle') {
+      if (activeDraftingJob) {
+        activeDraftingJob = null;
+        hideDraftingBanner();
+        stopDraftingMonitoring();
+      }
+    }
+  }
+
   function hideStudioNewPlanForm() {
     if (studioNewPlanFormContainer) studioNewPlanFormContainer.style.display = 'none';
     if (studioCustomProjectContainer) studioCustomProjectContainer.style.display = 'none';
@@ -481,6 +672,28 @@ window.OfficePlans = (function () {
     studioProjectSelect = document.getElementById('studioProjectSelect');
     studioPeriodSelect = document.getElementById('studioPeriodSelect');
     studioRefreshBtn = document.getElementById('studioRefreshBtn');
+    studioDraftingBanner = document.getElementById('studioDraftingBanner');
+    studioDraftingModelBadge = document.getElementById('studioDraftingModelBadge');
+    studioDraftingProjectText = document.getElementById('studioDraftingProjectText');
+    studioDraftingIdeaPreview = document.getElementById('studioDraftingIdeaPreview');
+    studioDraftingTimer = document.getElementById('studioDraftingTimer');
+
+    // Request notification permission if supported
+    if ('Notification' in window && Notification.permission === 'default') {
+      try {
+        Notification.requestPermission();
+      } catch (e) {}
+    }
+
+    // Check background drafting status on load
+    fetch('/api/plans/status')
+      .then(r => r.ok ? r.json() : null)
+      .then(st => {
+        if (st && (st.status === 'generating' || st.is_generating)) {
+          handlePlanJobSync(st);
+        }
+      })
+      .catch(() => {});
 
     if (studioPeriodSelect) {
       currentStudioPeriod = studioPeriodSelect.value || 'ALL';
@@ -514,6 +727,20 @@ window.OfficePlans = (function () {
     if (studioToggleNewPlanBtn) {
       studioToggleNewPlanBtn.addEventListener('click', () => {
         if (window.soundFx) window.soundFx.playClick();
+        if (activeDraftingJob) {
+          if (window.showOfficeToast) {
+            window.showOfficeToast({
+              title: 'Drafting in Progress',
+              message: 'HABIBIE saat ini sedang merancang plan di latar belakang. Silakan tunggu hingga selesai.',
+              type: 'info',
+              icon: 'loader',
+              duration: 4000
+            });
+          } else {
+            alert('HABIBIE saat ini sedang merancang plan di latar belakang. Silakan tunggu hingga selesai.');
+          }
+          return;
+        }
         if (!studioNewPlanFormContainer) return;
         const isVisible = studioNewPlanFormContainer.style.display === 'flex' || studioNewPlanFormContainer.style.display === 'block';
         if (isVisible) {
@@ -556,44 +783,70 @@ window.OfficePlans = (function () {
           project = customProject;
         }
 
-        if (studioSubmitPlanBtn) studioSubmitPlanBtn.disabled = true;
-        if (studioSubmitPlanBtnText) {
-          studioSubmitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generating') : 'HABIBIE is Drafting Plan...';
+        if (activeDraftingJob) {
+          alert('HABIBIE saat ini sedang merancang plan lain di latar belakang. Silakan tunggu hingga selesai.');
+          return;
         }
+
         if (window.soundFx) window.soundFx.playClick();
 
+        // 1. Segera tutup formulir agar user dapat beralih ke Kanban / Live Office
+        form.reset();
+        hideStudioNewPlanForm();
+
+        // 2. Tampilkan status sedang dibuat di bagian atas
+        showDraftingBanner({
+          idea,
+          project,
+          engine,
+          model,
+          started_at: new Date().toISOString()
+        });
+
+        // 3. Kirim ke API background generator secara asinkron
         try {
           const res = await fetch('/api/plans/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idea, project, engine, model })
+            body: JSON.stringify({ idea, project, engine, model, background: true })
           });
-          const resJson = await res.json();
-          if (res.ok && resJson.success) {
-            if (window.soundFx) window.soundFx.playSuccess();
-            form.reset();
-            hideStudioNewPlanForm();
 
-            // Reload dynamic project registries across all views
-            if (typeof window.loadProjects === 'function') {
-              window.loadProjects();
-            }
+          const text = await res.text();
+          let resJson;
+          try {
+            resJson = JSON.parse(text);
+          } catch (jsonErr) {
+            throw new Error(`Server returned non-JSON response (HTTP ${res.status}): ${text.slice(0, 100)}`);
+          }
 
-            await fetchStudioPlans(false);
-            const newPlanId = (resJson.plan && resJson.plan.id) || resJson.id;
-            if (newPlanId) {
-              selectStudioPlan(newPlanId);
-            }
-          } else {
-            alert(`Failed: ${resJson.error || resJson.detail || 'Unknown error'}`);
+          if (!res.ok || !resJson.success) {
+            throw new Error(resJson.error || resJson.detail || 'Gagal memulai perancangan plan');
+          }
+
+          activeDraftingJob = {
+            idea,
+            project,
+            engine,
+            model,
+            started_at: resJson.started_at || new Date().toISOString(),
+            status: 'generating'
+          };
+
+          startDraftingMonitoring();
+
+          if (window.showOfficeToast) {
+            window.showOfficeToast({
+              title: window.I18n ? window.I18n.t('plans.drafting_toast_started_title') : 'HABIBIE Drafting in Background',
+              message: window.I18n ? window.I18n.t('plans.drafting_toast_started_msg') : 'Architecture blueprint is being formulated. You can freely switch to Live Office or Kanban.',
+              type: 'info',
+              icon: 'compass',
+              duration: 6000
+            });
           }
         } catch (err) {
-          alert(`Error: ${err.message}`);
-        } finally {
-          if (studioSubmitPlanBtn) studioSubmitPlanBtn.disabled = false;
-          if (studioSubmitPlanBtnText) {
-            studioSubmitPlanBtnText.textContent = window.I18n ? window.I18n.t('plans.generate_btn') : 'Ask HABIBIE';
-          }
+          hideDraftingBanner();
+          if (window.soundFx) window.soundFx.playError();
+          alert(`Gagal merancang plan: ${err.message}`);
         }
       });
     }
@@ -758,6 +1011,7 @@ window.OfficePlans = (function () {
     selectPlan: selectStudioPlan,
     showNewPlanForm: showStudioNewPlanForm,
     hideNewPlanForm: hideStudioNewPlanForm,
+    handlePlanJobSync,
     renderMarkdownToHtml
   };
 })();

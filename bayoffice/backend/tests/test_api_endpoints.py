@@ -197,6 +197,31 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
                     model="claude-sonnet-4-6"
                 )
 
+            # 3. POST /api/plans/generate with background=True
+            with patch("plans_manager.start_background_plan_generation") as mock_bg:
+                mock_bg.return_value = {
+                    "success": True,
+                    "status": "drafting",
+                    "message": "HABIBIE sedang merancang Implementation Plan di latar belakang...",
+                    "project": "bayoffice",
+                    "idea": "Async Test"
+                }
+                async_req = app.PlanGenerateRequest(
+                    idea="Async Test",
+                    project="bayoffice",
+                    engine="agy",
+                    background=True
+                )
+                bg_res = await app.api_generate_plan(async_req, user=self.test_user)
+                self.assertTrue(bg_res["success"])
+                self.assertEqual(bg_res["status"], "drafting")
+
+            # 4. GET /api/plans/status & POST /api/plans/clear-status
+            status_res = await app.api_get_plan_status(user=self.test_user)
+            self.assertIn("status", status_res)
+            clear_res = await app.api_clear_plan_status(user=self.test_user)
+            self.assertTrue(clear_res["success"])
+
         asyncio.run(run_test())
 
     def test_login_rate_limiting_and_auth(self):

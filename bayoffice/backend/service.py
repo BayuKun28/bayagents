@@ -1132,6 +1132,21 @@ def generate_plan_ai(idea: str, project: str = "bayoffice", engine: str = "agy",
         register_project_if_new(clean_project)
     return plans_manager.generate_plan_ai(idea=idea, project=clean_project, engine=engine, model=model)
 
+def start_background_plan_generation(idea: str, project: str = "bayoffice", engine: str = "agy", model: Optional[str] = None) -> Dict[str, Any]:
+    """Meminta HABIBIE merancang plan secara asinkron di latar belakang."""
+    clean_project = (project or "bayoffice").strip()
+    if clean_project:
+        register_project_if_new(clean_project)
+    return plans_manager.start_background_plan_generation(idea=idea, project=clean_project, engine=engine, model=model)
+
+def get_plan_generation_status() -> Dict[str, Any]:
+    """Mengambil status perancangan plan AI di background."""
+    return plans_manager.get_plan_generation_status()
+
+def clear_plan_generation_status() -> Dict[str, Any]:
+    """Mereset status perancangan plan."""
+    return plans_manager.clear_plan_generation_status()
+
 def get_agy_models() -> List[Dict[str, Any]]:
     """Mengembalikan daftar reasoning model Antigravity yang tersedia."""
     return [

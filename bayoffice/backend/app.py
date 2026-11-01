@@ -148,6 +148,7 @@ class PlanGenerateRequest(BaseModel):
     project: Optional[str] = "bayoffice"
     engine: Optional[str] = "agy"
     model: Optional[str] = None
+    background: Optional[bool] = False
 
 # ==========================================================
 # PAGE ROUTES
@@ -446,6 +447,16 @@ async def api_get_plans(user: str = Depends(require_auth)):
     """Mengambil daftar seluruh implementation plan."""
     return {"plans": service.get_plans_list()}
 
+@app.get("/api/plans/status")
+async def api_get_plan_status(user: str = Depends(require_auth)):
+    """Mengambil status perancangan plan AI di latar belakang."""
+    return service.get_plan_generation_status()
+
+@app.post("/api/plans/clear-status")
+async def api_clear_plan_status(user: str = Depends(require_auth)):
+    """Mereset status perancangan plan AI setelah selesai atau dibatalkan."""
+    return service.clear_plan_generation_status()
+
 @app.get("/api/plans/{plan_id}")
 async def api_get_plan_detail(plan_id: str, user: str = Depends(require_auth)):
     """Mengambil satu dokumen implementation plan."""
@@ -456,15 +467,36 @@ async def api_get_plan_detail(plan_id: str, user: str = Depends(require_auth)):
 
 @app.post("/api/plans/generate")
 async def api_generate_plan(data: PlanGenerateRequest, user: str = Depends(require_auth)):
-    """Meminta HABIBIE merancang implementation plan baru."""
-    result = service.generate_plan_ai(
+    """Meminta HABIBIE merancang implementation plan baru (Sync atau Asinkron Background)."""
+    if getattr(data, "background", False):
+        result = service.start_background_plan_generation(
+            idea=data.idea,
+            project=data.project or "bayoffice",
+            engine=data.engine or "agy",
+            model=data.model
+        )
+    else:
+        result = service.generate_plan_ai(
+            idea=data.idea,
+            project=data.project or "bayoffice",
+            engine=data.engine or "agy",
+            model=data.model
+        )
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal merancang plan"))
+    return result
+
+@app.post("/api/plans/generate-async")
+async def api_generate_plan_async(data: PlanGenerateRequest, user: str = Depends(require_auth)):
+    """Meminta HABIBIE merancang implementation plan baru secara asinkron di latar belakang."""
+    result = service.start_background_plan_generation(
         idea=data.idea,
         project=data.project or "bayoffice",
         engine=data.engine or "agy",
         model=data.model
     )
     if not result.get("success"):
-        raise HTTPException(status_code=400, detail=result.get("error", "Gagal merancang plan"))
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal memulai drafting plan"))
     return result
 
 @app.post("/api/plans/{plan_id}/dispatch")
@@ -497,6 +529,7 @@ async def api_stream(request: Request):
         last_mtime = 0
         last_sched_mtime = 0
         last_tmux_state = None
+        last_plan_state = None
         ping_counter = 0
 
         while True:
@@ -511,10 +544,14 @@ async def api_stream(request: Request):
             sched_summary = service.get_schedules_summary()
             current_sched_mtime = sched_summary.get("updated_at", "")
 
-            if current_mtime != last_mtime or current_tmux != last_tmux_state or current_sched_mtime != last_sched_mtime or ping_counter >= 10:
+            plan_status = service.get_plan_generation_status()
+            current_plan_state = (plan_status.get("status"), plan_status.get("started_at"))
+
+            if current_mtime != last_mtime or current_tmux != last_tmux_state or current_sched_mtime != last_sched_mtime or current_plan_state != last_plan_state or ping_counter >= 10:
                 last_mtime = current_mtime
                 last_tmux_state = current_tmux
                 last_sched_mtime = current_sched_mtime
+                last_plan_state = current_plan_state
                 ping_counter = 0
 
                 payload = {
@@ -522,7 +559,8 @@ async def api_stream(request: Request):
                     "kanban": current_k,
                     "agents": service.get_agents_status(),
                     "system": sys_metrics,
-                    "schedules": sched_summary
+                    "schedules": sched_summary,
+                    "plan_generation": plan_status
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
             else:
