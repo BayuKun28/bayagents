@@ -122,6 +122,14 @@ class OfficeThree {
       lastStepSound: 0
     };
 
+    // 📱 Mobile Directional Navigation Overlay State
+    this.mobileNavState = {
+      up: false,
+      down: false,
+      left: false,
+      right: false
+    };
+
     this.init();
   }
 
@@ -2426,21 +2434,8 @@ class OfficeThree {
 
     group.add(tvCouchSet);
 
-    // DEDICATED GAMING CHAIRS (chair_gamecenter) - Oriented directly towards TV screen at z = 5.6
-    const chairGroup = new THREE.Group();
-    chairGroup.name = 'chair_gamecenter';
+    // Spatial Cleanup: Kursi penghalang di depan sofa Game Room dihapus agar pandangan ke TV 65" terbuka 100%
 
-    const gamingChair1 = this.buildErgonomicOfficeChair(0x8B5CF6, true);
-    gamingChair1.position.set(-0.8, 0, 2.8);
-    gamingChair1.rotation.y = 0.15; // Menghadap langsung ke arah layar monitor/TV (z = 5.6)
-    chairGroup.add(gamingChair1);
-
-    const gamingChair2 = this.buildErgonomicOfficeChair(0x06B6D4, true);
-    gamingChair2.position.set(-4.2, 0, 2.8);
-    gamingChair2.rotation.y = -0.15; // Menghadap langsung ke arah layar monitor/TV (z = 5.6)
-    chairGroup.add(gamingChair2);
-
-    group.add(chairGroup);
 
     // 6. 65" WALL SMART TV & CONSOLE
     const tvMat = (this.screenTextures && this.screenTextures['tv_synthwave'])
@@ -4627,6 +4622,33 @@ class OfficeThree {
         }
       }
       if (this.controls) {
+        // Smooth continuous mobile directional pan navigation in overview mode
+        if (this.mobileNavState) {
+          let panned = false;
+          if (this.mobileNavState.up) {
+            this.camera.position.z -= 0.18;
+            this.controls.target.z -= 0.18;
+            panned = true;
+          }
+          if (this.mobileNavState.down) {
+            this.camera.position.z += 0.18;
+            this.controls.target.z += 0.18;
+            panned = true;
+          }
+          if (this.mobileNavState.left) {
+            this.camera.position.x -= 0.18;
+            this.controls.target.x -= 0.18;
+            panned = true;
+          }
+          if (this.mobileNavState.right) {
+            this.camera.position.x += 0.18;
+            this.controls.target.x += 0.18;
+            panned = true;
+          }
+          if (panned) {
+            this.currentFocusAgent = null;
+          }
+        }
         this.controls.update();
       }
     }
@@ -4818,71 +4840,115 @@ class OfficeThree {
         mesh.position.z = ag.workPos.z;
         mesh.rotation.y = 0; // face desk monitors
 
-        // Dual-Pose Articulation: Seated 90° leg fold
-        if (mesh.legs) {
-          mesh.legs.left.hip.rotation.x = 0;
-          mesh.legs.right.hip.rotation.x = 0;
-          mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
-          mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
-          mesh.legs.left.knee.rotation.x = Math.PI / 2;
-          mesh.legs.right.knee.rotation.x = Math.PI / 2;
-        }
-
-        if (ag.state === 'working' || ag.state === 'reviewing') {
-          if (mesh.hands && mesh.hands.length === 2) {
-            mesh.hands[0].position.y = 0.25 + Math.sin(time * 14) * 0.04;
-            mesh.hands[1].position.y = 0.25 + Math.cos(time * 14) * 0.04;
-            mesh.hands[0].position.z = 0.25;
-            mesh.hands[1].position.z = 0.25;
+        const isNear = this.isNearSeat(mesh.position.x, mesh.position.z);
+        if (isNear) {
+          // Dual-Pose Articulation: Seated 90° leg fold
+          if (mesh.legs) {
+            mesh.legs.left.hip.rotation.x = 0;
+            mesh.legs.right.hip.rotation.x = 0;
+            mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
+            mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
+            mesh.legs.left.knee.rotation.x = Math.PI / 2;
+            mesh.legs.right.knee.rotation.x = Math.PI / 2;
           }
-          if (mesh.headMesh) {
-            mesh.headMesh.rotation.x = 0.12 + Math.sin(time * 5) * 0.04;
-          }
-          mesh.position.y = ag.targetY + Math.sin(time * 6) * 0.02;
 
-          // Keyboard clicks
-          if (window.soundFx && typeof window.soundFx.playKeyboardClick === 'function') {
-            if (!ag.lastTypeSound || time - ag.lastTypeSound > 2.5 + Math.random() * 2.0) {
-              ag.lastTypeSound = time;
-              window.soundFx.playKeyboardClick();
+          if (ag.state === 'working' || ag.state === 'reviewing') {
+            if (mesh.hands && mesh.hands.length === 2) {
+              mesh.hands[0].position.y = 0.25 + Math.sin(time * 14) * 0.04;
+              mesh.hands[1].position.y = 0.25 + Math.cos(time * 14) * 0.04;
+              mesh.hands[0].position.z = 0.25;
+              mesh.hands[1].position.z = 0.25;
+            }
+            if (mesh.headMesh) {
+              mesh.headMesh.rotation.x = 0.12 + Math.sin(time * 5) * 0.04;
+            }
+            mesh.position.y = ag.targetY + Math.sin(time * 6) * 0.02;
+
+            // Keyboard clicks
+            if (window.soundFx && typeof window.soundFx.playKeyboardClick === 'function') {
+              if (!ag.lastTypeSound || time - ag.lastTypeSound > 2.5 + Math.random() * 2.0) {
+                ag.lastTypeSound = time;
+                window.soundFx.playKeyboardClick();
+              }
+            }
+          } else {
+            // Idle sitting at desk
+            mesh.position.y = ag.targetY + Math.sin(time * 2.2) * 0.03;
+            if (mesh.headMesh) {
+              mesh.headMesh.rotation.x = Math.sin(time * 1.2) * 0.02;
+              mesh.headMesh.rotation.y = Math.sin(time * 0.6) * 0.08;
+            }
+            if (mesh.hands && mesh.hands.length === 2) {
+              mesh.hands[0].position.y = 0.22;
+              mesh.hands[1].position.y = 0.22;
+              mesh.hands[0].position.z = 0.22;
+              mesh.hands[1].position.z = 0.22;
             }
           }
         } else {
-          // Idle sitting at desk
-          mesh.position.y = ag.targetY + Math.sin(time * 2.2) * 0.03;
-          if (mesh.headMesh) {
-            mesh.headMesh.rotation.x = Math.sin(time * 1.2) * 0.02;
-            mesh.headMesh.rotation.y = Math.sin(time * 0.6) * 0.08;
+          // Standing fallback if outside valid chair boundary
+          if (mesh.legs) {
+            mesh.legs.left.hip.rotation.x = 0;
+            mesh.legs.right.hip.rotation.x = 0;
+            mesh.legs.left.thigh.rotation.x = 0;
+            mesh.legs.right.thigh.rotation.x = 0;
+            mesh.legs.left.knee.rotation.x = 0;
+            mesh.legs.right.knee.rotation.x = 0;
           }
-          if (mesh.hands && mesh.hands.length === 2) {
-            mesh.hands[0].position.y = 0.22;
-            mesh.hands[1].position.y = 0.22;
-            mesh.hands[0].position.z = 0.22;
-            mesh.hands[1].position.z = 0.22;
-          }
+          mesh.position.y = 1.45 + Math.sin(time * 2.2) * 0.02;
         }
       } else if (ag.socialStatus === 'at_break') {
         mesh.position.x = ag.breakPos.x;
         mesh.position.z = ag.breakPos.z;
 
-        // Seated at break spot (cafeteria chair, lounge sofa, or arcade stool)
-        if (mesh.legs) {
-          mesh.legs.left.hip.rotation.x = 0;
-          mesh.legs.right.hip.rotation.x = 0;
-          mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
-          mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
-          mesh.legs.left.knee.rotation.x = Math.PI / 2;
-          mesh.legs.right.knee.rotation.x = Math.PI / 2;
+        const isNear = this.isNearSeat(mesh.position.x, mesh.position.z);
+        if (isNear) {
+          // Seated at break spot (cafeteria chair, lounge sofa, recliner, or beanbag)
+          if (mesh.legs) {
+            mesh.legs.left.hip.rotation.x = 0;
+            mesh.legs.right.hip.rotation.x = 0;
+            mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
+            mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
+            mesh.legs.left.knee.rotation.x = Math.PI / 2;
+            mesh.legs.right.knee.rotation.x = Math.PI / 2;
+          }
+          mesh.position.y = ag.targetY + Math.sin(time * 1.8) * 0.025;
+          if (mesh.hands && mesh.hands.length === 2) {
+            mesh.hands[0].position.set(-0.25, 0.18, 0.15);
+            mesh.hands[1].position.set(0.25, 0.18, 0.15);
+          }
+        } else {
+          // Standing posture at activity spot (e.g. arcade cabinet, billiard table, standing counter)
+          if (mesh.legs) {
+            mesh.legs.left.hip.rotation.x = 0;
+            mesh.legs.right.hip.rotation.x = 0;
+            mesh.legs.left.thigh.rotation.x = 0;
+            mesh.legs.right.thigh.rotation.x = 0;
+            mesh.legs.left.knee.rotation.x = 0;
+            mesh.legs.right.knee.rotation.x = 0;
+          }
+          mesh.position.y = 1.45 + Math.sin(time * 2.0) * 0.02;
+          // Contextual interactive hands for arcade/billiard/standing
+          if (mesh.hands && mesh.hands.length === 2) {
+            if (ag.breakPos && ag.breakPos.x < -15.0 && ag.breakPos.z < 6.5) {
+              // Arcade cabinet joystick & button tapping
+              mesh.hands[0].position.set(-0.20, 0.35 + Math.sin(time * 8) * 0.03, 0.28);
+              mesh.hands[1].position.set(0.20, 0.35 + Math.cos(time * 9) * 0.03, 0.28);
+            } else if (ag.breakPos && ag.breakPos.x > -10.0 && ag.breakPos.x < -6.0 && ag.breakPos.z > 7.0) {
+              // Billiard stance
+              mesh.hands[0].position.set(-0.15, 0.22, 0.32);
+              mesh.hands[1].position.set(0.15, 0.22, 0.15);
+            } else {
+              // Natural standing posture
+              mesh.hands[0].position.set(-0.35, 0.10, -0.42);
+              mesh.hands[1].position.set(0.35, 0.10, -0.42);
+            }
+          }
         }
 
-        mesh.position.y = ag.targetY + Math.sin(time * 1.8) * 0.025;
         if (mesh.headMesh) {
           mesh.headMesh.rotation.x = Math.sin(time * 1.0) * 0.04;
           mesh.headMesh.rotation.y = Math.sin(time * 0.8) * 0.12;
-        }
-        if (mesh.hands && mesh.hands.length === 2) {
-          mesh.hands[0].position.set(-0.25, 0.18, 0.15);
-          mesh.hands[1].position.set(0.25, 0.18, 0.15);
         }
 
         // Ambient soundscapes when at break
@@ -4901,18 +4967,33 @@ class OfficeThree {
       } else if (ag.state === 'sleeping') {
         mesh.position.x += (ag.sleepPos.x - mesh.position.x) * 0.06;
         mesh.position.z += (ag.sleepPos.z - mesh.position.z) * 0.06;
-        mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
+
+        const isNear = this.isNearSeat(mesh.position.x, mesh.position.z);
+        if (isNear) {
+          mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
+          if (mesh.legs) {
+            mesh.legs.left.hip.rotation.x = 0;
+            mesh.legs.right.hip.rotation.x = 0;
+            mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
+            mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
+            mesh.legs.left.knee.rotation.x = Math.PI / 2;
+            mesh.legs.right.knee.rotation.x = Math.PI / 2;
+          }
+        } else {
+          mesh.position.y = 1.45;
+          if (mesh.legs) {
+            mesh.legs.left.hip.rotation.x = 0;
+            mesh.legs.right.hip.rotation.x = 0;
+            mesh.legs.left.thigh.rotation.x = 0;
+            mesh.legs.right.thigh.rotation.x = 0;
+            mesh.legs.left.knee.rotation.x = 0;
+            mesh.legs.right.knee.rotation.x = 0;
+          }
+        }
+
         // Orientasikan avatar di sofa/kursi Game Room langsung menghadap ke layar TV Gaming (+Z)
         if (ag.sleepPos.z > 6.0) {
           mesh.rotation.y = 0; // Menghadap langsung ke arah TV 65" di dinding selatan
-        }
-        if (mesh.legs) {
-          mesh.legs.left.hip.rotation.x = 0;
-          mesh.legs.right.hip.rotation.x = 0;
-          mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
-          mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
-          mesh.legs.left.knee.rotation.x = Math.PI / 2;
-          mesh.legs.right.knee.rotation.x = Math.PI / 2;
         }
         if (mesh.headMesh) {
           mesh.headMesh.rotation.x = 0.45;
@@ -4935,6 +5016,49 @@ class OfficeThree {
 
     // 7. Soft Separation Buffer / Anti-Collision Dispersion
     this.applySeparationVectorLogic();
+  }
+
+  isNearSeat(x, z) {
+    // 1. Workstation Desk Chairs
+    const deskSeats = [
+      { x: -15.5, z: -6.5 }, // LUHUT Executive Desk
+      { x: -5.5, z: -6.5 },  // HABIBIE Architect Desk
+      { x: 3.5, z: -6.5 },   // JOKOWI Backend Desk
+      { x: 11.5, z: -6.5 },  // PRABOWO Frontend Desk
+      { x: 19.5, z: -6.5 }   // GIBRAN QA Desk
+    ];
+    for (const seat of deskSeats) {
+      if (Math.hypot(x - seat.x, z - seat.z) <= 1.3) return true;
+    }
+
+    // 2. Executive Suite Sofa
+    if (Math.hypot(x - (-15.5), z - (-2.0)) <= 1.4) return true;
+
+    // 3. Architect Studio Recliner
+    if (Math.hypot(x - (-5.5), z - (-2.8)) <= 1.4) return true;
+
+    // 4. Game Room Lounge Sofa A & B (Facing TV at z = 5.6)
+    if (x >= -17.0 && x <= -12.0 && z >= 7.8 && z <= 10.5) return true;
+
+    // 5. Game Room Cyberpunk Beanbags
+    if (x >= -8.5 && x <= -3.5 && z >= 10.0 && z <= 12.5) return true;
+
+    // 6. Cafeteria Dining Chairs & Table
+    const cafeteriaSeats = [
+      { x: 13.0, z: 8.5 },
+      { x: 14.7, z: 8.5 },
+      { x: 11.9, z: 10.7 },
+      { x: 14.1, z: 10.7 },
+      { x: 10.5, z: 5.5 }
+    ];
+    for (const seat of cafeteriaSeats) {
+      if (Math.hypot(x - seat.x, z - seat.z) <= 1.4) return true;
+    }
+
+    // 7. Cafeteria High-Top Bar Stools
+    if (x >= 4.5 && x <= 7.5 && z >= 6.5 && z <= 8.5) return true;
+
+    return false;
   }
 
   // =========================================================================
@@ -5061,10 +5185,88 @@ class OfficeThree {
       });
     }
 
+    // 📱 Virtual Mobile D-Pad Directional Arrow Controls
+    this.setupMobileControls();
+
     // Refresh Day/Night atmosphere every 30 seconds
     this.atmosphereInterval = setInterval(() => {
       this.updateDayNightAtmosphere();
     }, 30000);
+  }
+
+  setupMobileControls() {
+    const upBtn = document.getElementById('mobileArrowUp');
+    const downBtn = document.getElementById('mobileArrowDown');
+    const leftBtn = document.getElementById('mobileArrowLeft');
+    const rightBtn = document.getElementById('mobileArrowRight');
+    const centerBtn = document.getElementById('mobileArrowCenter');
+
+    const bindButton = (btn, dirKey) => {
+      if (!btn) return;
+
+      const activate = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        btn.classList.add('active');
+        if (this.gameMode && this.gameMode.active) {
+          if (dirKey === 'up') this.gameMode.keys.forward = true;
+          else if (dirKey === 'down') this.gameMode.keys.backward = true;
+          else if (dirKey === 'left') this.gameMode.keys.left = true;
+          else if (dirKey === 'right') this.gameMode.keys.right = true;
+        } else {
+          if (this.mobileNavState) this.mobileNavState[dirKey] = true;
+        }
+      };
+
+      const deactivate = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        btn.classList.remove('active');
+        if (this.gameMode && this.gameMode.active) {
+          if (dirKey === 'up') this.gameMode.keys.forward = false;
+          else if (dirKey === 'down') this.gameMode.keys.backward = false;
+          else if (dirKey === 'left') this.gameMode.keys.left = false;
+          else if (dirKey === 'right') this.gameMode.keys.right = false;
+        }
+        if (this.mobileNavState) this.mobileNavState[dirKey] = false;
+      };
+
+      btn.addEventListener('pointerdown', activate);
+      btn.addEventListener('pointerup', deactivate);
+      btn.addEventListener('pointercancel', deactivate);
+      btn.addEventListener('pointerleave', deactivate);
+
+      btn.addEventListener('touchstart', activate, { passive: false });
+      btn.addEventListener('touchend', deactivate, { passive: false });
+      btn.addEventListener('touchcancel', deactivate, { passive: false });
+    };
+
+    bindButton(upBtn, 'up');
+    bindButton(downBtn, 'down');
+    bindButton(leftBtn, 'left');
+    bindButton(rightBtn, 'right');
+
+    if (centerBtn) {
+      const handleCenter = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (this.gameMode && this.gameMode.active) {
+          // Toggle POV between FPV and TPV on mobile
+          this.setGamePOV(this.gameMode.pov === 'FPV' ? 'TPV' : 'FPV');
+        } else {
+          // Reset Camera to default Isometric Overview
+          this.resetCamera();
+        }
+      };
+      centerBtn.addEventListener('click', handleCenter);
+      centerBtn.addEventListener('touchend', handleCenter, { passive: false });
+    }
   }
 
   // =========================================================================

@@ -168,10 +168,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <i data-lucide="${iconName}" class="lucide-sm"></i>
       </div>
       <div style="flex: 1; min-width: 0;">
-        <div style="font-weight: 800; font-size: 0.88rem; color: #1E293B; line-height: 1.3;">
+        <div class="office-toast-title" style="font-weight: 800; font-size: 0.88rem; line-height: 1.3;">
           ${escapeHtml(title)}
         </div>
-        ${message ? `<div style="font-size: 0.78rem; color: #64748B; margin-top: 3px; line-height: 1.4;">${escapeHtml(message)}</div>` : ''}
+        ${message ? `<div class="office-toast-message" style="font-size: 0.78rem; margin-top: 3px; line-height: 1.4;">${escapeHtml(message)}</div>` : ''}
         ${actionText ? `<div style="margin-top: 8px;"><button type="button" class="neo-btn neo-btn-primary toast-action-btn" style="padding: 4px 10px; font-size: 0.74rem; font-weight: 800; background: #8B5CF6; color: #FFFFFF; cursor: pointer;">${escapeHtml(actionText)}</button></div>` : ''}
       </div>
       <button type="button" class="office-toast-close" title="Dismiss">

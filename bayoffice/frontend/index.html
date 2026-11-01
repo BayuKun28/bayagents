@@ -329,6 +329,29 @@
                 </div>
               </div>
             </div>
+
+            <!-- 📱 Mobile Virtual D-Pad / Directional Arrow Controls Overlay (Touch & Viewport <= 768px) -->
+            <div id="mobileArrowControls" class="mobile-arrow-controls" aria-label="Kontrol Navigasi Mobile">
+              <div class="mobile-dpad-container">
+                <button type="button" id="mobileArrowUp" class="mobile-dpad-btn dpad-up" aria-label="Maju / Pandangan Atas" title="Maju (Atas)">
+                  <i data-lucide="chevron-up" class="lucide-sm"></i>
+                </button>
+                <div class="mobile-dpad-row">
+                  <button type="button" id="mobileArrowLeft" class="mobile-dpad-btn dpad-left" aria-label="Belok Kiri" title="Kiri">
+                    <i data-lucide="chevron-left" class="lucide-sm"></i>
+                  </button>
+                  <button type="button" id="mobileArrowCenter" class="mobile-dpad-btn dpad-center" aria-label="POV Switch / Reset" title="POV / Reset">
+                    <i data-lucide="crosshair" class="lucide-xs"></i>
+                  </button>
+                  <button type="button" id="mobileArrowRight" class="mobile-dpad-btn dpad-right" aria-label="Belok Kanan" title="Kanan">
+                    <i data-lucide="chevron-right" class="lucide-sm"></i>
+                  </button>
+                </div>
+                <button type="button" id="mobileArrowDown" class="mobile-dpad-btn dpad-down" aria-label="Mundur / Pandangan Bawah" title="Mundur (Bawah)">
+                  <i data-lucide="chevron-down" class="lucide-sm"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -669,7 +692,7 @@
     </div>
 
     <!-- Active Habibie Drafting Status Banner (Background Task Indicator) -->
-    <div id="studioDraftingBanner" class="neo-box studio-drafting-banner" style="display: none; padding: 12px 18px; margin-bottom: 18px; background: #FAF5FF; border: 2px solid #8B5CF6; border-left: 6px solid #8B5CF6; box-shadow: 3px 3px 0px var(--shadow-color); align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div id="studioDraftingBanner" class="neo-box studio-drafting-banner" style="display: none; padding: 12px 18px; margin-bottom: 18px; border: 2px solid #8B5CF6; border-left: 6px solid #8B5CF6; box-shadow: 3px 3px 0px var(--shadow-color); align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 14px;">
         <div style="position: relative; flex-shrink: 0;">
           <img src="/static/assets/avatars/habibie.jpg" alt="HABIBIE" 
@@ -678,20 +701,20 @@
         </div>
         <div>
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span style="font-weight: 800; font-size: 0.95rem; color: #1E293B;" data-i18n="plans.drafting_bg_title">
+            <span class="studio-drafting-title" style="font-weight: 800; font-size: 0.95rem;" data-i18n="plans.drafting_bg_title">
               HABIBIE sedang merancang Implementation Plan di latar belakang...
             </span>
             <span id="studioDraftingModelBadge" class="neo-badge" style="background: #8B5CF6; color: #FFFFFF; font-size: 0.68rem; font-weight: 800;">AGY CLI</span>
           </div>
-          <div style="font-size: 0.78rem; color: #64748B; margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span>Target: <strong id="studioDraftingProjectText" style="color: #1E293B;">bayoffice</strong></span>
+          <div class="studio-drafting-meta" style="font-size: 0.78rem; margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span>Target: <strong id="studioDraftingProjectText" class="studio-drafting-project">bayoffice</strong></span>
             <span>•</span>
-            <span>Konsep: <span id="studioDraftingIdeaPreview" style="font-style: italic; color: #475569;">...</span></span>
+            <span>Konsep: <span id="studioDraftingIdeaPreview" class="studio-drafting-preview" style="font-style: italic;">...</span></span>
           </div>
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <div class="neo-box-sm" style="padding: 6px 12px; background: #FFFFFF; display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-weight: 800; font-size: 0.82rem; color: #8B5CF6;">
+        <div class="neo-box-sm studio-drafting-clock" style="padding: 6px 12px; display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-weight: 800; font-size: 0.82rem;">
           <i data-lucide="clock" class="lucide-xs"></i>
           <span id="studioDraftingTimer">00:00</span>
         </div>
@@ -1624,6 +1647,7 @@
   <script src="/static/js/three.min.js?v=r128"></script>
   <script src="/static/js/OrbitControls.js?v=r128"></script>
   <script src="/static/js/office-three.js?v=20261101_02"></script>
+  <script src="/static/js/mobile-arrow-controls.js?v=20261101_01"></script>
   <script src="/static/js/kanban.js?v=20261030_06"></script>
   <script src="/static/js/office-health.js?v=20261030_01"></script>
   <script src="/static/js/office-insights.js?v=20261030_02"></script>
