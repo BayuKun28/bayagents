@@ -5201,6 +5201,14 @@ class OfficeThree {
       });
     }
 
+    const closeHudBtn = document.getElementById('threeCloseHudBtn');
+    if (closeHudBtn) {
+      closeHudBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dismissGameTutorial();
+      });
+    }
+
     if (pointerLockOverlay) {
       pointerLockOverlay.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -5228,6 +5236,7 @@ class OfficeThree {
     const leftBtn = document.getElementById('mobileArrowLeft');
     const rightBtn = document.getElementById('mobileArrowRight');
     const centerBtn = document.getElementById('mobileArrowCenter');
+    const povTopBtn = document.getElementById('mobileArrowPovTop');
 
     // Inisialisasi status tampilan D-Pad dari preferensi tersimpan
     try {
@@ -5292,6 +5301,22 @@ class OfficeThree {
     bindButton(downBtn, 'down');
     bindButton(leftBtn, 'left');
     bindButton(rightBtn, 'right');
+
+    if (povTopBtn) {
+      const handlePovToggle = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (this.gameMode && this.gameMode.active) {
+          this.setGamePOV(this.gameMode.pov === 'FPV' ? 'TPV' : 'FPV');
+        } else {
+          this.resetCamera();
+        }
+      };
+      povTopBtn.addEventListener('click', handlePovToggle);
+      povTopBtn.addEventListener('touchend', handlePovToggle, { passive: false });
+    }
 
     if (centerBtn) {
       const handleCenter = (e) => {
@@ -5996,6 +6021,21 @@ class OfficeThree {
     if (povGroup) povGroup.style.display = 'inline-flex';
     if (gameHud) gameHud.style.display = 'flex';
 
+    // 🎯 Auto-dismiss tutorial HUD bar after 3 seconds
+    const hudBar = document.getElementById('threeGameHudBar');
+    if (hudBar) {
+      hudBar.classList.remove('hud-hidden', 'hud-fade-out');
+    }
+    if (this.hudTutorialTimer) clearTimeout(this.hudTutorialTimer);
+    this.hudTutorialTimer = setTimeout(() => {
+      this.dismissGameTutorial();
+    }, 3000);
+
+    const mobilePovBtnLabel = document.getElementById('mobilePovBtnLabel');
+    if (mobilePovBtnLabel) {
+      mobilePovBtnLabel.textContent = this.gameMode.pov;
+    }
+
     if (hudPovLabel) hudPovLabel.textContent = this.gameMode.pov;
     if (fpvBtn) fpvBtn.classList.toggle('active', this.gameMode.pov === 'FPV');
     if (tpvBtn) tpvBtn.classList.toggle('active', this.gameMode.pov === 'TPV');
@@ -6046,6 +6086,20 @@ class OfficeThree {
     if (gameHud) gameHud.style.display = 'none';
     if (pointerOverlay) pointerOverlay.style.display = 'none';
 
+    // Clear tutorial auto-dismiss timer and reset visibility
+    if (this.hudTutorialTimer) {
+      clearTimeout(this.hudTutorialTimer);
+      this.hudTutorialTimer = null;
+    }
+    const hudBar = document.getElementById('threeGameHudBar');
+    if (hudBar) {
+      hudBar.classList.remove('hud-hidden', 'hud-fade-out');
+    }
+    const mobilePovBtnLabel = document.getElementById('mobilePovBtnLabel');
+    if (mobilePovBtnLabel) {
+      mobilePovBtnLabel.textContent = 'FPV/TPV';
+    }
+
     if (this.gameMode.avatarMesh) {
       this.gameMode.avatarMesh.visible = false;
     }
@@ -6068,12 +6122,33 @@ class OfficeThree {
     if (tpvBtn) tpvBtn.classList.toggle('active', this.gameMode.pov === 'TPV');
     if (hudPovLabel) hudPovLabel.textContent = this.gameMode.pov;
 
+    const mobilePovBtnLabel = document.getElementById('mobilePovBtnLabel');
+    if (mobilePovBtnLabel) {
+      mobilePovBtnLabel.textContent = this.gameMode.active ? this.gameMode.pov : 'FPV/TPV';
+    }
+
     if (this.gameMode.avatarMesh) {
       this.gameMode.avatarMesh.visible = (this.gameMode.pov === 'TPV');
     }
 
     if (window.soundFx && typeof window.soundFx.playCameraSnap === 'function') {
       window.soundFx.playCameraSnap();
+    }
+  }
+
+  dismissGameTutorial() {
+    if (this.hudTutorialTimer) {
+      clearTimeout(this.hudTutorialTimer);
+      this.hudTutorialTimer = null;
+    }
+    const hudBar = document.getElementById('threeGameHudBar');
+    if (hudBar) {
+      hudBar.classList.add('hud-fade-out');
+      setTimeout(() => {
+        if (hudBar.classList.contains('hud-fade-out')) {
+          hudBar.classList.add('hud-hidden');
+        }
+      }, 350);
     }
   }
 

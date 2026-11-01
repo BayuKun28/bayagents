@@ -1209,8 +1209,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `<i data-lucide="minimize-2" class="lucide-sm"></i> <span>${exitTxt}</span>` 
         : `<i data-lucide="maximize-2" class="lucide-sm"></i> <span>${fsTxt}</span>`;
     }
+    if (exitFullscreenBtn) {
+      exitFullscreenBtn.style.display = isFs ? 'inline-flex' : 'none';
+    }
     if (canvasOverlayControls) {
-      canvasOverlayControls.style.display = isFs ? 'flex' : 'none';
+      canvasOverlayControls.style.display = 'none';
     }
     if (officeThree && typeof officeThree.onWindowResize === 'function') {
       setTimeout(() => officeThree.onWindowResize(), 100);

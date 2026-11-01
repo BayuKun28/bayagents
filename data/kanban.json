@@ -2556,6 +2556,32 @@
         "unified_settings_popover": "VALID - Modal #canvasSettingsModal terintegrasi mulus dengan 5 grup kontrol pengaturan (POV, Touch, Lighting, Audio, Focus) dan preferensi tersimpan di localStorage.",
         "homelab_efficiency": "VALID - 0 MB server memory overhead, client-side persistence, 22/22 unit tests passed, dan clean resource disposal pada event listeners."
       }
+    },
+    {
+      "id": "TASK-FE-25",
+      "project": "bayoffice",
+      "assignee": "PRABOWO",
+      "title": "[Dari Plan PLAN-20261101-10: 3D Game HUD Auto-Dismiss, Ergonomic D-Pad, & Inline...",
+      "skills_required": [
+        "Frontend Engineering",
+        "UI/UX"
+      ],
+      "description": "[Dari Plan PLAN-20261101-10: 3D Game HUD Auto-Dismiss, Ergonomic D-Pad, & Inline Fullscreen Alignment]\n\n[HABIBIE]: Siap, Mas Bay! Sebagai Chief Architect & Strategic Planner, saya telah menganalisis kebutuhan peningkatan UX/UI pada fitur 3D Office Canvas di **bayoffice** secara menyeluruh.\n\nSolusi ini dirancang dengan prinsip **anti-overengineering**, berfokus langsung pada *usability refinement* di sisi client-side Three.js & Tailwind/Neubrutalism tanpa membebani CPU 2-core maupun RAM ~3.2GB server Debian kita.\n\nBerikut adalah dokumen **Implementation Plan** resmi untuk tim pengembang:\n\n---\n\n# Implementation Plan: 3D Game HUD Auto-Dismiss, Ergonomic D-Pad, & Inline Fullscreen Alignment\n\n## 1. 🎯...",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/bayoffice/frontend",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "created_at": "2026-11-01T18:19:45.329609+07:00",
+      "notes": "Implementasi 3D UX/UI Refinement bayoffice selesai 100%: 1. Auto-dismiss banner tutorial Game Mode (WASD, Sprint, Mouse Look) berdurasi 3 detik dengan transisi fade-out halus dan tombol silang manual [✕] (#threeCloseHudBtn). 2. Relokasi switch POV (FPV/TPV) ke header utility atas D-Pad mobile (#mobileArrowPovTop) dan isolasi center hub non-klik (#dpad-center-hub) anti-misclick saat bernavigasi 4-arah. 3. Penjajaran tombol Exit Fullscreen (#exitFullscreenBtn) secara inline di header controls 3D berdampingan dengan tombol Pengaturan (#threeSettingsBtn) berbalut styling Neubrutalism neo-btn-danger, mengeliminasi floating overlay yang saling bertumpuk (zero overlapping).",
+      "qa_review": "PASSED - Verifikasi 3D UX/UI Refinement lulus 100%: 1) Auto-dismiss tutorial HUD bar Game Mode berdurasi 3 detik dengan transisi fade-out halus dan tombol tutup silang manual (#threeCloseHudBtn). Reset timer dan kelas berjalan sempurna saat masuk/keluar mode game. 2) D-Pad mobile ergonomis dengan tombol switch POV terdedikasi di bar atas (#mobileArrowPovTop) dan center hub non-klik (#dpad-center-hub) yang mengeliminasi misklik arah navigasi. 3) Tombol Exit Fullscreen (#exitFullscreenBtn) sejajar secara inline di header controls Three.js berdampingan dengan tombol Pengaturan berbalut Neubrutalism neo-btn-danger, mengeliminasi floating overlay yang saling bertumpuk (zero overlapping). 4) 22/22 backend test unittest lulus (0 errors), sintaks JS 100% clean (node -c), dan HTTP 200 terverifikasi pada port 8888.",
+      "qa_certification": {
+        "status": "PASSED_100%",
+        "auditor": "GIBRAN",
+        "game_hud_auto_dismiss": "VALID - Banner tutorial HUD WASD/Sprint auto-dismiss dalam 3 detik dengan transisi fade-out halus serta tombol silang [✕] manual, bebas kebocoran timer.",
+        "ergonomic_dpad_layout": "VALID - POV switch berpindah ke utility bar atas D-Pad (#mobileArrowPovTop) dan slot tengah diisolasi menjadi hub non-klik (#dpad-center-hub) anti-misclick.",
+        "inline_fullscreen_header": "VALID - Tombol Exit Fullscreen (#exitFullscreenBtn) terintegrasi inline di header controls 3D berbalut Neubrutalism neo-btn-danger, zero overlapping.",
+        "code_and_test_integrity": "VALID - JavaScript syntax 100% clean, 22/22 unit tests passed, HTTP 200 OK di port 8888, dan konsisten dengan tema Neubrutalism."
+      }
     }
   ]
 }

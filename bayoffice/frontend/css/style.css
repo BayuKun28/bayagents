@@ -1569,19 +1569,12 @@ body.dark-mode .topbar-btn {
 
   .canvas-container:fullscreen .fullscreen-controls,
   .canvas-container:-webkit-full-screen .fullscreen-controls {
-    top: 10px;
-    right: 12px;
+    display: none !important;
   }
 }
 
 .fullscreen-controls {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: none !important;
 }
 
 /* ==========================================================
@@ -2241,6 +2234,27 @@ body.dark-mode .office-workload-row:hover {
 .three-controls-overlay .neo-btn-sm:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0px #000000;
+}
+
+.three-controls-overlay .neo-btn-sm.btn-exit-fullscreen {
+  background: var(--coral, #FF6B6B);
+  color: #FFFFFF;
+}
+
+.three-controls-overlay .neo-btn-sm.btn-exit-fullscreen:hover {
+  background: #EF4444;
+  color: #FFFFFF;
+}
+
+body.dark-mode .three-controls-overlay .neo-btn-sm.btn-exit-fullscreen {
+  background: #DC2626;
+  border-color: #F87171;
+  color: #FFFFFF;
+}
+
+body.dark-mode .three-controls-overlay .neo-btn-sm.btn-exit-fullscreen:hover {
+  background: #B91C1C;
+  color: #FFFFFF;
 }
 
 .three-focus-dropdown-wrapper .neo-select-sm {
@@ -2971,6 +2985,49 @@ body.dark-mode .pov-pill-btn.active {
   color: #F8FAFC;
   font-size: 0.75rem;
   font-weight: 700;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.three-game-hud-bar.hud-fade-out {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+
+.three-game-hud-bar.hud-hidden {
+  display: none !important;
+}
+
+.hud-dismiss-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #F8FAFC;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  transition: all 0.15s ease;
+}
+
+.hud-dismiss-btn:hover {
+  background: #EF4444;
+  border-color: #EF4444;
+  color: #FFFFFF;
+}
+
+body.dark-mode .hud-dismiss-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .hud-dismiss-btn:hover {
+  background: #DC2626;
+  border-color: #DC2626;
 }
 
 body.dark-mode .three-game-hud-bar {
@@ -3253,6 +3310,72 @@ body.dark-mode .mobile-dpad-btn.active {
   background: #8B5CF6;
   color: #FFFFFF;
   border-color: #A78BFA;
+}
+
+.mobile-dpad-top-bar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.mobile-dpad-pov-btn {
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  color: #0F172A;
+  touch-action: manipulation;
+  transition: transform 0.06s ease, background 0.1s ease, box-shadow 0.06s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mobile-dpad-pov-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000;
+  background: var(--yellow);
+}
+
+body.dark-mode .mobile-dpad-pov-btn {
+  background: #1E293B;
+  color: #38BDF8;
+  border-color: #475569;
+  box-shadow: 2px 2px 0px #000000;
+}
+
+body.dark-mode .mobile-dpad-pov-btn:active {
+  background: #0284C7;
+  color: #FFFFFF;
+  border-color: #38BDF8;
+}
+
+.dpad-center-hub {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #F1F5F9;
+  border: 2px dashed #94A3B8;
+  pointer-events: none;
+  opacity: 0.35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark-mode .dpad-center-hub {
+  background: #0F172A;
+  border-color: #334155;
+  opacity: 0.25;
 }
 
 .mobile-dpad-btn.dpad-center {

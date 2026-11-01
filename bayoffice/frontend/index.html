@@ -177,12 +177,6 @@
 
         <!-- Canvas Box -->
         <div class="canvas-container" id="canvasContainer">
-          <div class="fullscreen-controls" id="canvasOverlayControls" style="display: none;">
-            <button id="exitFullscreenBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="minimize-2" class="lucide-sm"></i>
-              <span data-i18n="canvas.exit_fullscreen">Exit Fullscreen</span>
-            </button>
-          </div>
           <canvas id="officeCanvas"></canvas>
           <div id="officeThreeContainer" style="display: none; width: 100%; height: 480px; position: relative;">
             <!-- 3D Camera & Living Atmosphere Controls Overlay -->
@@ -226,6 +220,10 @@
                   <button id="threeSettingsBtn" class="neo-btn-sm three-settings-btn" title="Pengaturan Kanvas & Navigasi (Mode Kamera, Suasana, Kontrol Sentuh, Audio)">
                     <i data-lucide="sliders" class="lucide-xs"></i>
                     <span class="three-settings-btn-text">Pengaturan</span>
+                  </button>
+                  <button type="button" id="exitFullscreenBtn" class="neo-btn-sm neo-btn-danger btn-exit-fullscreen" style="display: none;" title="Keluar dari Layar Penuh">
+                    <i data-lucide="minimize-2" class="lucide-xs"></i>
+                    <span data-i18n="canvas.exit_fullscreen">Keluar Layar Penuh</span>
                   </button>
                 </div>
                 <div class="three-focus-dropdown-wrapper three-desktop-only">
@@ -418,12 +416,15 @@
 
             <!-- 🎮 3D Game Mode Floating HUD Bar & Quick Exit -->
             <div id="threeGameHud" class="three-game-hud" style="display: none;">
-              <div class="three-game-hud-bar">
+              <div id="threeGameHudBar" class="three-game-hud-bar">
                 <span class="hud-pill"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Gerak</span>
                 <span class="hud-pill"><kbd>Shift</kbd> Sprint</span>
                 <span class="hud-pill"><kbd>🖱️ Mouse</kbd> Putar Pandangan</span>
                 <span class="hud-pill"><kbd>V</kbd> POV: <strong id="threeHudPovLabel">FPV</strong></span>
                 <span class="hud-pill hud-pill-esc"><kbd>ESC</kbd> Keluar</span>
+                <button type="button" id="threeCloseHudBtn" class="hud-dismiss-btn" title="Tutup Panduan (3s)">
+                  <i data-lucide="x" class="lucide-xs"></i>
+                </button>
               </div>
               <button id="threeExitGameBtn" class="three-exit-game-btn" title="Keluar Mode Game (ESC)">
                 ✕ Keluar Mode Game (ESC)
@@ -447,6 +448,15 @@
             <!-- 📱 Mobile Virtual D-Pad / Directional Arrow Controls Overlay (Touch & Viewport <= 768px) -->
             <div id="mobileArrowControls" class="mobile-arrow-controls" aria-label="Kontrol Navigasi Mobile">
               <div class="mobile-dpad-container">
+                <!-- 🎯 Top Utility Slot: POV Switch Button -->
+                <div class="mobile-dpad-top-bar">
+                  <button type="button" id="mobileArrowPovTop" class="mobile-dpad-pov-btn" title="Ganti Sudut Pandang (POV / Reset)">
+                    <i data-lucide="camera" class="lucide-xs"></i>
+                    <span id="mobilePovBtnLabel">FPV/TPV</span>
+                  </button>
+                </div>
+
+                <!-- 🕹️ 4-Way Directional Grid -->
                 <button type="button" id="mobileArrowUp" class="mobile-dpad-btn dpad-up" aria-label="Maju / Pandangan Atas" title="Maju (Atas)">
                   <i data-lucide="chevron-up" class="lucide-sm"></i>
                 </button>
@@ -454,9 +464,8 @@
                   <button type="button" id="mobileArrowLeft" class="mobile-dpad-btn dpad-left" aria-label="Belok Kiri" title="Kiri">
                     <i data-lucide="chevron-left" class="lucide-sm"></i>
                   </button>
-                  <button type="button" id="mobileArrowCenter" class="mobile-dpad-btn dpad-center" aria-label="POV Switch / Reset" title="POV / Reset">
-                    <i data-lucide="crosshair" class="lucide-xs"></i>
-                  </button>
+                  <!-- Center non-clickable hub -->
+                  <div class="dpad-center-hub" aria-hidden="true"></div>
                   <button type="button" id="mobileArrowRight" class="mobile-dpad-btn dpad-right" aria-label="Belok Kanan" title="Kanan">
                     <i data-lucide="chevron-right" class="lucide-sm"></i>
                   </button>
