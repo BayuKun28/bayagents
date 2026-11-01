@@ -69,6 +69,7 @@ class OfficeThree {
     this.interactiveObjects = [];
     this.hoveredObject = null;
     this.onAgentClick = null;
+    this.currentFocusAgent = null;
 
     // Atmosphere & 5 Time Categories
     this.ambientLight = null;
@@ -3430,7 +3431,7 @@ class OfficeThree {
         targetY: 1.15,
         workPos: { x: -15.5, z: -6.5, y: 1.15 },
         breakPos: { x: -15.5, z: -2.0, y: 1.15 },
-        sleepPos: { x: -14.0, z: 10.2, y: 1.15 },
+        sleepPos: { x: -16.0, z: 10.2, y: 1.15 }, // Sofa Game Room Sisi Barat
         waypointsToBreak: [
           { x: -15.5, z: -4.0 },
           { x: -15.5, z: -2.0 }
@@ -3442,7 +3443,7 @@ class OfficeThree {
         breakBubble: 'Executive review & santai sejenak 📋',
         deskBubble: 'Memantau sprint dari Executive Suite 📋',
         activePath: null,
-        nextSocialTimer: 35 + Math.random() * 25,
+        nextSocialTimer: 30 + (0 * 18) + Math.random() * 5,
         breakDuration: 0,
         lastTypeSound: 0,
         lastAmbientSound: 0
@@ -3459,7 +3460,7 @@ class OfficeThree {
         targetY: 1.25,
         workPos: { x: -5.5, z: -6.5, y: 1.25 },
         breakPos: { x: -5.5, z: -2.0, y: 1.25 },
-        sleepPos: { x: -5.5, z: -6.5, y: 1.25 },
+        sleepPos: { x: -5.5, z: -2.8, y: 1.25 }, // Kursi Santai Architect Studio
         waypointsToBreak: [
           { x: -5.5, z: -4.0 },
           { x: -5.5, z: -2.0 }
@@ -3471,7 +3472,7 @@ class OfficeThree {
         breakBubble: 'Merancang arsitektur N-250 Gatotkaca ✈️',
         deskBubble: 'Menganalisis arsitektur sistem & performa 🏛️',
         activePath: null,
-        nextSocialTimer: 45 + Math.random() * 30,
+        nextSocialTimer: 30 + (1 * 18) + Math.random() * 5,
         breakDuration: 0,
         lastTypeSound: 0,
         lastAmbientSound: 0
@@ -3488,7 +3489,7 @@ class OfficeThree {
         targetY: 1.15,
         workPos: { x: 3.5, z: -6.5, y: 1.15 },
         breakPos: { x: 13.0, z: 8.5, y: 1.15 }, // Cafeteria communal dining chair
-        sleepPos: { x: -14.0, z: 10.2, y: 1.15 }, // Game room lounge sofa
+        sleepPos: { x: -12.2, z: 10.2, y: 1.15 }, // Sofa Game Room Sisi Timur
         waypointsToBreak: [
           { x: 3.5, z: -3.5 },
           { x: 0.5, z: -1.2 },
@@ -3508,7 +3509,7 @@ class OfficeThree {
         breakBubble: 'Sedang rehat sejenak menikmati espresso homelab ☕',
         deskBubble: 'Backend Bay siap. API & DB optimal ⚡',
         activePath: null,
-        nextSocialTimer: 25 + Math.random() * 20,
+        nextSocialTimer: 30 + (2 * 18) + Math.random() * 5,
         breakDuration: 0,
         lastTypeSound: 0,
         lastAmbientSound: 0
@@ -3525,7 +3526,7 @@ class OfficeThree {
         targetY: 1.15,
         workPos: { x: 11.5, z: -6.5, y: 1.15 },
         breakPos: { x: -17.0, z: 5.5, y: 1.15 }, // Game Room arcade cabinet
-        sleepPos: { x: -6.0, z: 11.2, y: 1.15 }, // Game room beanbag
+        sleepPos: { x: -7.5, z: 11.2, y: 1.15 }, // Beanbag Oranye Game Room
         waypointsToBreak: [
           { x: 11.5, z: -3.5 },
           { x: 0.5, z: -1.2 },
@@ -3543,7 +3544,7 @@ class OfficeThree {
         breakBubble: 'Mencoba rekor baru di Pac-Man arcade 🕹️',
         deskBubble: 'Frontend Bay siap. UI/UX responsif 🎨',
         activePath: null,
-        nextSocialTimer: 30 + Math.random() * 25,
+        nextSocialTimer: 30 + (3 * 18) + Math.random() * 5,
         breakDuration: 0,
         lastTypeSound: 0,
         lastAmbientSound: 0
@@ -3560,7 +3561,7 @@ class OfficeThree {
         targetY: 1.15,
         workPos: { x: 19.5, z: -6.5, y: 1.15 },
         breakPos: { x: -8.0, z: 8.5, y: 1.15 }, // Billiard table side
-        sleepPos: { x: -6.0, z: 11.2, y: 1.15 }, // Game room beanbag
+        sleepPos: { x: -4.5, z: 11.2, y: 1.15 }, // Beanbag Toska Game Room
         waypointsToBreak: [
           { x: 19.5, z: -3.5 },
           { x: 0.5, z: -1.2 },
@@ -3578,7 +3579,7 @@ class OfficeThree {
         breakBubble: 'Rehat biliar trickshot & cek keamanan 🎱',
         deskBubble: 'QA Terminal siap audit & testing 🛡️',
         activePath: null,
-        nextSocialTimer: 35 + Math.random() * 30,
+        nextSocialTimer: 30 + (4 * 18) + Math.random() * 5,
         breakDuration: 0,
         lastTypeSound: 0,
         lastAmbientSound: 0
@@ -3964,22 +3965,89 @@ class OfficeThree {
   // 🎯 CINEMATIC CAMERA TRANSITION & AGENT FOCUS MODE
   // =========================================================================
 
+  getStaggeredSocialInterval(agentName, baseTime = 30) {
+    const order = ['LUHUT', 'HABIBIE', 'JOKOWI', 'PRABOWO', 'GIBRAN'];
+    const idx = order.indexOf(agentName);
+    const agentIndex = idx >= 0 ? idx : 0;
+    return baseTime + (agentIndex * 18) + (Math.random() * 5);
+  }
+
+  applySeparationVectorLogic() {
+    const agentNames = Object.keys(this.agents);
+    const repulsionRadius = 1.4;
+
+    for (let i = 0; i < agentNames.length; i++) {
+      const nameA = agentNames[i];
+      const meshA = this.agentMeshes[nameA];
+      const agA = this.agents[nameA];
+      if (!meshA || !agA) continue;
+
+      for (let j = i + 1; j < agentNames.length; j++) {
+        const nameB = agentNames[j];
+        const meshB = this.agentMeshes[nameB];
+        const agB = this.agents[nameB];
+        if (!meshB || !agB) continue;
+
+        const dx = meshA.position.x - meshB.position.x;
+        const dz = meshA.position.z - meshB.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist < repulsionRadius) {
+          // Soft repulsion offset (± 0.3 max displacement)
+          let nx = dx;
+          let nz = dz;
+          if (dist < 0.001) {
+            nx = (i % 2 === 0 ? 1 : -1) * 0.3;
+            nz = 0.1;
+          } else {
+            nx /= dist;
+            nz /= dist;
+          }
+
+          const overlap = repulsionRadius - dist;
+          const push = Math.min(overlap * 0.5, 0.3) * 0.15; // Smooth soft separation force
+
+          // Apply soft repulsion when moving or in transition
+          if (agA.activePath || agB.activePath || (agA.socialStatus !== 'at_desk' && agB.socialStatus !== 'at_desk')) {
+            meshA.position.x += nx * push;
+            meshA.position.z += nz * push;
+            meshB.position.x -= nx * push;
+            meshB.position.z -= nz * push;
+          }
+        }
+      }
+    }
+  }
+
   focusAgent(agentName) {
-    const focusTargets = {
-      LUHUT: { target: new THREE.Vector3(-15.5, 1.4, -6.5), camOffset: new THREE.Vector3(4.2, 4.0, 7.0) },
-      HABIBIE: { target: new THREE.Vector3(-5.5, 1.5, -6.5), camOffset: new THREE.Vector3(3.8, 3.8, 6.8) },
-      JOKOWI: { target: new THREE.Vector3(3.5, 1.4, -6.5), camOffset: new THREE.Vector3(3.8, 3.8, 6.8) },
-      PRABOWO: { target: new THREE.Vector3(11.5, 1.4, -6.5), camOffset: new THREE.Vector3(3.8, 3.8, 6.8) },
-      GIBRAN: { target: new THREE.Vector3(19.5, 1.4, -6.5), camOffset: new THREE.Vector3(3.8, 3.8, 6.8) },
-      arcade: { target: new THREE.Vector3(-11.5, 1.5, 7.0), camOffset: new THREE.Vector3(5.5, 5.0, 7.5) },
-      cafe: { target: new THREE.Vector3(12.5, 1.5, 7.0), camOffset: new THREE.Vector3(5.5, 5.0, 7.5) }
-    };
+    const mesh = this.agentMeshes[agentName];
+    if (!mesh) {
+      // Fallback for static non-agent areas (e.g. arcade, cafe)
+      const staticTargets = {
+        arcade: { target: new THREE.Vector3(-11.5, 1.5, 7.0), camOffset: new THREE.Vector3(5.5, 5.0, 7.5) },
+        cafe: { target: new THREE.Vector3(12.5, 1.5, 7.0), camOffset: new THREE.Vector3(5.5, 5.0, 7.5) }
+      };
+      const staticDef = staticTargets[agentName];
+      if (staticDef) {
+        this.currentFocusAgent = null;
+        const endCamPos = staticDef.target.clone().add(staticDef.camOffset);
+        this.startCameraTransition(endCamPos, staticDef.target, 850);
+        const selectEl = document.getElementById('threeFocusSelect');
+        if (selectEl && selectEl.value !== agentName) {
+          selectEl.value = agentName;
+        }
+      }
+      return;
+    }
 
-    const targetDef = focusTargets[agentName];
-    if (!targetDef) return;
+    // Ambil posisi real-time figur 3D avatar (Dynamic Mesh-Targeting)
+    const avatarPos = mesh.position.clone();
+    const targetLookAt = avatarPos.clone().add(new THREE.Vector3(0, 1.2, 0)); // Arah mata/wajah
+    const camOffset = new THREE.Vector3(3.5, 3.2, 6.0); // Sudut isometrik proporsional
+    const endCamPos = avatarPos.clone().add(camOffset);
 
-    const endCamPos = targetDef.target.clone().add(targetDef.camOffset);
-    this.startCameraTransition(endCamPos, targetDef.target, 850);
+    this.currentFocusAgent = agentName;
+    this.startCameraTransition(endCamPos, targetLookAt, 850);
 
     const selectEl = document.getElementById('threeFocusSelect');
     if (selectEl && selectEl.value !== agentName) {
@@ -3993,6 +4061,7 @@ class OfficeThree {
   }
 
   resetCamera() {
+    this.currentFocusAgent = null;
     this.startCameraTransition(this.defaultCamPos, this.defaultCamTarget, 800);
     const selectEl = document.getElementById('threeFocusSelect');
     if (selectEl) selectEl.value = '';
@@ -4000,6 +4069,7 @@ class OfficeThree {
   }
 
   setTopDownView() {
+    this.currentFocusAgent = null;
     const topDownPos = new THREE.Vector3(1, 35, 0.01);
     const topDownTarget = new THREE.Vector3(1, 0, 0);
     this.startCameraTransition(topDownPos, topDownTarget, 850);
@@ -4155,10 +4225,14 @@ class OfficeThree {
             ag.targetZ = ag.workPos.z;
             ag.targetY = ag.workPos.y || 1.15;
             ag.activePath = null;
+            ag.nextSocialTimer = performance.now() * 0.001 + this.getStaggeredSocialInterval(name, 30);
           }
         }
       }
     }
+
+    // Soft separation guard during data updates
+    this.applySeparationVectorLogic();
   }
 
   updateAnimations(time) {
@@ -4168,7 +4242,7 @@ class OfficeThree {
       this.updateAnimatedScreens(time);
     }
 
-    // 1. Smooth Camera Transition
+    // 1. Smooth Camera Transition & Dynamic Mesh-Targeting Camera Focus
     if (this.camTransition.active) {
       const elapsed = performance.now() - this.camTransition.startTime;
       const progress = Math.min(elapsed / this.camTransition.duration, 1);
@@ -4181,8 +4255,24 @@ class OfficeThree {
       if (progress >= 1) {
         this.camTransition.active = false;
       }
-    } else if (this.controls) {
-      this.controls.update();
+    } else {
+      // Dynamic Camera Tracking for Active Focus Agent (Smooth dampening on moving avatar)
+      if (this.currentFocusAgent && this.agentMeshes[this.currentFocusAgent] && this.controls) {
+        const focusMesh = this.agentMeshes[this.currentFocusAgent];
+        const targetLookAt = focusMesh.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+        const delta = targetLookAt.clone().sub(this.controls.target);
+
+        // Smooth dampening towards avatar position if moving
+        if (delta.lengthSq() > 0.0001) {
+          const dampFactor = 0.08;
+          const step = delta.multiplyScalar(dampFactor);
+          this.controls.target.add(step);
+          this.camera.position.add(step);
+        }
+      }
+      if (this.controls) {
+        this.controls.update();
+      }
     }
 
     // 2. Real-time Wall Clock Hands Rotation
@@ -4340,7 +4430,7 @@ class OfficeThree {
               this.updateAgentBubble(name, ag.breakBubble);
             } else if (ag.socialStatus === 'walking_to_desk') {
               ag.socialStatus = 'at_desk';
-              ag.nextSocialTimer = time + 35 + Math.random() * 35;
+              ag.nextSocialTimer = time + this.getStaggeredSocialInterval(name, 30);
               mesh.rotation.y = 0; // face desk monitors
               this.updateAgentBubble(name, ag.deskBubble || ag.bubble);
             }
@@ -4461,6 +4551,9 @@ class OfficeThree {
         }
       }
     }
+
+    // 7. Soft Separation Buffer / Anti-Collision Dispersion
+    this.applySeparationVectorLogic();
   }
 
   // =========================================================================
@@ -4488,7 +4581,11 @@ class OfficeThree {
     if (focusSelect) {
       focusSelect.addEventListener('change', (e) => {
         const val = e.target.value;
-        if (val) this.focusAgent(val);
+        if (val) {
+          this.focusAgent(val);
+        } else {
+          this.resetCamera();
+        }
       });
     }
 

@@ -325,7 +325,9 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
                 self.assertIn("location", ag)
                 self.assertIn("room_id", ag["location"])
                 self.assertIn("sub_area", ag["location"])
+                self.assertIn("slot_id", ag["location"])
                 self.assertIn("is_seated", ag["location"])
+                self.assertIn("slot_id", ag)
                 self.assertIn("bubble_text", ag)
                 self.assertIn("desk", ag)
 
@@ -358,12 +360,60 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             res = await app.api_get_agents(user=self.test_user)
             self.assertIn("JOKOWI", res)
             self.assertIn("location", res["JOKOWI"])
+            self.assertIn("slot_id", res["JOKOWI"]["location"])
+            self.assertEqual(res["JOKOWI"]["location"]["slot_id"], 2)
             self.assertIn("bubble_text", res["JOKOWI"])
             self.assertIn("PRABOWO", res)
+            self.assertEqual(res["PRABOWO"]["location"]["slot_id"], 3)
             self.assertIn("GIBRAN", res)
+            self.assertEqual(res["GIBRAN"]["location"]["slot_id"], 4)
             self.assertIn("LUHUT", res)
+            self.assertEqual(res["LUHUT"]["location"]["slot_id"], 1)
             self.assertIn("HABIBIE", res)
+            self.assertEqual(res["HABIBIE"]["location"]["slot_id"], 5)
         asyncio.run(run_test())
+
+    def test_dynamic_avatar_slots_and_anti_collision(self):
+        """Memverifikasi PLAN-20261101-05: Alokasi slot_id diskrit dan sub_area tidur terdistribusi tanpa tumpang tindih."""
+        from unittest.mock import patch
+        with patch("service.get_system_metrics") as mock_metrics:
+            # Kondisi tmux mati (mode hemat daya / sleeping untuk 4 tmux agents, standalone untuk HABIBIE)
+            mock_metrics.return_value = {"tmux_active": False, "load_avg": [0.05, 0.05, 0.05]}
+            agents = service.get_agents_status()
+
+            # Pastikan slot_id dan sub_area unik antar seluruh agen
+            slots = [ag["location"]["slot_id"] for ag in agents.values()]
+            sub_areas = [ag["location"]["sub_area"] for ag in agents.values()]
+
+            self.assertEqual(len(set(slots)), 5, "Setiap agen wajib memiliki slot_id unik (1-5)")
+            self.assertEqual(len(set(sub_areas)), 5, "Setiap agen wajib memiliki sub_area terdistribusi (zero clipping)")
+
+            # Verifikasi pemetaan 4 agen tmux saat sleeping sesuai PLAN-20261101-05
+            self.assertEqual(agents["LUHUT"]["location"]["slot_id"], 1)
+            self.assertEqual(agents["LUHUT"]["location"]["sub_area"], "lounge_sofa_west")
+            self.assertIn("Sofa Barat", agents["LUHUT"]["bubble_text"])
+
+            self.assertEqual(agents["JOKOWI"]["location"]["slot_id"], 2)
+            self.assertEqual(agents["JOKOWI"]["location"]["sub_area"], "lounge_sofa_east")
+            self.assertIn("Sofa Timur", agents["JOKOWI"]["bubble_text"])
+
+            self.assertEqual(agents["PRABOWO"]["location"]["slot_id"], 3)
+            self.assertEqual(agents["PRABOWO"]["location"]["sub_area"], "beanbag_orange")
+            self.assertIn("Beanbag Oranye", agents["PRABOWO"]["bubble_text"])
+
+            self.assertEqual(agents["GIBRAN"]["location"]["slot_id"], 4)
+            self.assertEqual(agents["GIBRAN"]["location"]["sub_area"], "beanbag_teal")
+            self.assertIn("Beanbag Toska", agents["GIBRAN"]["bubble_text"])
+
+            # Verifikasi HABIBIE standalone & resolver sleeping di studio_recliner
+            self.assertEqual(agents["HABIBIE"]["location"]["slot_id"], 5)
+            self.assertEqual(agents["HABIBIE"]["location"]["room_id"], "architect_studio")
+
+            loc_h, bubble_h = service.resolve_agent_bubble_and_location("HABIBIE", "sleeping")
+            self.assertEqual(loc_h["slot_id"], 5)
+            self.assertEqual(loc_h["sub_area"], "studio_recliner")
+            self.assertEqual(loc_h["room_id"], "architect_studio")
+            self.assertIn("Studio Recliner", bubble_h)
 
 
 if __name__ == "__main__":

@@ -153,6 +153,7 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
     "LUHUT": {
         "name": "LUHUT",
         "role": "Lead Orchestrator & DevOps",
+        "slot_id": 1,
         "work_room": "executive_suite",
         "work_sub_area": "workstation",
         "idle_bubble": "Memantau sprint dari Executive Suite 📋",
@@ -160,27 +161,29 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "break_sub_area": "lounge_sofa",
         "break_bubble": "Executive review & santai sejenak 📋",
         "sleep_room": "game_room",
-        "sleep_sub_area": "lounge_sofa",
-        "sleep_bubble": "Hibernasi (hemat RAM) 💤",
+        "sleep_sub_area": "lounge_sofa_west",
+        "sleep_bubble": "Hibernasi di Lounge Sofa Barat (hemat RAM) 💤",
         "desk": {"x": 220, "y": 125, "color": "#FF6B6B"}
     },
     "HABIBIE": {
         "name": "HABIBIE",
         "role": "Chief Architect",
+        "slot_id": 5,
         "work_room": "architect_studio",
         "work_sub_area": "workstation",
         "idle_bubble": "Menganalisis arsitektur sistem & performa 🏛️",
         "break_room": "architect_studio",
-        "break_sub_area": "workstation",
+        "break_sub_area": "studio_recliner",
         "break_bubble": "Merancang arsitektur N-250 Gatotkaca ✈️",
         "sleep_room": "architect_studio",
-        "sleep_sub_area": "workstation",
-        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "sleep_sub_area": "studio_recliner",
+        "sleep_bubble": "Standby pasif di Studio Recliner (0% CPU) 💤",
         "desk": {"x": 345, "y": 88, "color": "#8B5CF6"}
     },
     "JOKOWI": {
         "name": "JOKOWI",
         "role": "Backend Engineer",
+        "slot_id": 2,
         "work_room": "engineering_bay",
         "work_sub_area": "workstation",
         "idle_bubble": "Backend Bay siap. API & DB optimal ⚡",
@@ -188,13 +191,14 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "break_sub_area": "bar_counter",
         "break_bubble": "Rehat sejenak menikmati kopi homelab ☕",
         "sleep_room": "game_room",
-        "sleep_sub_area": "lounge_sofa",
-        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "sleep_sub_area": "lounge_sofa_east",
+        "sleep_bubble": "Standby pasif di Lounge Sofa Timur (0% CPU) 💤",
         "desk": {"x": 540, "y": 125, "color": "#45B7D1"}
     },
     "PRABOWO": {
         "name": "PRABOWO",
         "role": "Frontend Engineer",
+        "slot_id": 3,
         "work_room": "engineering_bay",
         "work_sub_area": "workstation",
         "idle_bubble": "Frontend Bay siap. UI/UX responsif 🎨",
@@ -202,13 +206,14 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "break_sub_area": "arcade",
         "break_bubble": "Mencoba rekor baru di Pac-Man arcade 🕹️",
         "sleep_room": "game_room",
-        "sleep_sub_area": "beanbag",
-        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "sleep_sub_area": "beanbag_orange",
+        "sleep_bubble": "Standby pasif di Beanbag Oranye (0% CPU) 💤",
         "desk": {"x": 700, "y": 125, "color": "#FFA07A"}
     },
     "GIBRAN": {
         "name": "GIBRAN",
         "role": "QA Auditor & Security",
+        "slot_id": 4,
         "work_room": "engineering_bay",
         "work_sub_area": "workstation",
         "idle_bubble": "QA Terminal siap audit & testing 🛡️",
@@ -216,8 +221,8 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "break_sub_area": "billiard",
         "break_bubble": "Rehat biliar trickshot & cek keamanan 🎱",
         "sleep_room": "game_room",
-        "sleep_sub_area": "beanbag",
-        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "sleep_sub_area": "beanbag_teal",
+        "sleep_bubble": "Standby pasif di Beanbag Toska (0% CPU) 💤",
         "desk": {"x": 860, "y": 125, "color": "#4ECDC4"}
     }
 }
@@ -230,6 +235,9 @@ def resolve_agent_bubble_and_location(
 ) -> Tuple[Dict[str, Any], str]:
     """Menghitung context-aware location dan speech bubble berdasarkan state dan aktivitas agen."""
     cfg = AGENT_CONFIGS.get(name, {
+        "name": name,
+        "role": "Agent",
+        "slot_id": 0,
         "work_room": "engineering_bay",
         "work_sub_area": "workstation",
         "idle_bubble": "Standby siap tugas.",
@@ -237,44 +245,56 @@ def resolve_agent_bubble_and_location(
         "break_sub_area": "dining_table",
         "break_bubble": "Rehat sejenak menikmati kopi homelab ☕",
         "sleep_room": "game_room",
-        "sleep_sub_area": "lounge_sofa",
+        "sleep_sub_area": "lounge_sofa_east",
         "sleep_bubble": "Standby pasif (0% CPU) 💤"
     })
+
+    agent_slot = cfg.get("slot_id", 0)
 
     if location_override:
         loc = {
             "room_id": location_override.get("room_id", cfg["work_room"]),
             "sub_area": location_override.get("sub_area", cfg["work_sub_area"]),
+            "slot_id": location_override.get("slot_id", agent_slot),
             "is_seated": location_override.get("is_seated", True)
         }
     elif state == "sleeping":
         loc = {
             "room_id": cfg["sleep_room"],
             "sub_area": cfg["sleep_sub_area"],
+            "slot_id": agent_slot,
             "is_seated": True
         }
     elif state in ["break", "at_break"]:
         loc = {
             "room_id": cfg["break_room"],
             "sub_area": cfg["break_sub_area"],
-            "is_seated": True if cfg["break_sub_area"] in ["bar_counter", "dining_table", "lounge_sofa", "beanbag"] else False
+            "slot_id": agent_slot,
+            "is_seated": True if cfg["break_sub_area"] in [
+                "bar_counter", "dining_table", "lounge_sofa", "beanbag",
+                "studio_recliner", "lounge_sofa_west", "lounge_sofa_east",
+                "beanbag_orange", "beanbag_teal"
+            ] else False
         }
     elif state in ["walking_to_break", "transit_break"]:
         loc = {
             "room_id": "hallway",
             "sub_area": "transit",
+            "slot_id": agent_slot,
             "is_seated": False
         }
     elif state in ["walking_to_desk", "transit_desk"]:
         loc = {
             "room_id": "hallway",
             "sub_area": "transit",
+            "slot_id": agent_slot,
             "is_seated": False
         }
     else:  # idle, working, reviewing
         loc = {
             "room_id": cfg["work_room"],
             "sub_area": cfg["work_sub_area"],
+            "slot_id": agent_slot,
             "is_seated": True
         }
 
@@ -320,6 +340,7 @@ def get_agents_status() -> Dict[str, Any]:
         agents[name] = {
             "name": cfg["name"],
             "role": cfg["role"],
+            "slot_id": cfg.get("slot_id", 0),
             "state": initial_state,
             "current_task": None,
             "bubble_text": bubble,
