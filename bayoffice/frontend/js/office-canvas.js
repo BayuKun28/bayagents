@@ -60,7 +60,7 @@ class OfficeCanvas {
         x: 112, y: 150,
         targetX: 112, targetY: 150,
         state: 'idle',
-        bubble: 'Memantau sprint dari Executive Suite.'
+        bubble: 'Memantau sprint dari Executive Suite 📋'
       },
       JOKOWI: {
         name: 'JOKOWI',
@@ -69,7 +69,7 @@ class OfficeCanvas {
         x: 620, y: 385,
         targetX: 620, targetY: 385,
         state: 'idle',
-        bubble: 'Santai di kantin, backend siap.'
+        bubble: 'Backend Bay siap. API & DB optimal ⚡'
       },
       PRABOWO: {
         name: 'PRABOWO',
@@ -78,7 +78,7 @@ class OfficeCanvas {
         x: 205, y: 385,
         targetX: 205, targetY: 385,
         state: 'idle',
-        bubble: 'Tanam Sawitt!'
+        bubble: 'Frontend Bay siap. UI/UX responsif 🎨'
       },
       GIBRAN: {
         name: 'GIBRAN',
@@ -87,7 +87,7 @@ class OfficeCanvas {
         x: 770, y: 385,
         targetX: 770, targetY: 385,
         state: 'idle',
-        bubble: 'Standby di kantin, siap audit QA.'
+        bubble: 'QA Terminal siap audit & testing 🛡️'
       },
       HABIBIE: {
         name: 'HABIBIE',
@@ -96,7 +96,7 @@ class OfficeCanvas {
         x: 334, y: 150,
         targetX: 334, targetY: 150,
         state: 'idle',
-        bubble: 'Cinta Sejati'
+        bubble: 'Menganalisis arsitektur sistem & performa 🏛️'
       }
     };
 
@@ -1083,10 +1083,10 @@ class OfficeCanvas {
       let activeBubble = ag.bubble;
       let badgeLabel = statusBadgeText;
 
-      // Khusus HABIBIE: Saat tidak ada kegiatan (idle / sleeping) selalu tampilkan "Cinta Sejati"
+      // Khusus HABIBIE: Saat tidak ada kegiatan (idle / sleeping) tampilkan pesan arsitektur sistem
       if (name === 'HABIBIE') {
         if (!ag.state || ag.state === 'idle' || ag.state === 'sleeping') {
-          activeBubble = 'Cinta Sejati';
+          activeBubble = ag.bubble || 'Menganalisis arsitektur sistem & performa 🏛️';
         }
       } else if (inGameRoom && gameRoomQuotes[name]) {
         activeBubble = gameRoomQuotes[name];

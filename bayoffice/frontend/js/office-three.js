@@ -1775,6 +1775,11 @@ class OfficeThree {
     // Executive Tall Potted Fan Palm
     this.addPottedPlant(group, 3.2, -1.8, 1.5);
 
+    // Ergonomic Executive High-Back Office Chair (Stationary workstation furniture)
+    const chair = this.buildErgonomicOfficeChair(0xEF4444, true);
+    chair.position.set(0, 0, -0.75);
+    group.add(chair);
+
     parent.add(group);
   }
 
@@ -1860,6 +1865,11 @@ class OfficeThree {
 
     // Grand Bookshelf with Architecture & Distributed Systems Volumes
     this.buildBookshelf(group, 0, 0, -2.8);
+
+    // Ergonomic Architect Studio Office Chair (Stationary workstation furniture)
+    const chair = this.buildErgonomicOfficeChair(0x8B5CF6, false);
+    chair.position.set(0, 0, -0.75);
+    group.add(chair);
 
     parent.add(group);
   }
@@ -2036,6 +2046,11 @@ class OfficeThree {
 
     this.addCoffeeMug(group, -1.1, 1.45, 0.3);
 
+    // Ergonomic Office Swivel Chair (Stationary workstation furniture)
+    const chair = this.buildErgonomicOfficeChair(0x0EA5E9, false);
+    chair.position.set(0, 0, -0.75);
+    group.add(chair);
+
     parent.add(group);
   }
 
@@ -2100,6 +2115,11 @@ class OfficeThree {
     this.addAcrylicDeskNameplate(group, 'PRABOWO', 'Frontend Engineer', '#F97316', 1.2, 1.45, 0.5);
 
     this.addPottedPlant(group, 1.25, -0.3, 0.6);
+
+    // Ergonomic Office Swivel Chair (Stationary workstation furniture)
+    const chair = this.buildErgonomicOfficeChair(0xF97316, false);
+    chair.position.set(0, 0, -0.75);
+    group.add(chair);
 
     parent.add(group);
   }
@@ -2180,6 +2200,11 @@ class OfficeThree {
 
     // 3D Acrylic Desk Nameplate for GIBRAN
     this.addAcrylicDeskNameplate(group, 'GIBRAN', 'Universal QA', '#10B981', 1.2, 1.45, 0.5);
+
+    // Ergonomic Office Swivel Chair (Stationary workstation furniture)
+    const chair = this.buildErgonomicOfficeChair(0x10B981, false);
+    chair.position.set(0, 0, -0.75);
+    group.add(chair);
 
     parent.add(group);
   }
@@ -2636,20 +2661,20 @@ class OfficeThree {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
-    // L-Shaped Espresso Counter Bar
+    // 1. Long Espresso & Food Service Counter Bar
     const counterA = new THREE.Mesh(
-      new THREE.BoxGeometry(5.2, 1.4, 1.4),
+      new THREE.BoxGeometry(6.4, 1.4, 1.4),
       new THREE.MeshLambertMaterial({ color: 0x3B2515 })
     );
-    counterA.position.set(-1.0, 0.7, -1.8);
+    counterA.position.set(-1.0, 0.7, -2.0);
     counterA.castShadow = true;
     group.add(counterA);
 
     const counterTopA = new THREE.Mesh(
-      new THREE.BoxGeometry(5.4, 0.12, 1.6),
+      new THREE.BoxGeometry(6.6, 0.12, 1.6),
       new THREE.MeshLambertMaterial({ color: 0xF1F5F9 })
     );
-    counterTopA.position.set(-1.0, 1.45, -1.8);
+    counterTopA.position.set(-1.0, 1.45, -2.0);
     group.add(counterTopA);
 
     // Commercial Stainless Steel Espresso Machine
@@ -2657,7 +2682,7 @@ class OfficeThree {
       new THREE.BoxGeometry(1.6, 1.0, 0.9),
       new THREE.MeshLambertMaterial({ color: 0xDC2626 })
     );
-    machine.position.set(-1.2, 1.95, -1.8);
+    machine.position.set(-2.6, 1.95, -2.0);
     group.add(machine);
 
     // Chrome Group Heads & Cup Tray
@@ -2665,7 +2690,7 @@ class OfficeThree {
       new THREE.BoxGeometry(1.4, 0.08, 0.7),
       new THREE.MeshLambertMaterial({ color: 0xE2E8F0 })
     );
-    cupTray.position.set(-1.2, 2.48, -1.8);
+    cupTray.position.set(-2.6, 2.48, -2.0);
     group.add(cupTray);
 
     // Espresso Demitasse Cups on Top
@@ -2674,43 +2699,425 @@ class OfficeThree {
         new THREE.CylinderGeometry(0.08, 0.06, 0.12, 8),
         new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
       );
-      cup.position.set(-1.2 + cx, 2.58, -1.8);
+      cup.position.set(-2.6 + cx, 2.58, -2.0);
       group.add(cup);
     });
 
-    // 💨 RISING STEAM PARTICLES FROM ESPRESSO NOZZLE
-    this.initEspressoSteam(group, -1.2, 2.2, -1.4);
+    // 💨 Rising Steam Particles from Espresso Nozzle
+    this.initEspressoSteam(group, -2.6, 2.2, -1.6);
 
     // Hanging Chalkboard Menu
-    this.buildCafeChalkboard(group, -1.0, 3.8, -1.8);
+    this.buildCafeChalkboard(group, -2.0, 3.8, -2.0);
+
+    // Modern Countertop Microwave Oven
+    this.buildMicrowave(group, -1.2, 1.5, -2.0);
 
     // Glass Pastry Showcase with Croissants & Doughnuts
-    this.buildPastryShowcase(group, 0.8, 1.85, -1.8);
+    this.buildPastryShowcase(group, 0.3, 1.85, -2.0);
 
-    // Cold Beverage Showcase Fridge
-    this.buildBeverageCooler(group, 2.8, 1.8, -1.8);
+    // Multi-Tiered Snack & Biscuit Wire Display Rack
+    this.buildSnackRack(group, 1.7, 1.5, -2.0);
+
+    // Cold Beverage Showcase Refrigerator Fridge
+    this.buildBeverageCooler(group, 3.3, 1.8, -2.0);
 
     // Blue Water Gallon Dispenser
-    this.buildWaterDispenser(group, 4.4, 0.9, -1.8);
+    this.buildWaterDispenser(group, 4.8, 0.9, -2.0);
 
-    // Round Bistro Table & Stools
-    const bistroTable = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.1, 1.1, 0.1, 16),
-      new THREE.MeshLambertMaterial({ color: 0xF8FAFC })
-    );
-    bistroTable.position.set(-0.8, 1.1, 2.2);
-    group.add(bistroTable);
+    // Dual-Compartment Stainless Steel Recycling & Trash Bin
+    this.buildRecyclingBin(group, 6.2, 0, -2.0);
 
-    [-1.8, 0.2].forEach(cx => {
-      const chairSeat = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.45, 0.45, 0.08, 12),
-        new THREE.MeshLambertMaterial({ color: 0xEA580C })
-      );
-      chairSeat.position.set(cx, 0.75, 2.2);
-      group.add(chairSeat);
-    });
+    // 2. High-Top Bar Counter & 3 Orange Leather Stools
+    this.buildHighTopBarCounter(group, -6.5, 0.5);
+
+    // 3. Communal Oak Dining Table (4.2m x 1.4m), 4 Chairs, Props, & 2 Warm Pendant Downlights
+    // North Chair 1 is positioned at local (0.5, 0, 1.5) -> world (13.0, 0, 8.5) for JOKOWI's break snap
+    this.buildCommunalDiningTable(group, 0.5, 2.6);
+
+    // 4. Lush Potted Monstera Deliciosa Tropical Plant
+    this.buildPottedMonstera(group, 7.5, 0, 3.8);
 
     parent.add(group);
+  }
+
+  buildMicrowave(parent, x, y, z) {
+    const micro = new THREE.Group();
+    micro.position.set(x, y, z);
+
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 0.65, 0.70),
+      new THREE.MeshLambertMaterial({ color: 0x1E293B })
+    );
+    body.position.set(0, 0.325, 0);
+    micro.add(body);
+
+    const door = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.60, 0.45),
+      new THREE.MeshBasicMaterial({ color: 0x0284C7, transparent: true, opacity: 0.6 })
+    );
+    door.position.set(-0.14, 0.325, 0.355);
+    micro.add(door);
+
+    const disp = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.18, 0.09),
+      new THREE.MeshBasicMaterial({ color: 0x10B981 })
+    );
+    disp.position.set(0.32, 0.45, 0.355);
+    micro.add(disp);
+
+    const handle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.40, 0.04),
+      new THREE.MeshLambertMaterial({ color: 0xE2E8F0 })
+    );
+    handle.position.set(0.18, 0.325, 0.38);
+    micro.add(handle);
+
+    parent.add(micro);
+  }
+
+  buildSnackRack(parent, x, y, z) {
+    const rack = new THREE.Group();
+    rack.position.set(x, y, z);
+
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1, 0.85, 0.55),
+      new THREE.MeshLambertMaterial({ color: 0x475569 })
+    );
+    frame.position.set(0, 0.425, 0);
+    rack.add(frame);
+
+    const snackColors = [0xEF4444, 0xF59E0B, 0x10B981, 0x8B5CF6, 0x06B6D4];
+    [-0.32, 0, 0.32].forEach((sx, i) => {
+      [0.22, 0.48, 0.72].forEach((sy, j) => {
+        const pack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.22, 0.12),
+          new THREE.MeshBasicMaterial({ color: snackColors[(i + j * 2) % snackColors.length] })
+        );
+        pack.position.set(sx, sy, 0.15);
+        rack.add(pack);
+      });
+    });
+
+    parent.add(rack);
+  }
+
+  buildRecyclingBin(parent, x, y, z) {
+    const binGroup = new THREE.Group();
+    binGroup.position.set(x, y, z);
+
+    const binBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1, 1.1, 0.6),
+      new THREE.MeshLambertMaterial({ color: 0x64748B })
+    );
+    binBody.position.set(0, 0.55, 0);
+    binGroup.add(binBody);
+
+    const lidRecycle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.08, 0.54),
+      new THREE.MeshLambertMaterial({ color: 0x0284C7 })
+    );
+    lidRecycle.position.set(-0.25, 1.14, 0);
+    binGroup.add(lidRecycle);
+
+    const lidTrash = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.08, 0.54),
+      new THREE.MeshLambertMaterial({ color: 0x1E293B })
+    );
+    lidTrash.position.set(0.25, 1.14, 0);
+    binGroup.add(lidTrash);
+
+    parent.add(binGroup);
+  }
+
+  buildHighTopBarCounter(parent, x, z) {
+    const barGroup = new THREE.Group();
+    barGroup.position.set(x, 0, z);
+
+    const barTop = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.12, 0.7),
+      new THREE.MeshLambertMaterial({ color: 0x451A03 })
+    );
+    barTop.position.set(0, 1.55, 0);
+    barTop.castShadow = true;
+    barGroup.add(barTop);
+
+    const postGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.5);
+    const postMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
+    [-1.4, 1.4].forEach(px => {
+      const p = new THREE.Mesh(postGeo, postMat);
+      p.position.set(px, 0.75, 0);
+      barGroup.add(p);
+    });
+
+    const footBar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 2.8),
+      postMat
+    );
+    footBar.rotation.z = Math.PI / 2;
+    footBar.position.set(0, 0.35, 0);
+    barGroup.add(footBar);
+
+    parent.add(barGroup);
+
+    [-1.1, 0, 1.1].forEach(sx => {
+      const stool = new THREE.Group();
+      stool.position.set(x + sx, 0, z + 0.75);
+
+      const sBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.32, 0.32, 0.04, 16),
+        new THREE.MeshLambertMaterial({ color: 0xE2E8F0 })
+      );
+      sBase.position.set(0, 0.02, 0);
+      stool.add(sBase);
+
+      const sPole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.045, 1.0, 10),
+        new THREE.MeshLambertMaterial({ color: 0xCBD5E1 })
+      );
+      sPole.position.set(0, 0.52, 0);
+      stool.add(sPole);
+
+      const fRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.20, 0.025, 8, 16),
+        new THREE.MeshLambertMaterial({ color: 0xE2E8F0 })
+      );
+      fRing.rotation.x = Math.PI / 2;
+      fRing.position.set(0, 0.40, 0);
+      stool.add(fRing);
+
+      const sSeat = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.12, 16),
+        new THREE.MeshLambertMaterial({ color: 0xEA580C })
+      );
+      sSeat.position.set(0, 1.08, 0);
+      sSeat.castShadow = true;
+      stool.add(sSeat);
+
+      const sBack = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 0.22, 0.06),
+        new THREE.MeshLambertMaterial({ color: 0xC2410C })
+      );
+      sBack.position.set(0, 1.22, 0.18);
+      stool.add(sBack);
+
+      parent.add(stool);
+    });
+  }
+
+  buildCommunalDiningTable(parent, x, z) {
+    const tableGroup = new THREE.Group();
+    tableGroup.position.set(x, 0, z);
+
+    // 1. Solid Oak Tabletop (4.2m width x 0.16m thickness x 1.4m depth)
+    const oakTop = new THREE.Mesh(
+      new THREE.BoxGeometry(4.2, 0.16, 1.4),
+      new THREE.MeshLambertMaterial({ color: 0x854D0E })
+    );
+    oakTop.position.set(0, 1.15, 0);
+    oakTop.castShadow = true;
+    oakTop.receiveShadow = true;
+    tableGroup.add(oakTop);
+
+    // Sturdy wooden legs (4 corner posts + crossbar)
+    const legGeo = new THREE.BoxGeometry(0.14, 1.07, 0.14);
+    const legMat = new THREE.MeshLambertMaterial({ color: 0x451A03 });
+    [[-1.9, -0.55], [-1.9, 0.55], [1.9, -0.55], [1.9, 0.55]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(legGeo, legMat);
+      leg.position.set(lx, 0.535, lz);
+      leg.castShadow = true;
+      tableGroup.add(leg);
+    });
+
+    const crossbar = new THREE.Mesh(
+      new THREE.BoxGeometry(3.8, 0.08, 0.10),
+      legMat
+    );
+    crossbar.position.set(0, 0.35, 0);
+    tableGroup.add(crossbar);
+
+    // 2. Tabletop Props
+    // Mini Laptop
+    const laptopBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.03, 0.40),
+      new THREE.MeshLambertMaterial({ color: 0x94A3B8 })
+    );
+    laptopBody.position.set(-0.8, 1.25, -0.1);
+    tableGroup.add(laptopBody);
+
+    const laptopScreen = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.38, 0.03),
+      new THREE.MeshLambertMaterial({ color: 0x0F172A })
+    );
+    laptopScreen.position.set(-0.8, 1.44, -0.28);
+    tableGroup.add(laptopScreen);
+
+    // Ceramic Coffee Mugs (White & Teal)
+    const mugA = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.07, 0.16, 10),
+      new THREE.MeshLambertMaterial({ color: 0xF8FAFC })
+    );
+    mugA.position.set(0.2, 1.31, -0.3);
+    tableGroup.add(mugA);
+
+    const mugB = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.07, 0.16, 10),
+      new THREE.MeshLambertMaterial({ color: 0x0EA5E9 })
+    );
+    mugB.position.set(1.4, 1.31, 0.2);
+    tableGroup.add(mugB);
+
+    // Snack Plate with Cookies
+    const plate = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.28, 0.24, 0.03, 16),
+      new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
+    );
+    plate.position.set(-0.1, 1.24, 0.15);
+    tableGroup.add(plate);
+
+    [-0.08, 0.06].forEach((cx, i) => {
+      const cookie = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.02, 8),
+        new THREE.MeshLambertMaterial({ color: 0x78350F })
+      );
+      cookie.position.set(-0.1 + cx, 1.265, 0.15 + (i * 0.05));
+      tableGroup.add(cookie);
+    });
+
+    // Potted Tabletop Succulent
+    const succPot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.09, 0.14, 10),
+      new THREE.MeshLambertMaterial({ color: 0xE2E8F0 })
+    );
+    succPot.position.set(0.8, 1.30, 0);
+    tableGroup.add(succPot);
+
+    const succLeaf = new THREE.Mesh(
+      new THREE.SphereGeometry(0.10, 8, 8),
+      new THREE.MeshLambertMaterial({ color: 0x16A34A })
+    );
+    succLeaf.position.set(0.8, 1.40, 0);
+    tableGroup.add(succLeaf);
+
+    parent.add(tableGroup);
+
+    // 3. Four Wooden Dining Chairs
+    // Note: Chair at Cafeteria local (0.5, 0, 1.5) corresponds to world (13.0, 0, 8.5) — JOKOWI's break snap!
+    const chairConfigs = [
+      { x: 0.5, z: 1.5, rotY: 0 },         // North Chair 1 (JOKOWI's Break Seat)
+      { x: 2.2, z: 1.5, rotY: 0 },         // North Chair 2
+      { x: -0.6, z: 3.7, rotY: Math.PI },  // South Chair 1
+      { x: 1.6, z: 3.7, rotY: Math.PI }    // South Chair 2
+    ];
+
+    chairConfigs.forEach(cfg => {
+      const chair = new THREE.Group();
+      chair.position.set(cfg.x, 0, cfg.z);
+      chair.rotation.y = cfg.rotY;
+
+      const seat = new THREE.Mesh(
+        new THREE.BoxGeometry(0.72, 0.10, 0.72),
+        new THREE.MeshLambertMaterial({ color: 0x92400E })
+      );
+      seat.position.set(0, 0.75, 0);
+      seat.castShadow = true;
+      chair.add(seat);
+
+      const back = new THREE.Mesh(
+        new THREE.BoxGeometry(0.70, 0.60, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0x78350F })
+      );
+      back.position.set(0, 1.10, -0.32);
+      chair.add(back);
+
+      const cLegGeo = new THREE.BoxGeometry(0.08, 0.70, 0.08);
+      [[-0.30, -0.30], [-0.30, 0.30], [0.30, -0.30], [0.30, 0.30]].forEach(([cx, cz]) => {
+        const cl = new THREE.Mesh(cLegGeo, legMat);
+        cl.position.set(cx, 0.35, cz);
+        chair.add(cl);
+      });
+
+      parent.add(chair);
+    });
+
+    // 4. Two Industrial Minimalist Pendant Downlights (2700K)
+    [-0.6, 1.6].forEach(px => {
+      const cord = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 1.8),
+        new THREE.MeshBasicMaterial({ color: 0x0F172A })
+      );
+      cord.position.set(x + px, 4.3, z);
+      parent.add(cord);
+
+      const shade = new THREE.Mesh(
+        new THREE.ConeGeometry(0.38, 0.32, 16),
+        new THREE.MeshLambertMaterial({ color: 0x1E293B })
+      );
+      shade.position.set(x + px, 3.4, z);
+      parent.add(shade);
+
+      const socket = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 0.08, 10),
+        new THREE.MeshBasicMaterial({ color: 0xF59E0B })
+      );
+      socket.position.set(x + px, 3.58, z);
+      parent.add(socket);
+
+      const warmLight = new THREE.PointLight(0xFDE047, 0.75, 6.0, 1.8);
+      warmLight.position.set(x + px, 3.2, z);
+      parent.add(warmLight);
+      this.accentNightLights.push({ light: warmLight, nightIntensity: 0.95, dayIntensity: 0.50 });
+    });
+  }
+
+  buildPottedMonstera(parent, x, y, z) {
+    const plant = new THREE.Group();
+    plant.position.set(x, y, z);
+
+    const pot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55, 0.42, 1.1, 16),
+      new THREE.MeshLambertMaterial({ color: 0xF8FAFC })
+    );
+    pot.position.set(0, 0.55, 0);
+    pot.castShadow = true;
+    plant.add(pot);
+
+    const soil = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.52, 0.52, 0.08, 16),
+      new THREE.MeshLambertMaterial({ color: 0x2A180E })
+    );
+    soil.position.set(0, 1.06, 0);
+    plant.add(soil);
+
+    const leafGeo = new THREE.BoxGeometry(0.70, 0.02, 0.95);
+    const leafMatA = new THREE.MeshLambertMaterial({ color: 0x15803D });
+    const leafMatB = new THREE.MeshLambertMaterial({ color: 0x166534 });
+
+    const leaves = [
+      { x: 0, y: 1.6, z: 0.4, rx: 0.5, ry: 0, rz: 0.2, mat: leafMatA },
+      { x: 0.4, y: 1.8, z: 0.1, rx: 0.2, ry: 1.1, rz: 0.4, mat: leafMatB },
+      { x: -0.4, y: 1.7, z: 0.1, rx: 0.3, ry: -1.0, rz: -0.3, mat: leafMatA },
+      { x: 0.2, y: 2.1, z: -0.3, rx: -0.4, ry: 2.2, rz: 0.3, mat: leafMatB },
+      { x: -0.3, y: 2.0, z: -0.2, rx: -0.3, ry: -2.0, rz: -0.2, mat: leafMatA },
+      { x: 0, y: 2.3, z: 0, rx: 0.1, ry: 0.5, rz: 0, mat: leafMatA }
+    ];
+
+    leaves.forEach(l => {
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.03, 0.8),
+        leafMatB
+      );
+      stem.position.set(l.x * 0.5, (1.1 + l.y) / 2, l.z * 0.5);
+      stem.rotation.set(l.rx * 0.5, l.ry, l.rz * 0.5);
+      plant.add(stem);
+
+      const leaf = new THREE.Mesh(leafGeo, l.mat);
+      leaf.position.set(l.x, l.y, l.z);
+      leaf.rotation.set(l.rx, l.ry, l.rz);
+      leaf.castShadow = true;
+      plant.add(leaf);
+    });
+
+    parent.add(plant);
   }
 
   initEspressoSteam(parent, x, y, z) {
@@ -2860,6 +3267,77 @@ class OfficeThree {
     });
   }
 
+  buildErgonomicOfficeChair(colorHex, isHighBack = false) {
+    const chairGroup = new THREE.Group();
+
+    const baseHub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.18, 0.1, 10),
+      new THREE.MeshLambertMaterial({ color: 0x0F172A })
+    );
+    baseHub.position.set(0, 0.12, 0);
+    chairGroup.add(baseHub);
+
+    for (let c = 0; c < 5; c++) {
+      const angle = (c / 5) * Math.PI * 2;
+      const leg = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.06, 0.45),
+        new THREE.MeshLambertMaterial({ color: 0x1E293B })
+      );
+      leg.geometry.translate(0, 0, 0.22);
+      leg.position.set(0, 0.12, 0);
+      leg.rotation.y = angle;
+      chairGroup.add(leg);
+
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.05, 8),
+        new THREE.MeshBasicMaterial({ color: 0x0F172A })
+      );
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(Math.sin(angle) * 0.45, 0.04, Math.cos(angle) * 0.45);
+      chairGroup.add(wheel);
+    }
+
+    const cylinder = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.07, 0.65),
+      new THREE.MeshLambertMaterial({ color: 0x475569 })
+    );
+    cylinder.position.set(0, 0.45, 0);
+    chairGroup.add(cylinder);
+
+    const seat = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 0.16, 1.0),
+      new THREE.MeshLambertMaterial({ color: 0x1E293B })
+    );
+    seat.position.set(0, 0.82, 0);
+    chairGroup.add(seat);
+
+    const backHeight = isHighBack ? 1.5 : 1.1;
+    const backrest = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, backHeight, 0.14),
+      new THREE.MeshLambertMaterial({ color: colorHex })
+    );
+    backrest.position.set(0, 0.85 + backHeight / 2, -0.42);
+    chairGroup.add(backrest);
+
+    [-0.52, 0.52].forEach(ax => {
+      const armrestPost = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.35, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0x0F172A })
+      );
+      armrestPost.position.set(ax, 0.98, 0);
+      chairGroup.add(armrestPost);
+
+      const armrestPad = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.05, 0.45),
+        new THREE.MeshLambertMaterial({ color: 0x334155 })
+      );
+      armrestPad.position.set(ax, 1.16, 0);
+      chairGroup.add(armrestPad);
+    });
+
+    return chairGroup;
+  }
+
   addMonitor(group, x, y, z, w, h, bezelColor, screenColor, rotY = 0, screenType = null, addBounceLight = false, bounceColor = 0xFFFFFF) {
     const monitor = new THREE.Group();
     monitor.position.set(x, y, z);
@@ -2946,7 +3424,7 @@ class OfficeThree {
         color: '#EF4444',
         state: 'idle',
         socialStatus: 'at_desk',
-        bubble: 'Executive Suite',
+        bubble: 'Memantau sprint dari Executive Suite 📋',
         x: -15.5, z: -6.5,
         targetX: -15.5, targetZ: -6.5,
         targetY: 1.15,
@@ -2962,7 +3440,7 @@ class OfficeThree {
           { x: -15.5, z: -6.5 }
         ],
         breakBubble: 'Executive review & santai sejenak 📋',
-        deskBubble: 'Executive Suite',
+        deskBubble: 'Memantau sprint dari Executive Suite 📋',
         activePath: null,
         nextSocialTimer: 35 + Math.random() * 25,
         breakDuration: 0,
@@ -2975,7 +3453,7 @@ class OfficeThree {
         color: '#8B5CF6',
         state: 'idle',
         socialStatus: 'at_desk',
-        bubble: 'Studio Arsitek',
+        bubble: 'Menganalisis arsitektur sistem & performa 🏛️',
         x: -5.5, z: -6.5,
         targetX: -5.5, targetZ: -6.5,
         targetY: 1.25,
@@ -2991,7 +3469,7 @@ class OfficeThree {
           { x: -5.5, z: -6.5 }
         ],
         breakBubble: 'Merancang arsitektur N-250 Gatotkaca ✈️',
-        deskBubble: 'Studio Arsitek',
+        deskBubble: 'Menganalisis arsitektur sistem & performa 🏛️',
         activePath: null,
         nextSocialTimer: 45 + Math.random() * 30,
         breakDuration: 0,
@@ -3004,21 +3482,23 @@ class OfficeThree {
         color: '#0EA5E9',
         state: 'idle',
         socialStatus: 'at_desk',
-        bubble: 'Backend Bay',
+        bubble: 'Backend Bay siap. API & DB optimal ⚡',
         x: 3.5, z: -6.5,
         targetX: 3.5, targetZ: -6.5,
         targetY: 1.15,
         workPos: { x: 3.5, z: -6.5, y: 1.15 },
-        breakPos: { x: 11.5, z: 6.5, y: 1.15 }, // Kantin espresso bar
+        breakPos: { x: 13.0, z: 8.5, y: 1.15 }, // Cafeteria communal dining chair
         sleepPos: { x: -14.0, z: 10.2, y: 1.15 }, // Game room lounge sofa
         waypointsToBreak: [
           { x: 3.5, z: -3.5 },
           { x: 0.5, z: -1.2 },
           { x: 0.5, z: 1.2 },
           { x: 6.0, z: 2.2 },
-          { x: 11.5, z: 6.5 }
+          { x: 10.5, z: 5.5 },
+          { x: 13.0, z: 8.5 }
         ],
         waypointsToDesk: [
+          { x: 10.5, z: 5.5 },
           { x: 6.0, z: 2.2 },
           { x: 0.5, z: 1.2 },
           { x: 0.5, z: -1.2 },
@@ -3026,7 +3506,7 @@ class OfficeThree {
           { x: 3.5, z: -6.5 }
         ],
         breakBubble: 'Sedang rehat sejenak menikmati espresso homelab ☕',
-        deskBubble: 'Backend Bay',
+        deskBubble: 'Backend Bay siap. API & DB optimal ⚡',
         activePath: null,
         nextSocialTimer: 25 + Math.random() * 20,
         breakDuration: 0,
@@ -3039,7 +3519,7 @@ class OfficeThree {
         color: '#F97316',
         state: 'idle',
         socialStatus: 'at_desk',
-        bubble: 'Frontend Bay',
+        bubble: 'Frontend Bay siap. UI/UX responsif 🎨',
         x: 11.5, z: -6.5,
         targetX: 11.5, targetZ: -6.5,
         targetY: 1.15,
@@ -3061,7 +3541,7 @@ class OfficeThree {
           { x: 11.5, z: -6.5 }
         ],
         breakBubble: 'Mencoba rekor baru di Pac-Man arcade 🕹️',
-        deskBubble: 'Frontend Bay',
+        deskBubble: 'Frontend Bay siap. UI/UX responsif 🎨',
         activePath: null,
         nextSocialTimer: 30 + Math.random() * 25,
         breakDuration: 0,
@@ -3074,7 +3554,7 @@ class OfficeThree {
         color: '#10B981',
         state: 'idle',
         socialStatus: 'at_desk',
-        bubble: 'QA Terminal',
+        bubble: 'QA Terminal siap audit & testing 🛡️',
         x: 19.5, z: -6.5,
         targetX: 19.5, targetZ: -6.5,
         targetY: 1.15,
@@ -3096,7 +3576,7 @@ class OfficeThree {
           { x: 19.5, z: -6.5 }
         ],
         breakBubble: 'Rehat biliar trickshot & cek keamanan 🎱',
-        deskBubble: 'QA Terminal',
+        deskBubble: 'QA Terminal siap audit & testing 🛡️',
         activePath: null,
         nextSocialTimer: 35 + Math.random() * 30,
         breakDuration: 0,
@@ -3119,78 +3599,7 @@ class OfficeThree {
 
     const colorHex = parseInt(config.color.replace('#', '0x'));
 
-    // 1. Ergonomic Office Swivel Chair
-    const chairGroup = new THREE.Group();
-    chairGroup.position.set(0, -config.targetY, -0.75);
-
-    const baseHub = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.18, 0.18, 0.1, 10),
-      new THREE.MeshLambertMaterial({ color: 0x0F172A })
-    );
-    baseHub.position.set(0, 0.12, 0);
-    chairGroup.add(baseHub);
-
-    for (let c = 0; c < 5; c++) {
-      const angle = (c / 5) * Math.PI * 2;
-      const leg = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, 0.06, 0.45),
-        new THREE.MeshLambertMaterial({ color: 0x1E293B })
-      );
-      leg.geometry.translate(0, 0, 0.22);
-      leg.position.set(0, 0.12, 0);
-      leg.rotation.y = angle;
-      chairGroup.add(leg);
-
-      const wheel = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.04, 0.04, 0.05, 8),
-        new THREE.MeshBasicMaterial({ color: 0x0F172A })
-      );
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(Math.sin(angle) * 0.45, 0.04, Math.cos(angle) * 0.45);
-      chairGroup.add(wheel);
-    }
-
-    const cylinder = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.65),
-      new THREE.MeshLambertMaterial({ color: 0x475569 })
-    );
-    cylinder.position.set(0, 0.45, 0);
-    chairGroup.add(cylinder);
-
-    const seat = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.16, 1.0),
-      new THREE.MeshLambertMaterial({ color: 0x1E293B })
-    );
-    seat.position.set(0, 0.82, 0);
-    chairGroup.add(seat);
-
-    const backHeight = (config.name === 'LUHUT') ? 1.5 : 1.1;
-    const backrest = new THREE.Mesh(
-      new THREE.BoxGeometry(0.95, backHeight, 0.14),
-      new THREE.MeshLambertMaterial({ color: colorHex })
-    );
-    backrest.position.set(0, 0.85 + backHeight / 2, -0.42);
-    chairGroup.add(backrest);
-
-    [-0.52, 0.52].forEach(ax => {
-      const armrestPost = new THREE.Mesh(
-        new THREE.BoxGeometry(0.06, 0.35, 0.08),
-        new THREE.MeshLambertMaterial({ color: 0x0F172A })
-      );
-      armrestPost.position.set(ax, 0.98, 0);
-      chairGroup.add(armrestPost);
-
-      const armrestPad = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 0.05, 0.45),
-        new THREE.MeshLambertMaterial({ color: 0x334155 })
-      );
-      armrestPad.position.set(ax, 1.16, 0);
-      chairGroup.add(armrestPad);
-    });
-
-    group.add(chairGroup);
-
-    // 2. Avatar Seated Body Structure
+    // 1. Avatar Body Structure
     const torsoGeo = new THREE.BoxGeometry(0.85, 0.95, 0.55);
     const torsoMat = new THREE.MeshLambertMaterial({ color: colorHex });
     const torso = new THREE.Mesh(torsoGeo, torsoMat);
@@ -3199,24 +3608,61 @@ class OfficeThree {
     group.add(torso);
     group.torsoMesh = torso;
 
-    // Seated Legs
+    // 2. Kinematic Articulated Legs (Dual-Pose Articulation: Standing/Walking vs Seated 90° fold)
     const thighMat = new THREE.MeshLambertMaterial({ color: 0x1E293B });
-    [-0.24, 0.24].forEach(lx => {
-      const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.55), thighMat);
-      thigh.position.set(lx, -0.22, -0.15);
-      group.add(thigh);
+    const shoeMat = new THREE.MeshLambertMaterial({ color: 0xF8FAFC });
+    const legs = {};
 
-      const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.58, 0.22), thighMat);
-      lowerLeg.position.set(lx, -0.55, 0.14);
-      group.add(lowerLeg);
+    [-0.24, 0.24].forEach((lx, idx) => {
+      const legSide = idx === 0 ? 'left' : 'right';
 
-      const shoe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.24, 0.16, 0.38),
-        new THREE.MeshLambertMaterial({ color: 0xF8FAFC })
-      );
-      shoe.position.set(lx, -0.80, 0.20);
-      group.add(shoe);
+      // Hip joint pivot: at bottom edge of torso
+      const hipJoint = new THREE.Group();
+      hipJoint.position.set(lx, -0.28, -0.42);
+
+      // Thigh rotation group (rotates around X at hip)
+      const thighGroup = new THREE.Group();
+      hipJoint.add(thighGroup);
+
+      // Thigh mesh (extends downward from hip)
+      const thighMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.46, 0.24), thighMat);
+      thighMesh.position.set(0, -0.23, 0);
+      thighMesh.castShadow = true;
+      thighGroup.add(thighMesh);
+
+      // Knee joint group (at bottom of thigh)
+      const kneeGroup = new THREE.Group();
+      kneeGroup.position.set(0, -0.46, 0);
+      thighGroup.add(kneeGroup);
+
+      // Lower leg mesh (extends downward from knee)
+      const lowerLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.48, 0.22), thighMat);
+      lowerLegMesh.position.set(0, -0.24, 0);
+      lowerLegMesh.castShadow = true;
+      kneeGroup.add(lowerLegMesh);
+
+      // Shoe mesh (at foot/ankle, pointing forward +Z)
+      const shoeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.38), shoeMat);
+      shoeMesh.position.set(0, -0.48, 0.08);
+      shoeMesh.castShadow = true;
+      kneeGroup.add(shoeMesh);
+
+      group.add(hipJoint);
+
+      legs[legSide] = {
+        hip: hipJoint,
+        thigh: thighGroup,
+        knee: kneeGroup
+      };
     });
+
+    group.legs = legs;
+
+    // Initial seated pose: thigh 90° forward, knee 90° downward
+    legs.left.thigh.rotation.x = -Math.PI / 2;
+    legs.left.knee.rotation.x = Math.PI / 2;
+    legs.right.thigh.rotation.x = -Math.PI / 2;
+    legs.right.knee.rotation.x = Math.PI / 2;
 
     // 3. Hands & Arms
     const skinMat = new THREE.MeshLambertMaterial({ color: 0xFBD38D });
@@ -3611,14 +4057,36 @@ class OfficeThree {
       roleBadgeEl.style.color = ag.color;
     }
 
-    const roomNames = {
-      LUHUT: 'Executive Suite (Meja Pimpinan)',
-      HABIBIE: "Architect's Studio (Drafting Desk)",
-      JOKOWI: 'Engineering Bay (Backend Terminal)',
-      PRABOWO: 'Engineering Bay (Frontend UI/UX)',
-      GIBRAN: 'Engineering Bay (QA Terminal)'
-    };
-    if (locationEl) locationEl.textContent = roomNames[agentName] || 'Office Workspace';
+    if (locationEl) {
+      if (ag.location && ag.location.room_id) {
+        const roomMap = {
+          executive_suite: 'Executive Suite',
+          architect_studio: "Architect's Studio",
+          engineering_bay: 'Engineering Bay',
+          cafeteria: 'Cafeteria & Coffee Bar',
+          game_room: 'Game Room & Lounge'
+        };
+        const subMap = {
+          workstation: 'Workstation',
+          dining_table: 'Communal Table',
+          bar_counter: 'Espresso Bar',
+          arcade: 'Arcade Cabinet',
+          billiard: 'Billiard Table'
+        };
+        const rName = roomMap[ag.location.room_id] || ag.location.room_id;
+        const sName = subMap[ag.location.sub_area] || ag.location.sub_area || '';
+        locationEl.textContent = sName ? `${rName} (${sName})` : rName;
+      } else {
+        const roomNames = {
+          LUHUT: 'Executive Suite (Meja Pimpinan)',
+          HABIBIE: "Architect's Studio (Drafting Desk)",
+          JOKOWI: 'Engineering Bay (Backend Terminal)',
+          PRABOWO: 'Engineering Bay (Frontend UI/UX)',
+          GIBRAN: 'Engineering Bay (QA Terminal)'
+        };
+        locationEl.textContent = roomNames[agentName] || 'Office Workspace';
+      }
+    }
     if (bubbleEl) bubbleEl.textContent = ag.bubble || ag.role;
     if (stateEl) {
       const stateMap = { working: 'Working', reviewing: 'QA Reviewing', sleeping: 'Sleeping', idle: 'Standby Pasif' };
@@ -3649,6 +4117,9 @@ class OfficeThree {
         const prevState = ag.state;
         ag.state = data.state || 'idle';
         ag.role = data.role || ag.role;
+        if (data.location) {
+          ag.location = data.location;
+        }
 
         // Custom bubble update
         if (data.bubble_text && ag.socialStatus === 'at_desk' && data.bubble_text !== ag.bubble) {
@@ -3659,13 +4130,16 @@ class OfficeThree {
 
         // Active task assignment: working or reviewing
         if (ag.state === 'working' || ag.state === 'reviewing') {
+          if (data.bubble_text) {
+            ag.bubble = data.bubble_text;
+            ag.deskBubble = data.bubble_text;
+          }
           if (ag.socialStatus !== 'at_desk' && ag.socialStatus !== 'walking_to_desk') {
             // Abort break and path directly back to desk
             ag.socialStatus = 'walking_to_desk';
             ag.activePath = (ag.waypointsToDesk && ag.waypointsToDesk.length) ? ag.waypointsToDesk.slice() : null;
-          }
-          if (data.bubble_text) {
-            ag.bubble = data.bubble_text;
+            this.updateAgentBubble(name, 'Kembali ke meja kerja... 🚶');
+          } else if (ag.socialStatus === 'at_desk') {
             this.updateAgentBubble(name, ag.bubble);
           }
         } else if (ag.state === 'sleeping') {
@@ -3795,11 +4269,16 @@ class OfficeThree {
           if (time > ag.nextSocialTimer) {
             ag.socialStatus = 'walking_to_break';
             ag.activePath = (ag.waypointsToBreak && ag.waypointsToBreak.length) ? ag.waypointsToBreak.slice() : null;
+            const transitBubble = (name === 'JOKOWI')
+              ? 'Menuju Kantin... ☕'
+              : ((name === 'LUHUT' || name === 'HABIBIE') ? 'Rehat sejenak... 🚶' : 'Menuju Game Room... 🎮');
+            this.updateAgentBubble(name, transitBubble);
           }
         } else if (ag.socialStatus === 'at_break') {
           if (time > ag.breakDuration) {
             ag.socialStatus = 'walking_to_desk';
             ag.activePath = (ag.waypointsToDesk && ag.waypointsToDesk.length) ? ag.waypointsToDesk.slice() : null;
+            this.updateAgentBubble(name, 'Kembali ke meja kerja... 🚶');
           }
         }
       }
@@ -3823,13 +4302,32 @@ class OfficeThree {
           while (diff > Math.PI) diff -= Math.PI * 2;
           mesh.rotation.y += diff * 0.15;
 
-          // Walking body bob & arm swing
-          mesh.position.y = ag.targetY + Math.abs(Math.sin(time * 11)) * 0.08;
+          // Walking standing posture & vertical bobbing
+          const walkBaseY = 1.45;
+          mesh.position.y = walkBaseY + Math.abs(Math.sin(time * 11)) * 0.08;
+
+          // Kinematic Leg Swing: Legs straight down, swinging from hips
+          if (mesh.legs) {
+            mesh.legs.left.thigh.rotation.x = 0;
+            mesh.legs.left.knee.rotation.x = 0;
+            mesh.legs.right.thigh.rotation.x = 0;
+            mesh.legs.right.knee.rotation.x = 0;
+
+            const legSwing = Math.sin(time * 11) * 0.42;
+            mesh.legs.left.hip.rotation.x = legSwing;
+            mesh.legs.right.hip.rotation.x = -legSwing;
+          }
+
+          // Natural Arm Swing around torso
           if (mesh.hands && mesh.hands.length === 2) {
-            mesh.hands[0].position.z = Math.sin(time * 11) * 0.14;
-            mesh.hands[1].position.z = -Math.sin(time * 11) * 0.14;
+            mesh.hands[0].position.z = -0.42 + Math.sin(time * 11) * 0.28;
+            mesh.hands[1].position.z = -0.42 - Math.sin(time * 11) * 0.28;
             mesh.hands[0].position.y = 0.22;
             mesh.hands[1].position.y = 0.22;
+          }
+          if (mesh.headMesh) {
+            mesh.headMesh.rotation.x = 0.04;
+            mesh.headMesh.rotation.y = 0;
           }
         } else {
           // Waypoint reached
@@ -3844,7 +4342,7 @@ class OfficeThree {
               ag.socialStatus = 'at_desk';
               ag.nextSocialTimer = time + 35 + Math.random() * 35;
               mesh.rotation.y = 0; // face desk monitors
-              this.updateAgentBubble(name, ag.deskBubble);
+              this.updateAgentBubble(name, ag.deskBubble || ag.bubble);
             }
           }
         }
@@ -3852,6 +4350,16 @@ class OfficeThree {
         mesh.position.x = ag.workPos.x;
         mesh.position.z = ag.workPos.z;
         mesh.rotation.y = 0; // face desk monitors
+
+        // Dual-Pose Articulation: Seated 90° leg fold
+        if (mesh.legs) {
+          mesh.legs.left.hip.rotation.x = 0;
+          mesh.legs.right.hip.rotation.x = 0;
+          mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
+          mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
+          mesh.legs.left.knee.rotation.x = Math.PI / 2;
+          mesh.legs.right.knee.rotation.x = Math.PI / 2;
+        }
 
         if (ag.state === 'working' || ag.state === 'reviewing') {
           if (mesh.hands && mesh.hands.length === 2) {
@@ -3887,10 +4395,27 @@ class OfficeThree {
           }
         }
       } else if (ag.socialStatus === 'at_break') {
+        mesh.position.x = ag.breakPos.x;
+        mesh.position.z = ag.breakPos.z;
+
+        // Seated at break spot (cafeteria chair, lounge sofa, or arcade stool)
+        if (mesh.legs) {
+          mesh.legs.left.hip.rotation.x = 0;
+          mesh.legs.right.hip.rotation.x = 0;
+          mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
+          mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
+          mesh.legs.left.knee.rotation.x = Math.PI / 2;
+          mesh.legs.right.knee.rotation.x = Math.PI / 2;
+        }
+
         mesh.position.y = ag.targetY + Math.sin(time * 1.8) * 0.025;
         if (mesh.headMesh) {
           mesh.headMesh.rotation.x = Math.sin(time * 1.0) * 0.04;
           mesh.headMesh.rotation.y = Math.sin(time * 0.8) * 0.12;
+        }
+        if (mesh.hands && mesh.hands.length === 2) {
+          mesh.hands[0].position.set(-0.25, 0.18, 0.15);
+          mesh.hands[1].position.set(0.25, 0.18, 0.15);
         }
 
         // Ambient soundscapes when at break
@@ -3910,6 +4435,14 @@ class OfficeThree {
         mesh.position.x += (ag.sleepPos.x - mesh.position.x) * 0.06;
         mesh.position.z += (ag.sleepPos.z - mesh.position.z) * 0.06;
         mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
+        if (mesh.legs) {
+          mesh.legs.left.hip.rotation.x = 0;
+          mesh.legs.right.hip.rotation.x = 0;
+          mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
+          mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
+          mesh.legs.left.knee.rotation.x = Math.PI / 2;
+          mesh.legs.right.knee.rotation.x = Math.PI / 2;
+        }
         if (mesh.headMesh) {
           mesh.headMesh.rotation.x = 0.45;
         }

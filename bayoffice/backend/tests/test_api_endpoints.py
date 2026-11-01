@@ -286,6 +286,60 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
 
         asyncio.run(run_sched_test())
 
+    def test_agent_states_and_location_schema(self):
+        """Memverifikasi schema location dan bubble text kontekstual pada 5 agen."""
+        from unittest.mock import patch
+        with patch("service.get_system_metrics") as mock_metrics:
+            mock_metrics.return_value = {"tmux_active": True, "load_avg": [0.1, 0.1, 0.1]}
+            agents = service.get_agents_status()
+            
+            self.assertEqual(len(agents), 5)
+            for name in ["LUHUT", "HABIBIE", "JOKOWI", "PRABOWO", "GIBRAN"]:
+                self.assertIn(name, agents)
+                ag = agents[name]
+                self.assertIn("location", ag)
+                self.assertIn("room_id", ag["location"])
+                self.assertIn("sub_area", ag["location"])
+                self.assertIn("is_seated", ag["location"])
+                self.assertIn("bubble_text", ag)
+                self.assertIn("desk", ag)
+
+            # Verifikasi penghapusan bubble kantin hardcode pada workstation
+            self.assertIn("Backend Bay siap", agents["JOKOWI"]["bubble_text"])
+            self.assertEqual(agents["JOKOWI"]["location"]["room_id"], "engineering_bay")
+            self.assertIn("QA Terminal siap", agents["GIBRAN"]["bubble_text"])
+            self.assertEqual(agents["GIBRAN"]["location"]["room_id"], "engineering_bay")
+            self.assertIn("Executive Suite", agents["LUHUT"]["bubble_text"])
+            self.assertEqual(agents["LUHUT"]["location"]["room_id"], "executive_suite")
+
+            # Verifikasi dynamic resolver saat break & transit
+            loc_break, bubble_break = service.resolve_agent_bubble_and_location("JOKOWI", "break")
+            self.assertEqual(loc_break["room_id"], "cafeteria")
+            self.assertIn("kopi homelab", bubble_break)
+
+            loc_transit, bubble_transit = service.resolve_agent_bubble_and_location("JOKOWI", "walking_to_break")
+            self.assertEqual(loc_transit["room_id"], "hallway")
+            self.assertFalse(loc_transit["is_seated"])
+            self.assertIn("Menuju Kantin", bubble_transit)
+
+            loc_return, bubble_return = service.resolve_agent_bubble_and_location("JOKOWI", "walking_to_desk")
+            self.assertEqual(loc_return["room_id"], "hallway")
+            self.assertIn("Kembali ke meja", bubble_return)
+
+    def test_api_v1_agents_endpoint(self):
+        """Memverifikasi endpoint /api/v1/agents dan /api/agents mengembalikan data agen tersinkron."""
+        import asyncio
+        async def run_test():
+            res = await app.api_get_agents(user=self.test_user)
+            self.assertIn("JOKOWI", res)
+            self.assertIn("location", res["JOKOWI"])
+            self.assertIn("bubble_text", res["JOKOWI"])
+            self.assertIn("PRABOWO", res)
+            self.assertIn("GIBRAN", res)
+            self.assertIn("LUHUT", res)
+            self.assertIn("HABIBIE", res)
+        asyncio.run(run_test())
+
 
 if __name__ == "__main__":
     unittest.main()

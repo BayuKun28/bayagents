@@ -75,8 +75,12 @@ async def get_favicon():
 # AUTHENTICATION HELPERS & MIDDLEWARE
 # ==========================================================
 def get_authenticated_user(request: Request) -> Optional[str]:
-    """Memverifikasi cookie session."""
+    """Memverifikasi cookie session atau Authorization header Bearer."""
     token = request.cookies.get(COOKIE_NAME)
+    if not token:
+        auth_hdr = request.headers.get("Authorization") or request.headers.get("authorization")
+        if auth_hdr and auth_hdr.startswith("Bearer "):
+            token = auth_hdr[7:].strip()
     if not token:
         return None
     try:
@@ -253,8 +257,9 @@ async def api_get_kanban(user: str = Depends(require_auth)):
     return service.get_kanban_data()
 
 @app.get("/api/agents")
+@app.get("/api/v1/agents")
 async def api_get_agents(user: str = Depends(require_auth)):
-    """Mengambil status 4 agen AI."""
+    """Mengambil status 5 agen AI dengan location context & bubble text."""
     return service.get_agents_status()
 
 @app.get("/api/system")

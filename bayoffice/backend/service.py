@@ -8,7 +8,7 @@ import subprocess
 import threading
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from dotenv import load_dotenv
 
 from storage import atomic_read_json, atomic_write_json, locked_json_transaction
@@ -146,79 +146,221 @@ def get_system_metrics(force_refresh: bool = False) -> Dict[str, Any]:
 
     return metrics
 
+# ==========================================================
+# AGENT CONFIGURATIONS & CONTEXT-AWARE RESOLVER
+# ==========================================================
+AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
+    "LUHUT": {
+        "name": "LUHUT",
+        "role": "Lead Orchestrator & DevOps",
+        "work_room": "executive_suite",
+        "work_sub_area": "workstation",
+        "idle_bubble": "Memantau sprint dari Executive Suite 📋",
+        "break_room": "executive_suite",
+        "break_sub_area": "lounge_sofa",
+        "break_bubble": "Executive review & santai sejenak 📋",
+        "sleep_room": "game_room",
+        "sleep_sub_area": "lounge_sofa",
+        "sleep_bubble": "Hibernasi (hemat RAM) 💤",
+        "desk": {"x": 220, "y": 125, "color": "#FF6B6B"}
+    },
+    "HABIBIE": {
+        "name": "HABIBIE",
+        "role": "Chief Architect",
+        "work_room": "architect_studio",
+        "work_sub_area": "workstation",
+        "idle_bubble": "Menganalisis arsitektur sistem & performa 🏛️",
+        "break_room": "architect_studio",
+        "break_sub_area": "workstation",
+        "break_bubble": "Merancang arsitektur N-250 Gatotkaca ✈️",
+        "sleep_room": "architect_studio",
+        "sleep_sub_area": "workstation",
+        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "desk": {"x": 345, "y": 88, "color": "#8B5CF6"}
+    },
+    "JOKOWI": {
+        "name": "JOKOWI",
+        "role": "Backend Engineer",
+        "work_room": "engineering_bay",
+        "work_sub_area": "workstation",
+        "idle_bubble": "Backend Bay siap. API & DB optimal ⚡",
+        "break_room": "cafeteria",
+        "break_sub_area": "bar_counter",
+        "break_bubble": "Rehat sejenak menikmati kopi homelab ☕",
+        "sleep_room": "game_room",
+        "sleep_sub_area": "lounge_sofa",
+        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "desk": {"x": 540, "y": 125, "color": "#45B7D1"}
+    },
+    "PRABOWO": {
+        "name": "PRABOWO",
+        "role": "Frontend Engineer",
+        "work_room": "engineering_bay",
+        "work_sub_area": "workstation",
+        "idle_bubble": "Frontend Bay siap. UI/UX responsif 🎨",
+        "break_room": "game_room",
+        "break_sub_area": "arcade",
+        "break_bubble": "Mencoba rekor baru di Pac-Man arcade 🕹️",
+        "sleep_room": "game_room",
+        "sleep_sub_area": "beanbag",
+        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "desk": {"x": 700, "y": 125, "color": "#FFA07A"}
+    },
+    "GIBRAN": {
+        "name": "GIBRAN",
+        "role": "QA Auditor & Security",
+        "work_room": "engineering_bay",
+        "work_sub_area": "workstation",
+        "idle_bubble": "QA Terminal siap audit & testing 🛡️",
+        "break_room": "game_room",
+        "break_sub_area": "billiard",
+        "break_bubble": "Rehat biliar trickshot & cek keamanan 🎱",
+        "sleep_room": "game_room",
+        "sleep_sub_area": "beanbag",
+        "sleep_bubble": "Standby pasif (0% CPU) 💤",
+        "desk": {"x": 860, "y": 125, "color": "#4ECDC4"}
+    }
+}
+
+def resolve_agent_bubble_and_location(
+    name: str,
+    state: str,
+    task: Optional[Dict[str, Any]] = None,
+    location_override: Optional[Dict[str, Any]] = None
+) -> Tuple[Dict[str, Any], str]:
+    """Menghitung context-aware location dan speech bubble berdasarkan state dan aktivitas agen."""
+    cfg = AGENT_CONFIGS.get(name, {
+        "work_room": "engineering_bay",
+        "work_sub_area": "workstation",
+        "idle_bubble": "Standby siap tugas.",
+        "break_room": "cafeteria",
+        "break_sub_area": "dining_table",
+        "break_bubble": "Rehat sejenak menikmati kopi homelab ☕",
+        "sleep_room": "game_room",
+        "sleep_sub_area": "lounge_sofa",
+        "sleep_bubble": "Standby pasif (0% CPU) 💤"
+    })
+
+    if location_override:
+        loc = {
+            "room_id": location_override.get("room_id", cfg["work_room"]),
+            "sub_area": location_override.get("sub_area", cfg["work_sub_area"]),
+            "is_seated": location_override.get("is_seated", True)
+        }
+    elif state == "sleeping":
+        loc = {
+            "room_id": cfg["sleep_room"],
+            "sub_area": cfg["sleep_sub_area"],
+            "is_seated": True
+        }
+    elif state in ["break", "at_break"]:
+        loc = {
+            "room_id": cfg["break_room"],
+            "sub_area": cfg["break_sub_area"],
+            "is_seated": True if cfg["break_sub_area"] in ["bar_counter", "dining_table", "lounge_sofa", "beanbag"] else False
+        }
+    elif state in ["walking_to_break", "transit_break"]:
+        loc = {
+            "room_id": "hallway",
+            "sub_area": "transit",
+            "is_seated": False
+        }
+    elif state in ["walking_to_desk", "transit_desk"]:
+        loc = {
+            "room_id": "hallway",
+            "sub_area": "transit",
+            "is_seated": False
+        }
+    else:  # idle, working, reviewing
+        loc = {
+            "room_id": cfg["work_room"],
+            "sub_area": cfg["work_sub_area"],
+            "is_seated": True
+        }
+
+    # Bubble text resolver
+    if state == "sleeping":
+        bubble = cfg["sleep_bubble"]
+    elif state == "working" and task:
+        task_id = task.get("id", "TASK")
+        task_title = str(task.get("title", ""))[:32]
+        bubble = f"Mengerjakan {task_id}: {task_title}... 🚀"
+    elif state == "reviewing" and task:
+        task_id = task.get("id", "TASK")
+        assignee = str(task.get("assignee", ""))
+        bubble = f"Audit QA {task_id} ({assignee})... 🛡️"
+    elif state in ["walking_to_break", "transit_break"]:
+        if cfg["break_room"] == "cafeteria":
+            bubble = "Menuju Kantin... ☕"
+        else:
+            bubble = "Menuju Game Room... 🎮"
+    elif state in ["walking_to_desk", "transit_desk"]:
+        bubble = "Kembali ke meja kerja... 🚶"
+    elif state in ["break", "at_break"]:
+        if loc["room_id"] == "cafeteria":
+            bubble = "Rehat sejenak menikmati kopi homelab ☕"
+        else:
+            bubble = cfg["break_bubble"]
+    else:  # idle
+        bubble = cfg["idle_bubble"]
+
+    return loc, bubble
+
 def get_agents_status() -> Dict[str, Any]:
-    """Mendapatkan status kerja, animasi, dan pesan terakhir 4 agen."""
+    """Mendapatkan status kerja, context location, dan pesan bubble kontekstual 5 agen AI."""
     k_data = get_kanban_data()
     tasks = k_data.get("tasks", [])
     sys_metrics = get_system_metrics()
-    tmux_active = sys_metrics["tmux_active"]
+    tmux_active = sys_metrics.get("tmux_active", False)
 
-    agents = {
-        "LUHUT": {
-            "name": "LUHUT",
-            "role": "Lead Orchestrator & DevOps",
-            "state": "sleeping" if not tmux_active else "idle",
+    agents: Dict[str, Any] = {}
+    for name, cfg in AGENT_CONFIGS.items():
+        initial_state = "sleeping" if (not tmux_active and name != "HABIBIE") else "idle"
+        loc, bubble = resolve_agent_bubble_and_location(name, initial_state)
+        agents[name] = {
+            "name": cfg["name"],
+            "role": cfg["role"],
+            "state": initial_state,
             "current_task": None,
-            "bubble_text": "Hibernasi (hemat RAM)." if not tmux_active else "Memantau sprint dari Executive Suite.",
-            "desk": {"x": 220, "y": 125, "color": "#FF6B6B"}
-        },
-        "GIBRAN": {
-            "name": "GIBRAN",
-            "role": "QA Auditor & Security",
-            "state": "sleeping" if not tmux_active else "idle",
-            "current_task": None,
-            "bubble_text": "Standby pasif." if not tmux_active else "Standby di kantin, siap audit QA.",
-            "desk": {"x": 860, "y": 125, "color": "#4ECDC4"}
-        },
-        "JOKOWI": {
-            "name": "JOKOWI",
-            "role": "Backend Engineer",
-            "state": "sleeping" if not tmux_active else "idle",
-            "current_task": None,
-            "bubble_text": "Standby pasif." if not tmux_active else "Santai di kantin, backend siap.",
-            "desk": {"x": 540, "y": 125, "color": "#45B7D1"}
-        },
-        "PRABOWO": {
-            "name": "PRABOWO",
-            "role": "Frontend Engineer",
-            "state": "sleeping" if not tmux_active else "idle",
-            "current_task": None,
-            "bubble_text": "Standby pasif." if not tmux_active else "Rehat di game room, frontend siap.",
-            "desk": {"x": 700, "y": 125, "color": "#FFA07A"}
-        },
-        "HABIBIE": {
-            "name": "HABIBIE",
-            "role": "Chief Architect",
-            "state": "idle",
-            "current_task": None,
-            "bubble_text": "Cinta Sejati",
-            "desk": {"x": 345, "y": 88, "color": "#8B5CF6"}
+            "bubble_text": bubble,
+            "location": loc,
+            "desk": dict(cfg["desk"])
         }
-    }
 
-    # Jika tmux aktif, cari tugas aktif di kanban
+    # Jika tmux aktif (atau untuk agen standalone), cari tugas aktif di kanban
     for t in reversed(tasks):
         if not isinstance(t, dict):
             continue
         status = str(t.get("status", "")).strip().lower()
-        assignee = str(t.get("assignee", "")).strip().upper()
-        
-        # In-Progress
+        assignee_raw = str(t.get("assignee", "")).strip().upper()
+
+        matched_agents = [name for name in agents.keys() if name in assignee_raw]
+        if not matched_agents and assignee_raw in agents:
+            matched_agents = [assignee_raw]
+
+        # In-Progress / Working
         if status in ["in-progress", "in progress", "working"]:
-            if assignee in agents and agents[assignee]["state"] != "working":
-                if tmux_active or assignee == "HABIBIE":
-                    agents[assignee]["state"] = "working"
-                    agents[assignee]["current_task"] = t
-                    agents[assignee]["bubble_text"] = f"Mengerjakan {t.get('id')}: {t.get('title', '')[:30]}..."
-        
+            for name in matched_agents:
+                if (tmux_active or name == "HABIBIE") and agents[name]["state"] != "working":
+                    agents[name]["state"] = "working"
+                    agents[name]["current_task"] = t
+                    loc, bubble = resolve_agent_bubble_and_location(name, "working", task=t)
+                    agents[name]["location"] = loc
+                    agents[name]["bubble_text"] = bubble
+
         # QA-Review
         elif status in ["qa-review", "qa review"]:
             if tmux_active and agents["GIBRAN"]["state"] != "reviewing":
                 agents["GIBRAN"]["state"] = "reviewing"
                 agents["GIBRAN"]["current_task"] = t
-                agents["GIBRAN"]["bubble_text"] = f"Audit QA {t.get('id')} ({assignee})..."
+                loc, bubble = resolve_agent_bubble_and_location("GIBRAN", "reviewing", task=t)
+                agents["GIBRAN"]["location"] = loc
+                agents["GIBRAN"]["bubble_text"] = bubble
 
     return agents
+
+# Alias untuk standardisasi penamaan antar modul backend & frontend
+get_agent_states = get_agents_status
 
 def register_project_if_new(project_id: str, project_name: str = None) -> None:
     """Mendaftarkan proyek baru ke projects.json secara otomatis jika belum ada."""

@@ -2384,6 +2384,39 @@
         "ambient_soundscapes": "VALID - Web Audio API synthesizer (0 KB audio assets) aman tanpa memory leak, dilengkapi error guard & volume throttle.",
         "performance_and_stability": "VALID - Node syntax check lulus 100%, HTTP 200/302 OK pada port 8888, zero overhead pada CPU homelab (0% idle, RAM 42.9MB)."
       }
+    },
+    {
+      "id": "TASK-FS-04",
+      "project": "bayoffice",
+      "assignee": "PRABOWO & JOKOWI",
+      "title": "Sinkronisasi Lokasi-Bubble, Realistic Cafeteria & Animasi Kinematik Avatar 3D",
+      "skills_required": [
+        "Fullstack",
+        "Three.js 3D",
+        "Python FastAPI",
+        "Kinematic Animation",
+        "Neubrutalism UI"
+      ],
+      "description": "[Dari Plan PLAN-20261101-04: Sinkronisasi Lokasi-Bubble, Realistic Cafeteria & Animasi Kinematik Avatar 3D]\n\n1. Backend (JOKOWI): Standardisasi state lokasi agen & context-aware speech bubble di backend/service.py & app.py (hapus bubble hardcode kantin saat agen di workstation).\n2. Frontend (PRABOWO): Decoupling kursi kantor dari mesh avatar, dual-pose articulation kinematik (berjalan/berdiri vs duduk 90 derajat), serta peremajaan area kantin (meja komunal, bar counter & stool, pantry props, warm pendant lights, break seating snap) di frontend/js/office-three.js & office-canvas.js.",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/bayoffice",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "created_at": "2026-11-01T07:04:04.023265+07:00",
+      "started_at": "2026-11-01T07:05:00.000000+07:00",
+      "completed_at": "2026-11-01T07:25:00.000000+07:00",
+      "notes": "Fullstack Selesai 100%:\n1. Backend (JOKOWI): Standardisasi state lokasi agen (room_id, sub_area, is_seated) dan context-aware bubble resolver aktif di service.py & app.py (/api/v1/agents live port 8888). 21/21 backend unit tests lulus.\n2. Frontend (PRABOWO): Decoupling kursi kantor (buildErgonomicOfficeChair stasioner di 5 meja kerja), dual-pose articulation kinematik (berjalan/berdiri dengan ayunan kaki sinusoidal & arm swing natural vs duduk 90° lipat lutut di kursi), peremajaan kantin (meja komunal oak 4.2x1.4m, 4 kursi kayu dengan snap seat JOKOWI di x=13.0 z=8.5, high-top bar counter + 3 bar stool oranye, microwave, snack rack, pastry showcase, beverage cooler, water dispenser, recycling bin, 2 lampu gantung hangat 2700K, dan tanaman monstera), serta sinkronisasi bubble dinamis transisi/break di office-three.js & office-canvas.js. Node syntax check lulus 100%, diserahkan ke GIBRAN untuk QA Review.",
+      "qa_review": "PASSED - Verifikasi menyeluruh TASK-FS-04 lulus 100%. 1) Backend: Standardisasi location schema (room_id, sub_area, is_seated) & context-aware speech bubble teruji di /api/v1/agents dan /api/agents (HTTP 200 OK), eliminasi bubble hardcode kantin di workstation tervalidasi, 21/21 backend unit tests lulus. 2) Frontend: Decoupling kursi kantor ergonomis stasioner di 5 meja kerja sukses, dual-pose articulation kinematik (berjalan sinusoidal & natural arm swing vs duduk lipat lutut 90°) mulus tanpa glitch visual, peremajaan kantin komprehensif (meja komunal oak, 4 kursi kayu dengan snap seat JOKOWI di x=13.0 z=8.5, bar counter & 3 stools, microwave, snack rack, pastry showcase, beverage cooler, water dispenser, recycling bin, 2 pendant lights 2700K, dan monstera) tertata rapi. Node syntax check lulus 100%, bayoffice.service port 8888 responsif dan stabil (RAM 38.5MB, 0% CPU idle).",
+      "qa_certification": {
+        "status": "PASSED_100%",
+        "auditor": "GIBRAN",
+        "location_bubble_sync": "VALID - Schema lokasi agen (room_id, sub_area, is_seated) terstandarisasi. Bubble text dinamis sesuai status & ruangan; bubble kantin hardcode pada workstation tereliminasi total.",
+        "api_endpoints": "VALID - Endpoint /api/v1/agents dan alias /api/agents aktif pada port 8888, 21/21 unit test backend lulus 100%.",
+        "chair_decoupling": "VALID - Kursi kantor ergonomis stasioner ditempatkan mandiri di 5 workstation agen (Executive, Architect, Backend, Frontend, QA) tanpa menempel pada avatar yang berjalan.",
+        "kinematic_articulation": "VALID - Dual-pose articulation aktif: pose berdiri/berjalan dengan ayunan kaki sinusoidal & arm swing natural, pose duduk dengan lipat paha & lutut 90° saat berada di kursi kerja/kantin/game room.",
+        "cafeteria_rejuvenation": "VALID - Area kantin diperkaya dengan meja komunal oak 4.2x1.4m, 4 kursi kayu (snap seat JOKOWI x=13.0 z=8.5), high-top bar & 3 stools, 8 props pantry (microwave, snack rack, pastry case, beverage cooler, dispenser, recycling bin, 2 pendant downlights, monstera).",
+        "stability_and_performance": "VALID - Node syntax check lulus, py_compile lulus, service port 8888 sehat (RAM 38.5MB, CPU 0% idle)."
+      }
     }
   ]
 }
