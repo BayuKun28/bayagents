@@ -2582,6 +2582,40 @@
         "inline_fullscreen_header": "VALID - Tombol Exit Fullscreen (#exitFullscreenBtn) terintegrasi inline di header controls 3D berbalut Neubrutalism neo-btn-danger, zero overlapping.",
         "code_and_test_integrity": "VALID - JavaScript syntax 100% clean, 22/22 unit tests passed, HTTP 200 OK di port 8888, dan konsisten dengan tema Neubrutalism."
       }
+    },
+    {
+      "id": "TASK-FS-06",
+      "project": "bayoffice",
+      "assignee": "JOKOWI / PRABOWO",
+      "title": "Sinkronisasi Status Drafting 3D & Ambient Roaming Hibernasi Agen",
+      "skills_required": [
+        "Fullstack",
+        "FastAPI Backend",
+        "Three.js 3D",
+        "Vanilla JS"
+      ],
+      "description": "[Dari Plan PLAN-20261102-01: Sinkronisasi Status Drafting 3D & Ambient Roaming Hibernasi Agen]\n\n1. Backend (JOKOWI):\n   - Di backend/service.py (get_agents_status()): Cek plans_manager.get_plan_generation_status(). Jika generating, set agents['HABIBIE']['state'] = 'working', location = architect_studio.drafting_desk, dan speech bubble dinamis drafting plan.\n   - Tambahkan destinasi santai hibernasi di AGENT_CONFIGS (hibernation_roam_targets: coffee_corner, billiard/arcade, n250_display).\n\n2. Frontend (PRABOWO):\n   - Di frontend/js/office-plans.js: Optimistic locking saat submit plan (set avatar Habibie langsung working di meja kerja, reset activePath, bubble drafting).\n   - Di frontend/js/office-three.js: Guard meja kerja saat working (freeze nextSocialTimer, auto walk back jika di luar meja); Hibernation Ambient Roaming Engine (siklus peregangan bertahap saat sleeping dengan staggered timer 90-180s, bubble santai, roam ke titik hibernasi, dan kembali santai ke sofa).",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/bayoffice",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "created_at": "2026-11-02T05:35:35.226684+07:00",
+      "started_at": "2026-11-02T09:05:00+07:00",
+      "notes": "Fullstack Selesai 100%:\n1. Backend (JOKOWI): Injeksi status background drafting HABIBIE (state: working, location: architect_studio.drafting_desk, dynamic speech bubble) dan penambahan hibernation_roam_targets pada ke-5 agen di AGENT_CONFIGS & service.py. 23/23 unit tests lulus.\n2. Frontend (PRABOWO):\n   - office-plans.js: Optimistic locking saat submit plan (set avatar HABIBIE langsung working di drafting desk, reset activePath, bubble drafting seketika) serta sinkronisasi visual saat background generating.\n   - office-three.js: Guard meja kerja saat working (freeze nextSocialTimer, auto walk back via calculateReturnToDeskPath jika di luar meja, guard khusus meja studio HABIBIE).\n   - office-three.js: Hibernation Ambient Roaming Engine (properti otonom agen sleeping hibernateStatus, nextHibernateRoamTimer, hibernationRoamTargets untuk 5 agen, transisi roaming bertahap ke billiard/arcade/kantin/etalase N-250, kinematic leg/arm swing & dynamic ambient bubbles, mutex 1 agen roaming pada satu waktu hemat CPU homelab, serta interupsi mulus saat ada tugas baru).\n3. Verifikasi: Syntax JS (node -c) 100% valid, 23/23 backend unittest lulus.",
+      "backend_completed_at": "2026-11-02T09:12:00+07:00",
+      "frontend_completed_at": "2026-11-02T09:16:30+07:00",
+      "qa_review": "PASSED - Verifikasi 100% lulus: 1) Backend: Injeksi status drafting HABIBIE (working di drafting_desk dengan bubble dinamis & DRAFTING-PLAN task) teruji, payload hibernation_roam_targets aktif pada ke-5 agen, 23/23 unittest lulus. 2) Frontend: Optimistic locking di office-plans.js sinkron seketika saat submit & polling generating, guard meja kerja di office-three.js membekukan social timer dan auto-return to desk saat working, dan Hibernation Ambient Roaming Engine berjalan otonom dengan mutex 1 roamer hemat CPU, rotasi kinematic, serta interupsi mulus. Syntax JS 100% valid dan live di port 8888.",
+      "qa_certification": {
+        "status": "PASSED_100%",
+        "auditor": "GIBRAN",
+        "backend_drafting_sync": "VALID - HABIBIE state dipaksa 'working' di architect_studio.drafting_desk saat background plan generating.",
+        "backend_hibernation_targets": "VALID - Konfigurasi dan resolver hibernation_roam_targets aktif pada ke-5 agen (LUHUT, HABIBIE, JOKOWI, PRABOWO, GIBRAN).",
+        "backend_tests": "VALID - 23/23 unit tests pass (0 errors).",
+        "frontend_optimistic_locking": "VALID - office-plans.js mengupdate avatar HABIBIE secara instan saat form plan disubmit dan sinkron saat status generating.",
+        "frontend_work_guard": "VALID - office-three.js membekukan nextSocialTimer dan mencegah avatar working keluyuran dari meja kerja.",
+        "frontend_ambient_roaming": "VALID - Hibernation Ambient Roaming Engine otonom dengan staggered interval 90-180s, kinematic animation, dynamic bubbles, dan mutex 1 roamer hemat CPU homelab.",
+        "live_service": "VALID - bayoffice.service aktif di port 8888, file JS terdistribusi tanpa error."
+      }
     }
   ]
 }

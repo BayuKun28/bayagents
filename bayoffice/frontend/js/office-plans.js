@@ -582,6 +582,24 @@ window.OfficePlans = (function () {
       activeDraftingJob = job;
       showDraftingBanner(job);
       if (!draftingPollInterval) startDraftingMonitoring();
+
+      // Sinkronisasi avatar HABIBIE di 3D Live Office saat status generating
+      if (window.officeThree && window.officeThree.agents && window.officeThree.agents['HABIBIE']) {
+        const ag = window.officeThree.agents['HABIBIE'];
+        ag.state = 'working';
+        ag.socialStatus = 'at_desk';
+        ag.activePath = null;
+        ag.targetX = ag.workPos.x;
+        ag.targetZ = ag.workPos.z;
+        ag.targetY = ag.workPos.y || 1.25;
+        const rawIdea = job.idea || '';
+        const draftingBubble = rawIdea ? `Merancang blueprint: ${rawIdea.slice(0, 32)}... 📐` : 'Merancang blueprint arsitektur... 📐';
+        ag.bubble = draftingBubble;
+        ag.deskBubble = draftingBubble;
+        if (typeof window.officeThree.updateAgentBubble === 'function') {
+          window.officeThree.updateAgentBubble('HABIBIE', draftingBubble);
+        }
+      }
     } else if (job.status === 'completed') {
       if (activeDraftingJob || job.result) {
         const completedJob = Object.assign({}, job);
@@ -793,6 +811,23 @@ window.OfficePlans = (function () {
         // 1. Segera tutup formulir agar user dapat beralih ke Kanban / Live Office
         form.reset();
         hideStudioNewPlanForm();
+
+        // Optimistic locking avatar HABIBIE di 3D Live Office (Drafting Desk)
+        if (window.officeThree && window.officeThree.agents && window.officeThree.agents['HABIBIE']) {
+          const ag = window.officeThree.agents['HABIBIE'];
+          ag.state = 'working';
+          ag.socialStatus = 'at_desk';
+          ag.activePath = null;
+          ag.targetX = ag.workPos.x;
+          ag.targetZ = ag.workPos.z;
+          ag.targetY = ag.workPos.y || 1.25;
+          const draftingBubble = `Merancang blueprint arsitektur: ${idea.slice(0, 32)}... 📐`;
+          ag.bubble = draftingBubble;
+          ag.deskBubble = draftingBubble;
+          if (typeof window.officeThree.updateAgentBubble === 'function') {
+            window.officeThree.updateAgentBubble('HABIBIE', draftingBubble);
+          }
+        }
 
         // 2. Tampilkan status sedang dibuat di bagian atas
         showDraftingBanner({

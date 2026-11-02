@@ -27,8 +27,28 @@ export PATH="$BAY_HOME/.gemini/antigravity-cli/bin:$BAY_HOME/.local/bin:/usr/loc
 cd "$WORK_DIR"
 
 INITIAL_TASK="$2"
-# Bersihkan newline dan tanda kutip agar aman dari error sintaks shell
-CLEAN_TASK=$(echo "$INITIAL_TASK" | tr '\n\r"'"'" '    ' | sed 's/  */ /g' | xargs)
+
+# Jika tidak ada argumen tugas, periksa apakah ada tugas To-Do yang tertunda di kanban.json
+if [ -z "$INITIAL_TASK" ] && [ -f "$BAYAGENTS_DIR/data/kanban.json" ]; then
+    PENDING_TASK=$(python3 -c "
+import json
+try:
+    with open('$BAYAGENTS_DIR/data/kanban.json') as f:
+        d = json.load(f)
+    for t in d.get('tasks', []):
+        if t.get('status') == 'To-Do':
+            print(f\"{t.get('id')} [Proyek: {t.get('project', 'general')}] ({t.get('title', '')[:60]})\")
+            break
+except Exception:
+    pass
+" 2>/dev/null)
+    if [ -n "$PENDING_TASK" ]; then
+        INITIAL_TASK="$PENDING_TASK"
+    fi
+fi
+
+# Bersihkan newline, backtick, dan tanda kutip agar aman dari error sintaks shell
+CLEAN_TASK=$(echo "$INITIAL_TASK" | tr '\n\r"'"'"'\`$' '     ' | sed 's/  */ /g' | cut -c 1-150 | xargs 2>/dev/null)
 
 if [ -n "$CLEAN_TASK" ]; then
     LUHUT_PROMPT="Nama kamu LUHUT (DevOps & Orchestrator). Ada tugas baru dari Mas Bay: '$CLEAN_TASK'. Baca $CONFIGS_DIR/luhut.yaml. ATURAN FAST-TRACK: Segera catat/update ke kanban.json, delegasikan ke PRABOWO (Frontend: $SESSION:0.3) atau JOKOWI (Backend: $SESSION:0.2) via tmux send-keys, laporkan ke Telegram via python3 $TELEBOT_DIR/bot.py '[LUHUT]: ...', lalu MASUK STANDBY PASIF. DILARANG audit kode aplikasi atau loop checking!"

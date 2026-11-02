@@ -70,6 +70,7 @@ class OfficeThree {
     this.hoveredObject = null;
     this.onAgentClick = null;
     this.currentFocusAgent = null;
+    this.activeHibernateRoamer = null; // Mutex: Hanya 1 agen hibernasi yang roaming dalam satu waktu (hemat CPU)
 
     // Atmosphere & 5 Time Categories
     this.ambientLight = null;
@@ -3564,6 +3565,63 @@ class OfficeThree {
         activePath: null,
         nextSocialTimer: 30 + (0 * 18) + Math.random() * 5,
         breakDuration: 0,
+        hibernateStatus: 'resting',
+        nextHibernateRoamTimer: 90 + (0 * 22) + Math.random() * 10,
+        hibernateDuration: 0,
+        sleepBubble: 'Hibernasi di Lounge Sofa Barat (hemat RAM) 💤',
+        hibernationRoamTargets: [
+          {
+            id: 'game_room_billiard',
+            name: 'Billiard Table',
+            pos: { x: -8.0, z: 8.5, y: 1.15 },
+            bubble: 'Meluruskan kaki ke meja biliar... 🚶',
+            atBubble: 'Mengamati meja biliar & istirahat sejenak... 🎱',
+            waypointsToRoam: [
+              { x: -11.0, z: 8.5 },
+              { x: -8.0, z: 8.5 }
+            ],
+            waypointsToSleep: [
+              { x: -11.0, z: 8.5 },
+              { x: -15.3, z: 8.9 }
+            ]
+          },
+          {
+            id: 'game_room_arcade',
+            name: 'Arcade & Vending',
+            pos: { x: -17.0, z: 5.5, y: 1.15 },
+            bubble: 'Mengambil air minum di dispenser... 💧',
+            atBubble: 'Rehat sejenak di dekat arcade & vending... 🕹️',
+            waypointsToRoam: [
+              { x: -15.0, z: 7.0 },
+              { x: -17.0, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: -15.0, z: 7.0 },
+              { x: -15.3, z: 8.9 }
+            ]
+          },
+          {
+            id: 'cafeteria_coffee',
+            name: 'Cafeteria Coffee Corner',
+            pos: { x: 10.5, z: 5.5, y: 1.15 },
+            bubble: 'Meluruskan kaki ke kantin homelab... 🚶',
+            atBubble: 'Menikmati aroma kopi homelab... ☕',
+            waypointsToRoam: [
+              { x: -10.0, z: 8.0 },
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -10.0, z: 8.0 },
+              { x: -15.3, z: 8.9 }
+            ]
+          }
+        ],
         lastTypeSound: 0,
         lastAmbientSound: 0
       },
@@ -3652,6 +3710,69 @@ class OfficeThree {
         activePath: null,
         nextSocialTimer: 30 + (1 * 18) + Math.random() * 5,
         breakDuration: 0,
+        hibernateStatus: 'resting',
+        nextHibernateRoamTimer: 90 + (1 * 22) + Math.random() * 10,
+        hibernateDuration: 0,
+        sleepBubble: 'Merenungkan blueprint arsitektur (0% CPU) 🏛️💤',
+        hibernationRoamTargets: [
+          {
+            id: 'studio_n250_display',
+            name: 'Etalase Miniatur N-250',
+            pos: { x: -8.0, z: -4.5, y: 1.25 },
+            bubble: 'Melihat etalase miniatur N-250 Gatotkaca... ✈️',
+            atBubble: 'Mengagumi aerodinamika sayap N-250... ✈️',
+            waypointsToRoam: [
+              { x: -5.5, z: -3.8 },
+              { x: -8.0, z: -4.5 }
+            ],
+            waypointsToSleep: [
+              { x: -5.5, z: -3.8 },
+              { x: -5.5, z: -2.8 }
+            ]
+          },
+          {
+            id: 'cafeteria_espresso',
+            name: 'Cafeteria Espresso Bar',
+            pos: { x: 10.5, z: 5.5, y: 1.15 },
+            bubble: 'Mengambil air minum di dispenser kantin... 💧',
+            atBubble: 'Menikmati aroma kopi homelab... ☕',
+            waypointsToRoam: [
+              { x: -5.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: -5.5, z: -3.5 },
+              { x: -5.5, z: -2.8 }
+            ]
+          },
+          {
+            id: 'game_room_lounge',
+            name: 'Game Room Lounge',
+            pos: { x: -14.0, z: 8.9, y: 1.15 },
+            bubble: 'Meluruskan kaki ke Game Lounge... 🚶',
+            atBubble: 'Mencari inspirasi arsitektur di Game Lounge 🕹️',
+            waypointsToRoam: [
+              { x: -5.5, z: -3.5 },
+              { x: 0.5, z: -1.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -14.0, z: 8.9 }
+            ],
+            waypointsToSleep: [
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 0.5, z: -1.2 },
+              { x: -5.5, z: -3.5 },
+              { x: -5.5, z: -2.8 }
+            ]
+          }
+        ],
         lastTypeSound: 0,
         lastAmbientSound: 0
       },
@@ -3735,6 +3856,63 @@ class OfficeThree {
         activePath: null,
         nextSocialTimer: 30 + (2 * 18) + Math.random() * 5,
         breakDuration: 0,
+        hibernateStatus: 'resting',
+        nextHibernateRoamTimer: 90 + (2 * 22) + Math.random() * 10,
+        hibernateDuration: 0,
+        sleepBubble: 'Hibernasi di Lounge Sofa Timur (hemat RAM) 💤',
+        hibernationRoamTargets: [
+          {
+            id: 'cafeteria_coffee',
+            name: 'Cafeteria Coffee Corner',
+            pos: { x: 10.5, z: 5.5, y: 1.15 },
+            bubble: 'Mengambil air minum di dispenser... 💧',
+            atBubble: 'Menikmati aroma kopi homelab... ☕',
+            waypointsToRoam: [
+              { x: -10.0, z: 8.0 },
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -10.0, z: 8.0 },
+              { x: -12.7, z: 8.9 }
+            ]
+          },
+          {
+            id: 'game_room_billiard',
+            name: 'Billiard Table',
+            pos: { x: -8.0, z: 8.5, y: 1.15 },
+            bubble: 'Meluruskan kaki ke meja biliar... 🚶',
+            atBubble: 'Mengamati meja biliar santai... 🎱',
+            waypointsToRoam: [
+              { x: -10.0, z: 8.5 },
+              { x: -8.0, z: 8.5 }
+            ],
+            waypointsToSleep: [
+              { x: -10.0, z: 8.5 },
+              { x: -12.7, z: 8.9 }
+            ]
+          },
+          {
+            id: 'game_room_arcade',
+            name: 'Arcade Cabinet',
+            pos: { x: -17.0, z: 5.5, y: 1.15 },
+            bubble: 'Meluruskan kaki sejenak... 🚶',
+            atBubble: 'Melihat high score di mesin arcade... 🕹️',
+            waypointsToRoam: [
+              { x: -14.0, z: 7.0 },
+              { x: -17.0, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: -14.0, z: 7.0 },
+              { x: -12.7, z: 8.9 }
+            ]
+          }
+        ],
         lastTypeSound: 0,
         lastAmbientSound: 0
       },
@@ -3810,6 +3988,65 @@ class OfficeThree {
         activePath: null,
         nextSocialTimer: 30 + (3 * 18) + Math.random() * 5,
         breakDuration: 0,
+        hibernateStatus: 'resting',
+        nextHibernateRoamTimer: 90 + (3 * 22) + Math.random() * 10,
+        hibernateDuration: 0,
+        sleepBubble: 'Hibernasi di Beanbag Oranye Game Room (hemat RAM) 💤',
+        hibernationRoamTargets: [
+          {
+            id: 'game_room_arcade',
+            name: 'Arcade Cabinet',
+            pos: { x: -17.0, z: 5.5, y: 1.15 },
+            bubble: 'Meluruskan kaki ke arcade corner... 🚶',
+            atBubble: 'Melihat high score di mesin arcade... 👾',
+            waypointsToRoam: [
+              { x: -10.0, z: 8.0 },
+              { x: -14.0, z: 7.0 },
+              { x: -17.0, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: -14.0, z: 7.0 },
+              { x: -10.0, z: 8.0 },
+              { x: -7.5, z: 11.2 }
+            ]
+          },
+          {
+            id: 'cafeteria_coffee',
+            name: 'Cafeteria Coffee Corner',
+            pos: { x: 10.5, z: 5.5, y: 1.15 },
+            bubble: 'Mengambil air minum di dispenser... 💧',
+            atBubble: 'Menikmati aroma kopi homelab... ☕',
+            waypointsToRoam: [
+              { x: -6.0, z: 8.0 },
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -6.0, z: 8.0 },
+              { x: -7.5, z: 11.2 }
+            ]
+          },
+          {
+            id: 'game_room_billiard',
+            name: 'Billiard Table',
+            pos: { x: -8.0, z: 8.5, y: 1.15 },
+            bubble: 'Meluruskan kaki sejenak... 🚶',
+            atBubble: 'Mengamati meja biliar santai... 🎱',
+            waypointsToRoam: [
+              { x: -7.0, z: 9.5 },
+              { x: -8.0, z: 8.5 }
+            ],
+            waypointsToSleep: [
+              { x: -7.0, z: 9.5 },
+              { x: -7.5, z: 11.2 }
+            ]
+          }
+        ],
         lastTypeSound: 0,
         lastAmbientSound: 0
       },
@@ -3885,6 +4122,65 @@ class OfficeThree {
         activePath: null,
         nextSocialTimer: 30 + (4 * 18) + Math.random() * 5,
         breakDuration: 0,
+        hibernateStatus: 'resting',
+        nextHibernateRoamTimer: 90 + (4 * 22) + Math.random() * 10,
+        hibernateDuration: 0,
+        sleepBubble: 'Hibernasi di Beanbag Toska Game Room (hemat RAM) 💤',
+        hibernationRoamTargets: [
+          {
+            id: 'game_room_billiard',
+            name: 'Billiard Table',
+            pos: { x: -8.0, z: 8.5, y: 1.15 },
+            bubble: 'Meluruskan kaki ke meja biliar... 🚶',
+            atBubble: 'Mengamati meja biliar santai... 🎱',
+            waypointsToRoam: [
+              { x: -6.0, z: 9.5 },
+              { x: -8.0, z: 8.5 }
+            ],
+            waypointsToSleep: [
+              { x: -6.0, z: 9.5 },
+              { x: -4.5, z: 11.2 }
+            ]
+          },
+          {
+            id: 'cafeteria_coffee',
+            name: 'Cafeteria Coffee Corner',
+            pos: { x: 10.5, z: 5.5, y: 1.15 },
+            bubble: 'Mengambil air minum di dispenser... 💧',
+            atBubble: 'Menikmati aroma kopi homelab... ☕',
+            waypointsToRoam: [
+              { x: -6.0, z: 8.0 },
+              { x: -6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: 6.0, z: 2.2 },
+              { x: 10.5, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: 6.0, z: 2.2 },
+              { x: 0.5, z: 1.2 },
+              { x: -6.0, z: 2.2 },
+              { x: -6.0, z: 8.0 },
+              { x: -4.5, z: 11.2 }
+            ]
+          },
+          {
+            id: 'game_room_arcade',
+            name: 'Arcade & Vending',
+            pos: { x: -17.0, z: 5.5, y: 1.15 },
+            bubble: 'Meluruskan kaki sejenak... 🚶',
+            atBubble: 'Melihat high score di mesin arcade... 🕹️',
+            waypointsToRoam: [
+              { x: -10.0, z: 8.0 },
+              { x: -14.0, z: 7.0 },
+              { x: -17.0, z: 5.5 }
+            ],
+            waypointsToSleep: [
+              { x: -14.0, z: 7.0 },
+              { x: -10.0, z: 8.0 },
+              { x: -4.5, z: 11.2 }
+            ]
+          }
+        ],
         lastTypeSound: 0,
         lastAmbientSound: 0
       }
@@ -4294,6 +4590,63 @@ class OfficeThree {
     return baseTime + (agentIndex * 18) + (Math.random() * 5);
   }
 
+  getStaggeredHibernateInterval(agentName, baseTime = 90) {
+    const order = ['LUHUT', 'HABIBIE', 'JOKOWI', 'PRABOWO', 'GIBRAN'];
+    const idx = order.indexOf(agentName);
+    const agentIndex = idx >= 0 ? idx : 0;
+    return baseTime + (agentIndex * 22) + (Math.random() * 10);
+  }
+
+  chooseAgentHibernateRoamDestination(ag) {
+    if (!ag || !ag.hibernationRoamTargets || ag.hibernationRoamTargets.length === 0) return;
+    const targets = ag.hibernationRoamTargets;
+    const chosen = targets[Math.floor(Math.random() * targets.length)];
+    ag.currentRoamDest = chosen;
+  }
+
+  calculateReturnToDeskPath(ag, currentPos) {
+    const px = currentPos ? currentPos.x : ag.workPos.x;
+    const pz = currentPos ? currentPos.z : ag.workPos.z;
+    const path = [];
+
+    // Jika berada di sayap selatan (Game Room atau Kantin: z > 3.0)
+    if (pz > 3.0) {
+      if (px > 3.0) {
+        // Dari Kantin keluar ke koridor tengah
+        path.push({ x: 6.0, z: 2.2 });
+      } else {
+        // Dari Game Room keluar ke koridor tengah
+        path.push({ x: -6.0, z: 2.2 });
+      }
+      path.push({ x: 0.5, z: 1.2 });
+      path.push({ x: 0.5, z: -1.2 });
+    }
+
+    // Aisle workstation tujuan di sayap utara
+    if (ag.name === 'LUHUT') {
+      if (path.length > 0) path.push({ x: -15.5, z: -2.0 });
+      path.push({ x: -15.5, z: -4.0 });
+      path.push({ x: -15.5, z: -6.5 });
+    } else if (ag.name === 'HABIBIE') {
+      if (path.length > 0) path.push({ x: -5.5, z: -3.5 });
+      path.push({ x: -5.5, z: -4.0 });
+      path.push({ x: -5.5, z: -6.5 });
+    } else if (ag.name === 'JOKOWI') {
+      path.push({ x: 3.5, z: -3.5 });
+      path.push({ x: 3.5, z: -6.5 });
+    } else if (ag.name === 'PRABOWO') {
+      path.push({ x: 11.5, z: -3.5 });
+      path.push({ x: 11.5, z: -6.5 });
+    } else if (ag.name === 'GIBRAN') {
+      path.push({ x: 19.5, z: -3.5 });
+      path.push({ x: 19.5, z: -6.5 });
+    } else {
+      path.push({ x: ag.workPos.x, z: ag.workPos.z });
+    }
+
+    return path;
+  }
+
   applySeparationVectorLogic() {
     const agentNames = Object.keys(this.agents);
     const repulsionRadius = 1.4;
@@ -4576,28 +4929,72 @@ class OfficeThree {
             ag.bubble = data.bubble_text;
             ag.deskBubble = data.bubble_text;
           }
-          if (ag.socialStatus !== 'at_desk' && ag.socialStatus !== 'walking_to_desk') {
-            // Abort break and path directly back to desk
-            ag.socialStatus = 'walking_to_desk';
-            ag.activePath = (ag.waypointsToDesk && ag.waypointsToDesk.length) ? ag.waypointsToDesk.slice() : null;
-            this.updateAgentBubble(name, 'Kembali ke meja kerja... 🚶');
-          } else if (ag.socialStatus === 'at_desk') {
+          // Freeze nextSocialTimer so agent stays focused at desk
+          ag.nextSocialTimer = (performance.now() * 0.001) + this.getStaggeredSocialInterval(name, 35);
+
+          // Release hibernation roam lock if this agent was roaming
+          if (this.activeHibernateRoamer === name) {
+            this.activeHibernateRoamer = null;
+          }
+          ag.hibernateStatus = 'resting';
+
+          // Guard meja kerja: jika sedang di luar meja atau sedang istirahat
+          if (ag.socialStatus !== 'at_desk') {
+            if (ag.socialStatus === 'walking_to_desk' && ag.activePath && ag.activePath.length > 0) {
+              // Sudah dalam perjalanan pulang ke meja kerja, lanjutkan
+            } else {
+              ag.socialStatus = 'walking_to_desk';
+              const curPos = this.agentMeshes[name] ? this.agentMeshes[name].position : ag.workPos;
+              ag.activePath = this.calculateReturnToDeskPath(ag, curPos);
+              this.updateAgentBubble(name, 'Kembali ke meja kerja... 🚶');
+            }
+          } else {
+            // Sudah di meja kerja
             this.updateAgentBubble(name, ag.bubble);
           }
+
+          // Guard khusus HABIBIE saat drafting / working: pastikan tepat di meja arsitek
+          if (name === 'HABIBIE') {
+            if (ag.socialStatus !== 'at_desk') {
+              if (ag.socialStatus !== 'walking_to_desk' || !ag.activePath || !ag.activePath.length) {
+                ag.socialStatus = 'at_desk';
+                ag.activePath = null;
+                ag.targetX = ag.workPos.x;
+                ag.targetZ = ag.workPos.z;
+                ag.targetY = ag.workPos.y || 1.25;
+                const m = this.agentMeshes['HABIBIE'];
+                if (m) {
+                  m.position.set(ag.workPos.x, ag.workPos.y || 1.25, ag.workPos.z);
+                  m.rotation.y = 0;
+                }
+              }
+            }
+            this.updateAgentBubble('HABIBIE', ag.bubble);
+          }
         } else if (ag.state === 'sleeping') {
-          ag.socialStatus = 'sleeping';
-          ag.targetX = ag.sleepPos.x;
-          ag.targetZ = ag.sleepPos.z;
-          ag.targetY = ag.sleepPos.y || 1.15;
-          ag.activePath = null;
-        } else if (ag.state === 'idle') {
-          if (prevState === 'sleeping') {
-            ag.socialStatus = 'at_desk';
-            ag.targetX = ag.workPos.x;
-            ag.targetZ = ag.workPos.z;
-            ag.targetY = ag.workPos.y || 1.15;
+          if (prevState !== 'sleeping') {
+            ag.socialStatus = 'sleeping';
+            ag.hibernateStatus = 'resting';
+            if (this.activeHibernateRoamer === name) {
+              this.activeHibernateRoamer = null;
+            }
+            ag.targetX = ag.sleepPos.x;
+            ag.targetZ = ag.sleepPos.z;
+            ag.targetY = ag.sleepPos.y || 1.15;
             ag.activePath = null;
-            ag.nextSocialTimer = performance.now() * 0.001 + this.getStaggeredSocialInterval(name, 30);
+            ag.nextHibernateRoamTimer = (performance.now() * 0.001) + this.getStaggeredHibernateInterval(name, 90);
+          }
+        } else if (ag.state === 'idle') {
+          if (this.activeHibernateRoamer === name) {
+            this.activeHibernateRoamer = null;
+          }
+          ag.hibernateStatus = 'resting';
+          if (prevState === 'sleeping') {
+            ag.socialStatus = 'walking_to_desk';
+            const curPos = this.agentMeshes[name] ? this.agentMeshes[name].position : ag.sleepPos;
+            ag.activePath = this.calculateReturnToDeskPath(ag, curPos);
+            this.updateAgentBubble(name, 'Bangun dari hibernasi... 🚶');
+            ag.nextSocialTimer = (performance.now() * 0.001) + this.getStaggeredSocialInterval(name, 30);
           }
         }
       }
@@ -4765,8 +5162,10 @@ class OfficeThree {
       const mesh = this.agentMeshes[name];
       if (!mesh) continue;
 
-      // Autonomous Social Pathing Transition for Idle Agents
-      if (ag.state === 'idle') {
+      // Autonomous Social Pathing Transition for Idle Agents (Frozen for Working/Reviewing)
+      if (ag.state === 'working' || ag.state === 'reviewing') {
+        ag.nextSocialTimer = time + this.getStaggeredSocialInterval(name, 35);
+      } else if (ag.state === 'idle') {
         if (ag.socialStatus === 'at_desk') {
           if (time > ag.nextSocialTimer) {
             this.chooseAgentBreakDestination(ag);
@@ -4795,7 +5194,7 @@ class OfficeThree {
         }
       }
 
-      // Waypoint Navigation
+      // Waypoint Navigation (Supports Breaks, Returning to Desk, & Ambient Hibernation Roaming)
       if (ag.activePath && ag.activePath.length > 0) {
         const nextPt = ag.activePath[0];
         const dx = nextPt.x - mesh.position.x;
@@ -4855,6 +5254,19 @@ class OfficeThree {
               ag.nextSocialTimer = time + this.getStaggeredSocialInterval(name, 30);
               mesh.rotation.y = 0; // face desk monitors
               this.updateAgentBubble(name, ag.deskBubble || ag.bubble);
+            } else if (ag.hibernateStatus === 'walking_to_roam') {
+              ag.hibernateStatus = 'at_roam';
+              ag.hibernateDuration = time + 15 + Math.random() * 10; // 15-25s roam duration
+              const roamBubble = (ag.currentRoamDest && ag.currentRoamDest.atBubble) ? ag.currentRoamDest.atBubble : (ag.currentRoamDest ? ag.currentRoamDest.bubble : 'Meluruskan kaki sejenak... 🚶');
+              this.updateAgentBubble(name, roamBubble);
+            } else if (ag.hibernateStatus === 'walking_to_sleep') {
+              ag.hibernateStatus = 'resting';
+              ag.nextHibernateRoamTimer = time + this.getStaggeredHibernateInterval(name, 90);
+              if (this.activeHibernateRoamer === name) {
+                this.activeHibernateRoamer = null;
+              }
+              mesh.rotation.y = (ag.sleepPos && ag.sleepPos.z > 6.0) ? 0 : 0;
+              this.updateAgentBubble(name, ag.sleepBubble || 'Hibernasi santai (0% CPU) 💤');
             }
           }
         }
@@ -4988,22 +5400,67 @@ class OfficeThree {
           }
         }
       } else if (ag.state === 'sleeping') {
-        mesh.position.x += (ag.sleepPos.x - mesh.position.x) * 0.06;
-        mesh.position.z += (ag.sleepPos.z - mesh.position.z) * 0.06;
+        // Hibernation Ambient Roaming Engine
+        if (!ag.hibernateStatus) ag.hibernateStatus = 'resting';
+        if (!ag.nextHibernateRoamTimer) {
+          ag.nextHibernateRoamTimer = time + this.getStaggeredHibernateInterval(name, 90);
+        }
 
-        const isNear = this.isNearSeat(mesh.position.x, mesh.position.z);
-        if (isNear) {
-          mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
-          if (mesh.legs) {
-            mesh.legs.left.hip.rotation.x = 0;
-            mesh.legs.right.hip.rotation.x = 0;
-            mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
-            mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
-            mesh.legs.left.knee.rotation.x = Math.PI / 2;
-            mesh.legs.right.knee.rotation.x = Math.PI / 2;
+        if (ag.hibernateStatus === 'resting') {
+          // Autonomous Hibernation Ambient Roaming (1 agen pada satu waktu untuk hemat CPU)
+          if (!this.activeHibernateRoamer && time > ag.nextHibernateRoamTimer) {
+            this.chooseAgentHibernateRoamDestination(ag);
+            if (ag.currentRoamDest && ag.currentRoamDest.waypointsToRoam && ag.currentRoamDest.waypointsToRoam.length) {
+              this.activeHibernateRoamer = name;
+              ag.hibernateStatus = 'walking_to_roam';
+              ag.activePath = ag.currentRoamDest.waypointsToRoam.slice();
+              const startBubble = ag.currentRoamDest.bubble || 'Meluruskan kaki sejenak... 🚶';
+              this.updateAgentBubble(name, startBubble);
+            } else {
+              ag.nextHibernateRoamTimer = time + 30;
+            }
           }
-        } else {
-          mesh.position.y = 1.45;
+
+          mesh.position.x += (ag.sleepPos.x - mesh.position.x) * 0.06;
+          mesh.position.z += (ag.sleepPos.z - mesh.position.z) * 0.06;
+
+          const isNear = this.isNearSeat(mesh.position.x, mesh.position.z);
+          if (isNear) {
+            mesh.position.y = ag.targetY + Math.sin(time * 1.5) * 0.015;
+            if (mesh.legs) {
+              mesh.legs.left.hip.rotation.x = 0;
+              mesh.legs.right.hip.rotation.x = 0;
+              mesh.legs.left.thigh.rotation.x = -Math.PI / 2;
+              mesh.legs.right.thigh.rotation.x = -Math.PI / 2;
+              mesh.legs.left.knee.rotation.x = Math.PI / 2;
+              mesh.legs.right.knee.rotation.x = Math.PI / 2;
+            }
+          } else {
+            mesh.position.y = 1.45;
+            if (mesh.legs) {
+              mesh.legs.left.hip.rotation.x = 0;
+              mesh.legs.right.hip.rotation.x = 0;
+              mesh.legs.left.thigh.rotation.x = 0;
+              mesh.legs.right.thigh.rotation.x = 0;
+              mesh.legs.left.knee.rotation.x = 0;
+              mesh.legs.right.knee.rotation.x = 0;
+            }
+          }
+
+          // Orientasikan avatar di sofa/kursi Game Room langsung menghadap ke layar TV Gaming (+Z)
+          if (ag.sleepPos.z > 6.0) {
+            mesh.rotation.y = 0; // Menghadap langsung ke arah TV 65" di dinding selatan
+          }
+          if (mesh.headMesh) {
+            mesh.headMesh.rotation.x = 0.45;
+          }
+        } else if (ag.hibernateStatus === 'at_roam') {
+          if (ag.currentRoamDest && ag.currentRoamDest.pos) {
+            mesh.position.x = ag.currentRoamDest.pos.x;
+            mesh.position.z = ag.currentRoamDest.pos.z;
+          }
+          mesh.position.y = 1.45 + Math.sin(time * 1.8) * 0.02;
+
           if (mesh.legs) {
             mesh.legs.left.hip.rotation.x = 0;
             mesh.legs.right.hip.rotation.x = 0;
@@ -5012,14 +5469,25 @@ class OfficeThree {
             mesh.legs.left.knee.rotation.x = 0;
             mesh.legs.right.knee.rotation.x = 0;
           }
-        }
+          if (mesh.hands && mesh.hands.length === 2) {
+            mesh.hands[0].position.set(-0.30, 0.15, -0.2);
+            mesh.hands[1].position.set(0.30, 0.15, -0.2);
+          }
+          if (mesh.headMesh) {
+            mesh.headMesh.rotation.x = Math.sin(time * 1.0) * 0.03;
+            mesh.headMesh.rotation.y = Math.sin(time * 0.7) * 0.10;
+          }
 
-        // Orientasikan avatar di sofa/kursi Game Room langsung menghadap ke layar TV Gaming (+Z)
-        if (ag.sleepPos.z > 6.0) {
-          mesh.rotation.y = 0; // Menghadap langsung ke arah TV 65" di dinding selatan
-        }
-        if (mesh.headMesh) {
-          mesh.headMesh.rotation.x = 0.45;
+          // Periksa apakah durasi santai selesai -> jalan santai kembali ke posisi tidur
+          if (time > ag.hibernateDuration) {
+            ag.hibernateStatus = 'walking_to_sleep';
+            if (ag.currentRoamDest && ag.currentRoamDest.waypointsToSleep && ag.currentRoamDest.waypointsToSleep.length) {
+              ag.activePath = ag.currentRoamDest.waypointsToSleep.slice();
+            } else {
+              ag.activePath = [{ x: ag.sleepPos.x, z: ag.sleepPos.z }];
+            }
+            this.updateAgentBubble(name, 'Kembali santai ke sofa... 🚶');
+          }
         }
       }
 

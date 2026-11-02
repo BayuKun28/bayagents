@@ -1675,7 +1675,17 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         project_id = "general"
     else:
         is_standalone = False
-        project_root = str(WORKSPACE_DIR / project_id)
+        projects_reg = {}
+        if os.path.exists(PROJECTS_FILE):
+            try:
+                with open(PROJECTS_FILE, "r", encoding="utf-8") as pf:
+                    projects_reg = json.load(pf).get("projects", {})
+            except Exception:
+                pass
+        if project_id in projects_reg and "root_dir" in projects_reg[project_id]:
+            project_root = projects_reg[project_id]["root_dir"]
+        else:
+            project_root = str(WORKSPACE_DIR / project_id)
         if is_fe and not is_be:
             category = "Frontend"
             target_agent = "PRABOWO"
@@ -1836,9 +1846,10 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 delegation_hint = f"Dekomposisi tugas pada proyek {project_id} ke PRABOWO atau JOKOWI"
 
+            clean_summary = instruction.splitlines()[0][:80].replace('"', '').replace("'", "").strip()
             model_note = f" (Model AGY: {CURRENT_MODEL})"
             prompt_to_luhut = (
-                f"Tugas baru [Proyek: {project_id}{model_note}]: '{instruction}'. Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
+                f"LUHUT: Tugas baru {task_id} [Proyek: {project_id}{model_note}] ('{clean_summary}'). Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
                 f"ATURAN FAST-TRACK: {delegation_hint} via tmux send-keys, laporkan ke Telegram via python3 {BOT_SCRIPT} '[LUHUT]: ...', "
                 f"lalu MASUK STANDBY PASIF. DILARANG audit kode atau loop checking!"
             )

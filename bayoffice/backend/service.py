@@ -184,6 +184,32 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
                 "weight": 0.25,
                 "bubble": "Evaluasi sprint santai di lounge 🎮"
             }
+        ],
+        "hibernation_roam_targets": [
+            {
+                "id": "coffee_corner",
+                "target_id": "coffee_corner",
+                "room_id": "cafeteria",
+                "sub_area": "coffee_corner",
+                "weight": 0.40,
+                "bubble": "Meluruskan kaki sejenak & ambil kopi di dispenser ☕"
+            },
+            {
+                "id": "billiard",
+                "target_id": "billiard",
+                "room_id": "game_room",
+                "sub_area": "billiard",
+                "weight": 0.35,
+                "bubble": "Melihat meja biliar & evaluasi sprint santai 🎱"
+            },
+            {
+                "id": "n250_display",
+                "target_id": "n250_display",
+                "room_id": "architect_studio",
+                "sub_area": "n250_display",
+                "weight": 0.25,
+                "bubble": "Mengagumi miniatur pesawat N-250 Gatotkaca ✈️"
+            }
         ]
     },
     "HABIBIE": {
@@ -219,6 +245,32 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
                 "weight": 0.30,
                 "bubble": "Introspeksi rancangan Gatotkaca & efisiensi cluster ✈️"
             }
+        ],
+        "hibernation_roam_targets": [
+            {
+                "id": "n250_display",
+                "target_id": "n250_display",
+                "room_id": "architect_studio",
+                "sub_area": "n250_display",
+                "weight": 0.50,
+                "bubble": "Inspeksi aerodinamika miniatur N-250 Gatotkaca ✈️"
+            },
+            {
+                "id": "coffee_corner",
+                "target_id": "coffee_corner",
+                "room_id": "cafeteria",
+                "sub_area": "coffee_corner",
+                "weight": 0.30,
+                "bubble": "Menikmati aroma kopi homelab & meluruskan pikiran ☕"
+            },
+            {
+                "id": "arcade",
+                "target_id": "arcade",
+                "room_id": "game_room",
+                "sub_area": "arcade",
+                "weight": 0.20,
+                "bubble": "Melihat mesin arcade retro & bernostalgia 🕹️"
+            }
         ]
     },
     "JOKOWI": {
@@ -247,6 +299,32 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
                 "sub_area": "billiard",
                 "weight": 0.40,
                 "bubble": "Main biliar tipis-tipis menyegarkan logika query 🎱"
+            }
+        ],
+        "hibernation_roam_targets": [
+            {
+                "id": "coffee_corner",
+                "target_id": "coffee_corner",
+                "room_id": "cafeteria",
+                "sub_area": "coffee_corner",
+                "weight": 0.45,
+                "bubble": "Ambil air minum di dispenser & stretching santai 💧"
+            },
+            {
+                "id": "billiard",
+                "target_id": "billiard",
+                "room_id": "game_room",
+                "sub_area": "billiard",
+                "weight": 0.35,
+                "bubble": "Cek kelurusan meja biliar sambil rehat logika query 🎱"
+            },
+            {
+                "id": "n250_display",
+                "target_id": "n250_display",
+                "room_id": "architect_studio",
+                "sub_area": "n250_display",
+                "weight": 0.20,
+                "bubble": "Stretching santai melihat etalase Gatotkaca ✈️"
             }
         ]
     },
@@ -277,6 +355,32 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
                 "weight": 0.40,
                 "bubble": "Camilan croissant & espresso santai 🥐☕"
             }
+        ],
+        "hibernation_roam_targets": [
+            {
+                "id": "arcade",
+                "target_id": "arcade",
+                "room_id": "game_room",
+                "sub_area": "arcade",
+                "weight": 0.45,
+                "bubble": "Meluruskan kaki & lirik skor kabinet arcade 🕹️"
+            },
+            {
+                "id": "coffee_corner",
+                "target_id": "coffee_corner",
+                "room_id": "cafeteria",
+                "sub_area": "coffee_corner",
+                "weight": 0.35,
+                "bubble": "Ambil air mineral di dispenser kantin 💧"
+            },
+            {
+                "id": "n250_display",
+                "target_id": "n250_display",
+                "room_id": "architect_studio",
+                "sub_area": "n250_display",
+                "weight": 0.20,
+                "bubble": "Melihat detail etalase N-250 Gatotkaca ✈️"
+            }
         ]
     },
     "GIBRAN": {
@@ -306,6 +410,32 @@ AGENT_CONFIGS: Dict[str, Dict[str, Any]] = {
                 "weight": 0.45,
                 "bubble": "Audit aroma kopi homelab, zero vulnerability ☕🛡️"
             }
+        ],
+        "hibernation_roam_targets": [
+            {
+                "id": "billiard",
+                "target_id": "billiard",
+                "room_id": "game_room",
+                "sub_area": "billiard",
+                "weight": 0.45,
+                "bubble": "Stretching sejenak di dekat meja biliar 🎱"
+            },
+            {
+                "id": "coffee_corner",
+                "target_id": "coffee_corner",
+                "room_id": "cafeteria",
+                "sub_area": "coffee_corner",
+                "weight": 0.35,
+                "bubble": "Ambil air minum & recharge fokus audit 💧"
+            },
+            {
+                "id": "n250_display",
+                "target_id": "n250_display",
+                "room_id": "architect_studio",
+                "sub_area": "n250_display",
+                "weight": 0.20,
+                "bubble": "Observasi miniatur N-250 & kualitas cetak ✈️"
+            }
         ]
     }
 }
@@ -321,6 +451,21 @@ def resolve_break_target(cfg: Dict[str, Any]) -> Dict[str, Any]:
         }
     weights = [float(d.get("weight", 1.0)) for d in dests]
     chosen = random.choices(dests, weights=weights, k=1)[0]
+    return chosen
+
+def resolve_hibernation_target(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Memilih salah satu target peregangan hibernasi berdasarkan bobot (weighted random)."""
+    targets = cfg.get("hibernation_roam_targets", [])
+    if not targets:
+        return {
+            "id": "coffee_corner",
+            "target_id": "coffee_corner",
+            "room_id": "cafeteria",
+            "sub_area": "coffee_corner",
+            "bubble": "Meluruskan kaki sejenak & ambil air minum 💧"
+        }
+    weights = [float(d.get("weight", 1.0)) for d in targets]
+    chosen = random.choices(targets, weights=weights, k=1)[0]
     return chosen
 
 def resolve_agent_bubble_and_location(
@@ -361,6 +506,18 @@ def resolve_agent_bubble_and_location(
             "slot_id": agent_slot,
             "is_seated": True
         }
+    elif state in ["hibernation_roam", "roaming"]:
+        chosen_hib = resolve_hibernation_target(cfg)
+        h_room = chosen_hib.get("room_id", "cafeteria")
+        h_sub = chosen_hib.get("sub_area", "coffee_corner")
+        loc = {
+            "room": h_room,
+            "room_id": h_room,
+            "sub_area": h_sub,
+            "slot_id": agent_slot,
+            "is_seated": False
+        }
+        bubble = chosen_hib.get("bubble", "Meluruskan kaki sejenak... 🚶")
     elif state in ["break", "at_break"]:
         chosen_break = resolve_break_target(cfg)
         b_room = chosen_break.get("room_id", cfg.get("break_room", "cafeteria"))
@@ -401,6 +558,8 @@ def resolve_agent_bubble_and_location(
     # Bubble text resolver
     if state == "sleeping":
         bubble = cfg["sleep_bubble"]
+    elif state in ["hibernation_roam", "roaming"]:
+        pass  # bubble already resolved contextually above with weighted hibernation target
     elif state == "working" and task:
         task_id = task.get("id", "TASK")
         task_title = str(task.get("title", ""))[:32]
@@ -435,6 +594,7 @@ def get_agents_status() -> Dict[str, Any]:
         initial_state = "sleeping" if (not tmux_active and name != "HABIBIE") else "idle"
         loc, bubble = resolve_agent_bubble_and_location(name, initial_state)
         chosen_break = resolve_break_target(cfg)
+        chosen_hib = resolve_hibernation_target(cfg)
         agents[name] = {
             "name": cfg["name"],
             "role": cfg["role"],
@@ -445,10 +605,18 @@ def get_agents_status() -> Dict[str, Any]:
             "location": loc,
             "desk": dict(cfg["desk"]),
             "break_destinations": cfg.get("break_destinations", []),
+            "hibernation_roam_targets": cfg.get("hibernation_roam_targets", []),
             "current_break_target": {
                 "room_id": chosen_break.get("room_id", cfg.get("break_room", "cafeteria")),
                 "sub_area": chosen_break.get("sub_area", cfg.get("break_sub_area", "dining_table")),
                 "bubble": chosen_break.get("bubble", cfg.get("break_bubble", "Rehat sejenak menikmati kopi homelab ☕"))
+            },
+            "current_hibernation_target": {
+                "id": chosen_hib.get("id", "coffee_corner"),
+                "target_id": chosen_hib.get("target_id", "coffee_corner"),
+                "room_id": chosen_hib.get("room_id", "cafeteria"),
+                "sub_area": chosen_hib.get("sub_area", "coffee_corner"),
+                "bubble": chosen_hib.get("bubble", "Meluruskan kaki sejenak & ambil air minum 💧")
             }
         }
 
@@ -481,6 +649,36 @@ def get_agents_status() -> Dict[str, Any]:
                 loc, bubble = resolve_agent_bubble_and_location("GIBRAN", "reviewing", task=t)
                 agents["GIBRAN"]["location"] = loc
                 agents["GIBRAN"]["bubble_text"] = bubble
+
+    # Check background plan drafting status for HABIBIE (PLAN-20261102-01)
+    try:
+        import plans_manager
+        plan_job = plans_manager.get_plan_generation_status()
+        if plan_job and (plan_job.get("status") == "generating" or plan_job.get("is_generating") is True):
+            idea_preview = str(plan_job.get("idea", "") or "").strip()
+            if idea_preview:
+                bubble_text = f"Merancang blueprint arsitektur: {idea_preview[:40]}... 📐"
+            else:
+                bubble_text = "Merancang blueprint arsitektur di Plan Studio... 📐"
+
+            agents["HABIBIE"]["state"] = "working"
+            agents["HABIBIE"]["bubble_text"] = bubble_text
+            agents["HABIBIE"]["location"] = {
+                "room": "architect_studio",
+                "room_id": "architect_studio",
+                "sub_area": "drafting_desk",
+                "slot_id": AGENT_CONFIGS["HABIBIE"].get("slot_id", 5),
+                "is_seated": True
+            }
+            agents["HABIBIE"]["current_task"] = {
+                "id": "DRAFTING-PLAN",
+                "title": f"Merancang blueprint: {idea_preview[:40]}" if idea_preview else "Merancang Blueprint Arsitektur",
+                "project": plan_job.get("project", "bayoffice"),
+                "assignee": "HABIBIE",
+                "status": "In-Progress"
+            }
+    except Exception as e:
+        print(f"⚠️ Gagal memeriksa status drafting HABIBIE: {e}")
 
     return agents
 
@@ -877,7 +1075,11 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
             else:
                 project_id = "infobay"
 
-        project_root = str(WORKSPACE_DIR / project_id)
+        projects_reg = get_projects_registry().get("projects", {})
+        if project_id in projects_reg and "root_dir" in projects_reg[project_id]:
+            project_root = projects_reg[project_id]["root_dir"]
+        else:
+            project_root = str(WORKSPACE_DIR / project_id)
         register_project_if_new(project_id)
 
         # Klasifikasi Keahlian & Target Direktori Software
@@ -1153,9 +1355,10 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
     # ==========================================================
     # Jalur C: Default Antigravity (agy) 4-Agent Team via Tmux
     # ==========================================================
+    clean_summary = instruction.splitlines()[0][:80].replace('"', '').replace("'", "").strip()
     res = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
     if res.returncode != 0:
-        task_summary = f"{task_id} [Proyek: {project_id}] ({category}): {instruction}"
+        task_summary = f"{task_id} [Proyek: {project_id}] ({category}): {clean_summary}"
         launch_agents_daemon(task_summary, model=model or "")
     else:
         try:
@@ -1168,7 +1371,8 @@ def dispatch_task_from_web(instruction: str, category_hint: str = "auto", projec
 
             model_note = f" (Model AGY: {model})" if model else ""
             prompt_to_luhut = (
-                f"Tugas baru [Proyek: {project_id}{model_note}]: '{instruction}'. Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
+                f"LUHUT: Tugas baru {task_id} [Proyek: {project_id}{model_note}] ('{clean_summary}'). "
+                f"Telah dicatat di kanban.json sebagai {task_id} ({category}) di {target_dir}. "
                 f"ATURAN FAST-TRACK: {delegation_hint} via tmux send-keys, laporkan ke Telegram via python3 {TELEBOT_SCRIPT} '[LUHUT]: ...', "
                 f"lalu MASUK STANDBY PASIF. DILARANG audit kode atau loop checking!"
             )

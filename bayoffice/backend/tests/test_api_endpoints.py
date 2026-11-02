@@ -418,6 +418,59 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             self.assertEqual(loc_h["room_id"], "architect_studio")
             self.assertIn("Studio Recliner", bubble_h)
 
+    def test_habibie_drafting_sync_and_hibernation_roam_targets(self):
+        """Memverifikasi PLAN-20261102-01 (TASK-FS-06): Sinkronisasi drafting 3D HABIBIE & target peregangan hibernasi."""
+        from unittest.mock import patch
+        import plans_manager
+
+        # 1. Verifikasi konfigurasi hibernation_roam_targets pada ke-5 agen
+        for name in ["LUHUT", "HABIBIE", "JOKOWI", "PRABOWO", "GIBRAN"]:
+            cfg = service.AGENT_CONFIGS[name]
+            self.assertIn("hibernation_roam_targets", cfg)
+            targets = cfg["hibernation_roam_targets"]
+            self.assertGreaterEqual(len(targets), 2, f"{name} minimal memiliki 2 target peregangan hibernasi")
+            for t in targets:
+                self.assertIn("room_id", t)
+                self.assertIn("sub_area", t)
+                self.assertIn("bubble", t)
+                self.assertIn(t["room_id"], ["cafeteria", "game_room", "architect_studio"])
+
+        # 2. Verifikasi state resolver saat hibernasi roaming
+        loc_roam, bubble_roam = service.resolve_agent_bubble_and_location("HABIBIE", "hibernation_roam")
+        self.assertIn(loc_roam["room_id"], ["cafeteria", "game_room", "architect_studio"])
+        self.assertFalse(loc_roam["is_seated"])
+        self.assertTrue(len(bubble_roam) > 0)
+
+        # 3. Verifikasi HABIBIE drafting sync saat ada background job generating
+        mock_job = {
+            "is_generating": True,
+            "status": "generating",
+            "idea": "Optimasi Query Cache Redis",
+            "project": "infobay",
+            "started_at": "2026-11-02T09:00:00"
+        }
+        with patch("plans_manager.get_plan_generation_status", return_value=mock_job), \
+             patch("service.get_system_metrics", return_value={"tmux_active": False, "load_avg": [0.1, 0.1, 0.1]}):
+            agents = service.get_agents_status()
+            habibie = agents["HABIBIE"]
+
+            # HABIBIE harus dipaksa berstatus 'working' di architect_studio.drafting_desk
+            self.assertEqual(habibie["state"], "working")
+            self.assertEqual(habibie["location"]["room_id"], "architect_studio")
+            self.assertEqual(habibie["location"]["sub_area"], "drafting_desk")
+            self.assertTrue(habibie["location"]["is_seated"])
+            self.assertIn("Merancang blueprint", habibie["bubble_text"])
+            self.assertIn("Optimasi Query Cache Redis", habibie["bubble_text"])
+            self.assertIsNotNone(habibie["current_task"])
+            self.assertEqual(habibie["current_task"]["id"], "DRAFTING-PLAN")
+
+            # Verifikasi agen lain tetap sleeping saat tmux mati dan memiliki payload hibernation roam
+            self.assertEqual(agents["LUHUT"]["state"], "sleeping")
+            self.assertIn("hibernation_roam_targets", agents["LUHUT"])
+            self.assertIn("current_hibernation_target", agents["LUHUT"])
+            self.assertIn("hibernation_roam_targets", agents["JOKOWI"])
+            self.assertIn("current_hibernation_target", agents["JOKOWI"])
+
 
 if __name__ == "__main__":
     unittest.main()
