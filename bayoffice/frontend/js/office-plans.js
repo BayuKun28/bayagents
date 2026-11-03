@@ -40,6 +40,17 @@ window.OfficePlans = (function () {
   let studioDraftingProjectText;
   let studioDraftingIdeaPreview;
   let studioDraftingTimer;
+  let studioRevisePlanBtn;
+  let studioReviseModal;
+  let closeStudioReviseModalBtn;
+  let cancelStudioReviseModalBtn;
+  let studioReviseForm;
+  let studioReviseTargetTitle;
+  let studioReviseFeedbackInput;
+  let studioReviseEngineSelect;
+  let studioReviseModelSelect;
+  let submitStudioReviseBtn;
+  let submitStudioReviseBtnText;
 
   let activeDraftingJob = null;
   let draftingTimerInterval = null;
@@ -401,6 +412,15 @@ window.OfficePlans = (function () {
         }
       }
 
+      if (studioRevisePlanBtn) {
+        studioRevisePlanBtn.disabled = isDispatched;
+        studioRevisePlanBtn.style.opacity = isDispatched ? '0.5' : '1';
+        studioRevisePlanBtn.style.cursor = isDispatched ? 'not-allowed' : 'pointer';
+        studioRevisePlanBtn.title = isDispatched
+          ? 'Dokumen sudah didelegasikan ke Kanban.'
+          : (window.I18n && window.I18n.currentLocale === 'id' ? 'Beri masukan, respon opsi, atau revisi dokumen ini ke Habibie' : "Provide feedback, answer options, or revise this plan with Habibie");
+      }
+
       // Render Markdown Content into Studio Pane
       if (studioViewerContent) {
         studioViewerContent.innerHTML = renderMarkdownToHtml(plan.content || '');
@@ -671,6 +691,17 @@ window.OfficePlans = (function () {
     studioViewerPlanTitle = document.getElementById('studioViewerPlanTitle');
     studioViewerContent = document.getElementById('studioViewerContent');
     studioDispatchPlanBtn = document.getElementById('studioDispatchPlanBtn');
+    studioRevisePlanBtn = document.getElementById('studioRevisePlanBtn');
+    studioReviseModal = document.getElementById('studioReviseModal');
+    closeStudioReviseModalBtn = document.getElementById('closeStudioReviseModalBtn');
+    cancelStudioReviseModalBtn = document.getElementById('cancelStudioReviseModalBtn');
+    studioReviseForm = document.getElementById('studioReviseForm');
+    studioReviseTargetTitle = document.getElementById('studioReviseTargetTitle');
+    studioReviseFeedbackInput = document.getElementById('studioReviseFeedbackInput');
+    studioReviseEngineSelect = document.getElementById('studioReviseEngineSelect');
+    studioReviseModelSelect = document.getElementById('studioReviseModelSelect');
+    submitStudioReviseBtn = document.getElementById('submitStudioReviseBtn');
+    submitStudioReviseBtnText = document.getElementById('submitStudioReviseBtnText');
     studioCopyPlanBtn = document.getElementById('studioCopyPlanBtn');
     studioDeletePlanBtn = document.getElementById('studioDeletePlanBtn');
     studioNewPlanFormContainer = document.getElementById('studioNewPlanFormContainer');
@@ -922,6 +953,98 @@ window.OfficePlans = (function () {
           alert(`Error: ${err.message}`);
           studioDispatchPlanBtn.disabled = false;
           studioDispatchPlanBtn.innerHTML = origHtml;
+          if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+        }
+      });
+    }
+
+    // Revise / Respond Plan Dialog & Submission
+    if (studioRevisePlanBtn) {
+      studioRevisePlanBtn.addEventListener('click', () => {
+        if (!currentSelectedStudioPlan) return;
+        if (studioReviseTargetTitle) {
+          studioReviseTargetTitle.textContent = `[${currentSelectedStudioPlan.id}] ${currentSelectedStudioPlan.title || ''}`;
+        }
+        if (studioReviseFeedbackInput) {
+          studioReviseFeedbackInput.value = '';
+        }
+        if (studioReviseEngineSelect) {
+          studioReviseEngineSelect.value = currentSelectedStudioPlan.engine || 'agy';
+        }
+        if (studioReviseModelSelect && currentSelectedStudioPlan.model) {
+          studioReviseModelSelect.value = currentSelectedStudioPlan.model;
+        }
+        if (studioReviseModal) {
+          studioReviseModal.style.display = 'flex';
+          setTimeout(() => {
+            if (studioReviseFeedbackInput) studioReviseFeedbackInput.focus();
+          }, 60);
+        }
+        if (window.soundFx) window.soundFx.playClick();
+        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+      });
+    }
+
+    const closeReviseModal = () => {
+      if (studioReviseModal) studioReviseModal.style.display = 'none';
+    };
+
+    if (closeStudioReviseModalBtn) {
+      closeStudioReviseModalBtn.addEventListener('click', closeReviseModal);
+    }
+    if (cancelStudioReviseModalBtn) {
+      cancelStudioReviseModalBtn.addEventListener('click', closeReviseModal);
+    }
+    if (studioReviseModal) {
+      studioReviseModal.addEventListener('click', (e) => {
+        if (e.target === studioReviseModal) closeReviseModal();
+      });
+    }
+
+    if (studioReviseForm) {
+      studioReviseForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentSelectedStudioPlan) return;
+        const feedback = (studioReviseFeedbackInput ? studioReviseFeedbackInput.value : '').trim();
+        if (!feedback) {
+          alert('Harap masukkan catatan atau masukan revisi untuk Habibie.');
+          return;
+        }
+
+        const engine = studioReviseEngineSelect ? studioReviseEngineSelect.value : 'agy';
+        const model = studioReviseModelSelect ? studioReviseModelSelect.value : null;
+
+        if (submitStudioReviseBtn) submitStudioReviseBtn.disabled = true;
+        const origSubmitText = submitStudioReviseBtnText ? submitStudioReviseBtnText.textContent : 'Sempurnakan Rencana';
+        if (submitStudioReviseBtnText) {
+          submitStudioReviseBtnText.textContent = window.I18n ? window.I18n.t('plans.revising') : 'HABIBIE is Refining Plan...';
+        }
+        if (window.soundFx) window.soundFx.playClick();
+
+        try {
+          const res = await fetch(`/api/plans/${currentSelectedStudioPlan.id}/revise`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feedback, engine, model })
+          });
+          const resJson = await res.json();
+          if (res.ok && resJson.success) {
+            closeReviseModal();
+            if (window.soundFx) window.soundFx.playSuccess();
+            const successMsg = window.I18n
+              ? window.I18n.t('plans.revise_success', { planId: currentSelectedStudioPlan.id })
+              : `Plan ${currentSelectedStudioPlan.id} was refined successfully!`;
+            alert(successMsg);
+            await fetchStudioPlans(false);
+            selectStudioPlan(currentSelectedStudioPlan.id);
+          } else {
+            alert(`Gagal merevisi plan: ${resJson.error || resJson.detail || 'Terjadi kesalahan sistem'}`);
+          }
+        } catch (err) {
+          alert(`Error: ${err.message}`);
+        } finally {
+          if (submitStudioReviseBtn) submitStudioReviseBtn.disabled = false;
+          if (submitStudioReviseBtnText) submitStudioReviseBtnText.textContent = origSubmitText;
           if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
         }
       });

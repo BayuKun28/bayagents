@@ -371,6 +371,154 @@ def generate_plan_ai(idea: str,
     return saved
 
 
+def revise_plan_ai(plan_id: str,
+                   feedback: str,
+                   engine: Optional[str] = None,
+                   model: Optional[str] = None) -> Dict[str, Any]:
+    """Meminta HABIBIE merevisi dan memperbarui Implementation Plan berdasarkan masukan Mas Bay."""
+    feedback = feedback.strip()
+    if not feedback:
+        return {"success": False, "error": "Masukan atau respon revisi tidak boleh kosong"}
+
+    plan = get_plan(plan_id)
+    if not plan:
+        return {"success": False, "error": f"Plan dengan ID '{plan_id}' tidak ditemukan"}
+
+    used_engine = engine or plan.get("engine", "agy")
+    used_model = model if used_engine == "agy" else None
+    if not used_model and used_engine == "agy":
+        used_model = plan.get("model")
+
+    project = plan.get("project", "bayoffice")
+    habibie_sys = load_habibie_system_prompt()
+
+    revise_prompt = (
+        f"Sebagai HABIBIE (Chief Architect & Strategic Planner), kamu telah merancang dokumen Implementation Plan sebelumnya:\n"
+        f"================ DOKUMEN IMPLEMENTATION PLAN SAAT INI ({plan_id}) ================\n"
+        f"{plan['content']}\n"
+        f"===================================================================================\n\n"
+        f"Mas Bay telah meninjau draft tersebut dan memberikan masukan perbaikan / jawaban atas opsi pertanyaanmu:\n"
+        f"\"{feedback}\"\n\n"
+        f"TUGAS KAMU:\n"
+        f"Perbarui, sempurnakan, dan sesuaikan seluruh isi dokumen Implementation Plan di atas secara menyeluruh berdasarkan masukan Mas Bay.\n"
+        f"Pertahankan struktur Markdown standar yang rapi:\n"
+        f"# Implementation Plan: <Judul Rencana Singkat & Jelas>\n\n"
+        f"## 1. 🎯 Tujuan & Scope Fitur\n"
+        f"- Ringkasan problem & solusi yang diperbarui.\n\n"
+        f"## 2. 🗄️ Tugas Backend (JOKOWI)\n"
+        f"- Kebutuhan Database / Migration, Schema, Models.\n"
+        f"- RESTful API Endpoints & Business Logic.\n\n"
+        f"## 3. 🎨 Tugas Frontend (PRABOWO)\n"
+        f"- Antarmuka UI (Neubrutalism/Tailwind), Layout & State Management.\n"
+        f"- Interaksi pengguna, komponen & responsivitas.\n\n"
+        f"## 4. 🛡️ Checklist QA & Verifikasi (GIBRAN)\n"
+        f"- Test cases, edge cases, verifikasi keamanan & build passing.\n\n"
+        f"## 5. 🚀 Catatan Orkestrasi & Deployment (LUHUT)\n"
+        f"- Urutan eksekusi sekuensial (Backend -> Frontend -> QA -> Deploy).\n\n"
+        f"Pastikan solusi teknis tetap presisi, efisien, dan 100% anti-overengineering."
+    )
+
+    plan_markdown = ""
+    if used_engine == "agy":
+        try:
+            env = os.environ.copy()
+            env["HOME"] = str(Path.home())
+            env["PATH"] = f"{Path.home()}/.gemini/antigravity-cli/bin:{Path.home()}/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
+            cmd = ["agy", "-p", f"{habibie_sys}{revise_prompt}", "--dangerously-skip-permissions"]
+            if used_model and used_model.strip():
+                cmd.extend(["--model", used_model.strip()])
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
+            if res.returncode == 0 and res.stdout.strip():
+                plan_markdown = res.stdout.strip()
+        except Exception as e:
+            print(f"⚠️ AGY CLI error saat revise plan: {e}")
+
+    if not plan_markdown:
+        headers = {
+            "Authorization": f"Bearer {ROUTER9_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": ROUTER9_MODEL,
+            "messages": [
+                {"role": "system", "content": habibie_sys},
+                {"role": "user", "content": revise_prompt}
+            ],
+            "stream": False
+        }
+        try:
+            with httpx.Client(timeout=65.0) as client:
+                resp = client.post(f"{ROUTER9_BASE_URL}/chat/completions", headers=headers, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    plan_markdown = data["choices"][0]["message"]["content"].strip()
+                else:
+                    return {"success": False, "error": f"9Router HTTP {resp.status_code}: {resp.text[:200]}"}
+        except Exception as e:
+            return {"success": False, "error": f"Gagal menghubungi model AI: {e}"}
+
+    if not plan_markdown:
+        return {"success": False, "error": "Model AI tidak menghasilkan keluaran teks."}
+
+    title = plan.get("title", plan_id)
+    match = re.search(r"^#\s+(?:Implementation Plan:\s*)?(.+)$", plan_markdown, re.MULTILINE | re.IGNORECASE)
+    if match:
+        title = match.group(1).strip()
+
+    saved = save_plan(
+        title=title,
+        content=plan_markdown,
+        project=project,
+        author="HABIBIE",
+        status=plan.get("status", "Draft"),
+        plan_id=plan_id,
+        dispatched_task_id=plan.get("dispatched_task_id"),
+        engine=used_engine,
+        model=used_model
+    )
+    model_tag = f", model: {used_model}" if (used_engine == "agy" and used_model) else ""
+    log_habibie_activity(f"REVISED PLAN: [{plan_id}] '{title}' diperbarui berdasarkan feedback Mas Bay (engine: {used_engine}{model_tag})")
+
+    saved["content"] = plan_markdown
+    saved["plan"] = {
+        "id": saved["id"],
+        "filename": saved["filename"],
+        "title": saved["title"],
+        "project": saved["project"],
+        "status": saved["status"],
+        "engine": saved.get("engine", used_engine),
+        "model": saved.get("model", used_model),
+        "created_at": saved["created_at"],
+        "content": plan_markdown
+    }
+    return saved
+
+
+def parse_plan_components(content: str) -> Dict[str, Any]:
+    """Mengekstrak komponen tugas backend, frontend, dan scope dari dokumen plan."""
+    scope_match = re.search(r'(##\s*1\.\s*[^\n]*Tujuan[^\n]*\n.*?)(?=##\s*2\.|\Z)', content, re.DOTALL | re.IGNORECASE)
+    be_match = re.search(r'(##\s*2\.\s*[^\n]*Backend[^\n]*\n.*?)(?=##\s*3\.|\Z)', content, re.DOTALL | re.IGNORECASE)
+    fe_match = re.search(r'(##\s*3\.\s*[^\n]*Frontend[^\n]*\n.*?)(?=##\s*4\.|\Z)', content, re.DOTALL | re.IGNORECASE)
+
+    # Fallback jika penomoran fleksibel
+    if not be_match:
+        be_match = re.search(r'(##\s*[^\n]*Backend[^\n]*\n.*?)(?=##\s*[^\n]*Frontend|##\s*Checklist QA|\Z)', content, re.DOTALL | re.IGNORECASE)
+    if not fe_match:
+        fe_match = re.search(r'(##\s*[^\n]*Frontend[^\n]*\n.*?)(?=##\s*[^\n]*Checklist QA|##\s*Catatan Orkestrasi|\Z)', content, re.DOTALL | re.IGNORECASE)
+
+    has_be = bool(be_match and len(be_match.group(1).strip()) > 50)
+    has_fe = bool(fe_match and len(fe_match.group(1).strip()) > 50)
+
+    return {
+        "is_fullstack": has_be and has_fe,
+        "has_be": has_be,
+        "has_fe": has_fe,
+        "scope_section": scope_match.group(1).strip() if scope_match else "",
+        "be_section": be_match.group(1).strip() if be_match else "",
+        "fe_section": fe_match.group(1).strip() if fe_match else ""
+    }
+
+
 # ==========================================================
 # ASYNCHRONOUS BACKGROUND PLAN GENERATION WORKER
 # ==========================================================
@@ -490,13 +638,21 @@ def start_background_plan_generation(idea: str,
 
 
 def dispatch_plan_to_kanban(plan_id: str, dispatch_fn) -> Dict[str, Any]:
-    """Meneruskan Implementation Plan ke tim agen di Kanban & membangunkan LUHUT via tmux."""
+    """Meneruskan Implementation Plan ke tim agen di Kanban."""
     plan = get_plan(plan_id)
     if not plan:
         return {"success": False, "error": f"Plan dengan ID '{plan_id}' tidak ditemukan"}
 
-    instruction = f"[Dari Plan {plan['id']}: {plan['title']}]\n\n{plan['content'][:600]}..."
     project = plan.get("project", "bayoffice")
+    filename = plan.get("filename", f"{plan_id}.md")
+    plan_file_path = PLANS_DIR / filename
+
+    # Kirimkan instruksi lengkap dengan referensi path file absolut
+    instruction = (
+        f"[Dari Plan {plan['id']}: {plan['title']}]\n\n"
+        f"📌 DOKUMEN ARSITEKTUR UTUH: {plan_file_path}\n\n"
+        f"{plan['content']}"
+    )
 
     # Panggil fungsi dispatch Kanban yang sudah ada
     res = dispatch_fn(

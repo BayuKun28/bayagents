@@ -31,7 +31,15 @@ system_prompt: >
      - Laporkan milestone penting ke Telegram: python3 /home/bay/bayagents/telebot/bot.py "[JOKOWI]: ⚙️ [Progress] <ID> - <Deskripsi singkat progress>"
   4. SETELAH SELESAI & TERUJI:
      - Jalankan uji mandiri endpoint/database/syntax sesuai stack proyek (curl / php artisan / pytest / node test).
-     - Perbarui /home/bay/bayagents/data/kanban.json: ubah status ke 'QA-Review' dan tuliskan dokumentasi endpoint/perubahan di kolom 'notes'.
-     - Bangunkan GIBRAN via tmux: tmux send-keys -t agy_agents:0.1 "GIBRAN: Tugas <ID> [<PROYEK>] selesai di backend, siap diaudit." Enter
-     - Kirim laporan serah terima ke Telegram: python3 /home/bay/bayagents/telebot/bot.py "[JOKOWI]: ✅ [Selesai] Tugas <ID> [<PROYEK>] tuntas dan diserahkan ke GIBRAN untuk QA Review."
+     - Periksa atribut 'next_task' pada tugas ini di /home/bay/bayagents/data/kanban.json:
+       * JIKA MEMILIKI NEXT_TASK (ESTAFET KE PRABOWO):
+         Ubah status tugas backend ini menjadi 'Done', ubah tugas frontend (<NEXT_TASK_ID>) dari 'To-Do' menjadi 'In-Progress'.
+         Bangunkan PRABOWO via tmux:
+         tmux send-keys -t agy_agents:0.3 "PRABOWO: Backend & API untuk <ID> selesai. Sekarang lanjutkan integrasi frontend untuk <NEXT_TASK_ID>. Cek kanban.json." Enter
+         Kirim notifikasi estafet ke Telegram:
+         python3 /home/bay/bayagents/telebot/bot.py "[JOKOWI]: 🔀 [Handover Estafet] Fase 1 Backend <ID> [<PROYEK>] tuntas! Tongkat estafet diserahkan ke PRABOWO untuk integrasi UI (<NEXT_TASK_ID>)."
+       * JIKA TANPA NEXT_TASK (MURNI BACKEND):
+         Ubah status tugas ke 'QA-Review' dan tuliskan dokumentasi endpoint di kolom 'notes'.
+         Bangunkan GIBRAN via tmux: tmux send-keys -t agy_agents:0.1 "GIBRAN: Tugas <ID> [<PROYEK>] selesai di backend, siap diaudit." Enter
+         Kirim laporan serah terima ke Telegram: python3 /home/bay/bayagents/telebot/bot.py "[JOKOWI]: ✅ [Selesai] Tugas <ID> [<PROYEK>] tuntas dan diserahkan ke GIBRAN untuk QA Review."
      - KEMBALI KE MODE STANDBY PASIF (BERHENTI MEMANGGIL TOOL).

@@ -1572,6 +1572,13 @@ async def orchestrator_sleep_job(context: ContextTypes.DEFAULT_TYPE):
         SPRINT_DONE_START_TIME = now
         return
 
+    # Guard: Jangan tidurkan jika masih ada proses deployment, ssh remote, atau git push yang berjalan
+    res_ssh = subprocess.run(["pgrep", "-f", "ssh.*192.168.100.146"], capture_output=True)
+    res_git = subprocess.run(["pgrep", "-f", "git push"], capture_output=True)
+    if res_ssh.returncode == 0 or res_git.returncode == 0:
+        SPRINT_DONE_START_TIME = now
+        return
+
     # Jika sudah melewati batas cooldown 3 menit
     if now - SPRINT_DONE_START_TIME >= SPRINT_SLEEP_COOLDOWN_SECONDS:
         SPRINT_DONE_START_TIME = None
@@ -1843,6 +1850,8 @@ async def task_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 delegation_hint = f"Tugas Frontend: Segera bangunkan PRABOWO ({TMUX_SESSION_NAME}:0.3) di {target_dir}"
             elif target_agent == "JOKOWI":
                 delegation_hint = f"Tugas Backend: Segera bangunkan JOKOWI ({TMUX_SESSION_NAME}:0.2) di {target_dir}"
+            elif category == "Fullstack":
+                delegation_hint = f"Tugas Fullstack: Terapkan Pipa Estafet Sekuensial. Bangunkan JOKOWI ({TMUX_SESSION_NAME}:0.2) untuk Fase 1 Backend terlebih dahulu. Setelah selesai, JOKOWI akan mengoper estafet ke PRABOWO ({TMUX_SESSION_NAME}:0.3)."
             else:
                 delegation_hint = f"Dekomposisi tugas pada proyek {project_id} ke PRABOWO atau JOKOWI"
 

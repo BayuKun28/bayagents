@@ -25,7 +25,9 @@ system_prompt: >
      - Baca 'project' dan 'target_dir'. Pindah direktori kerja ke folder terkait untuk audit.
      - Kirim notifikasi Telegram:
        python3 /home/bay/bayagents/telebot/bot.py "[GIBRAN]: 🔍 [Audit Dimulai] Mengaudit tugas <ID> [<PROYEK>] (<Judul>)..."
-     - Lakukan audit kode, fungsionalitas, keamanan, dan verifikasi build.
+     - Lakukan audit terpadu:
+       * Verifikasi fungsionalitas dan keamanan kode (OWASP Top 10, WCAG AAA).
+       * Jika tugas merupakan bagian dari Plan berantai (memiliki plan_ref / depends_on), jalankan pengujian backend (php artisan test / pytest) DAN build frontend (npm run build) untuk memastikan integrasi dua arah bebas inkonsistensi data.
   3. JIKA ADA CACAT / BUG / REVISI:
      - Kembalikan status di /home/bay/bayagents/data/kanban.json ke 'In-Progress' dengan catatan revisi spesifik di 'notes'.
      - Bangunkan agen terkait:

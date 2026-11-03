@@ -1022,6 +1022,10 @@
               <i data-lucide="send" class="lucide-sm"></i>
               <span data-i18n="plans.dispatch_btn">Dispatch to Kanban</span>
             </button>
+            <button id="studioRevisePlanBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 800; display: flex; align-items: center; gap: 6px; background: #FEF3C7; color: #92400E; border: 2px solid var(--border-color); box-shadow: 2px 2px 0px var(--shadow-color);" title="Beri masukan, jawaban opsi, atau revisi dokumen ini ke Habibie">
+              <i data-lucide="message-square-plus" class="lucide-sm"></i>
+              <span data-i18n="plans.revise_btn">Revisi / Balas</span>
+            </button>
             <button id="studioCopyPlanBtn" class="neo-btn neo-btn-secondary" style="padding: 7px 12px; font-size: 0.82rem; display: flex; align-items: center; gap: 4px;" title="Copy Markdown">
               <i data-lucide="copy" class="lucide-sm"></i>
               <span data-i18n="plans.copy_btn">Copy</span>
@@ -1049,6 +1053,71 @@
 
   </div> <!-- /#plansStudioView -->
 </main>
+
+  <!-- HABIBIE PLAN REVISION MODAL -->
+  <div id="studioReviseModal" class="modal-overlay" style="display: none;">
+    <div class="neo-box modal-content" style="max-width: 650px; width: 94%; padding: 22px; display: flex; flex-direction: column;">
+      
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #FEF3C7; color: #92400E; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0px var(--shadow-color);">
+            <i data-lucide="message-square-plus" class="lucide-sm"></i>
+          </div>
+          <div>
+            <h3 style="font-weight: 800; font-size: 1.1rem; margin: 0;" data-i18n="plans.revise_modal_title">Respon / Revisi Rencana HABIBIE</h3>
+            <p id="studioReviseTargetTitle" style="font-size: 0.76rem; color: #64748B; margin: 2px 0 0 0; font-weight: 600;">-</p>
+          </div>
+        </div>
+        <button id="closeStudioReviseModalBtn" class="neo-btn neo-btn-secondary" style="padding: 6px 10px; font-size: 0.85rem;" title="Close">
+          <i data-lucide="x" class="lucide-sm"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="studioReviseForm" style="display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;" for="studioReviseFeedbackInput" data-i18n="plans.revise_label">
+            Arahan Perbaikan / Jawaban atas Opsi Habibie:
+          </label>
+          <textarea id="studioReviseFeedbackInput" required class="neo-box-sm" rows="6" 
+                    placeholder="Contoh: 'Gunakan opsi B (SQLite in-memory), tambahkan field project_role di tabel portfolios, dan jangan sentuh routing auth.'" 
+                    data-i18n-placeholder="plans.revise_placeholder" 
+                    style="width: 100%; padding: 12px; font-size: 0.9rem; line-height: 1.5; resize: vertical; outline: none; font-family: inherit; box-sizing: border-box;"></textarea>
+          <small style="font-size: 0.72rem; color: #64748B; display: block; margin-top: 4px;" data-i18n="plans.revise_hint">
+            HABIBIE akan memperbarui seluruh dokumen rencana di atas dengan tetap mempertahankan ID yang sama.
+          </small>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="display: block; font-weight: 700; font-size: 0.8rem; margin-bottom: 4px;" data-i18n="plans.engine_label">Architect Brain</label>
+            <select id="studioReviseEngineSelect" class="neo-box-sm" style="width: 100%; padding: 8px 10px; font-size: 0.85rem; outline: none; font-family: inherit;">
+              <option value="agy" selected>Antigravity (AGY CLI)</option>
+              <option value="9router">9Router (Free Proxy .146)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-weight: 700; font-size: 0.8rem; margin-bottom: 4px;" data-i18n="plans.model_label">Reasoning Model</label>
+            <select id="studioReviseModelSelect" class="neo-box-sm" style="width: 100%; padding: 8px 10px; font-size: 0.85rem; outline: none; font-family: inherit;">
+              <option value="gemini-3.8-flash-high" selected>Gemini 3.8 Flash (High)</option>
+              <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Thinking)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border-color);">
+          <button type="button" id="cancelStudioReviseModalBtn" class="neo-btn neo-btn-secondary" style="padding: 8px 16px; font-size: 0.85rem;" data-i18n="plans.cancel_btn">Batal</button>
+          <button type="submit" id="submitStudioReviseBtn" class="neo-btn neo-btn-primary" style="padding: 8px 20px; font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; gap: 6px; background: #D97706; color: #FFF;">
+            <i data-lucide="sparkles" class="lucide-sm"></i>
+            <span id="submitStudioReviseBtnText" data-i18n="plans.submit_revise_btn">Sempurnakan Rencana</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
 
   <!-- TASK DISPATCHER MODAL ("BERI TUGAS BARU") -->
   <div id="taskModal" class="modal-overlay">

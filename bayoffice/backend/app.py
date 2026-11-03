@@ -150,6 +150,11 @@ class PlanGenerateRequest(BaseModel):
     model: Optional[str] = None
     background: Optional[bool] = False
 
+class PlanReviseRequest(BaseModel):
+    feedback: str
+    engine: Optional[str] = "agy"
+    model: Optional[str] = None
+
 # ==========================================================
 # PAGE ROUTES
 # ==========================================================
@@ -505,6 +510,19 @@ async def api_dispatch_plan(plan_id: str, user: str = Depends(require_auth)):
     result = service.dispatch_plan_to_kanban(plan_id)
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Gagal meneruskan plan ke Kanban"))
+    return result
+
+@app.post("/api/plans/{plan_id}/revise")
+async def api_revise_plan(plan_id: str, data: PlanReviseRequest, user: str = Depends(require_auth)):
+    """Meminta HABIBIE merevisi dan memperbarui dokumen plan berdasarkan masukan Mas Bay."""
+    result = service.revise_plan_by_id(
+        plan_id=plan_id,
+        feedback=data.feedback,
+        engine=data.engine or "agy",
+        model=data.model
+    )
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Gagal merevisi plan"))
     return result
 
 @app.delete("/api/plans/{plan_id}")

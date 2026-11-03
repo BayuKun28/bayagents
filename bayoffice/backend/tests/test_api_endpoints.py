@@ -471,6 +471,92 @@ class TestSchedulerAPIEndpoints(unittest.TestCase):
             self.assertIn("hibernation_roam_targets", agents["JOKOWI"])
             self.assertIn("current_hibernation_target", agents["JOKOWI"])
 
+    def test_plan_revision_endpoint_and_sequential_estafet_dispatch(self):
+        """Memverifikasi fitur interaktif revisi draft plan Habibie dan pipa estafet sekuensial (BE -> FE)."""
+        import plans_manager
+        import asyncio
+        from unittest.mock import patch
+
+        # 1. Verifikasi parse_plan_components
+        sample_plan_md = (
+            "# Implementation Plan: Sistem Notifikasi Realtime\n\n"
+            "## 1. 🎯 Tujuan & Scope Fitur\nProblem & solusi notifikasi.\n\n"
+            "## 2. 🗄️ Tugas Backend (JOKOWI)\n- Migrasi tabel notifications\n- API endpoint POST /api/v1/notify\n\n"
+            "## 3. 🎨 Tugas Frontend (PRABOWO)\n- Komponen NotificationBell.jsx\n- Toast notification popups\n\n"
+            "## 4. 🛡️ Checklist QA & Verifikasi (GIBRAN)\n- PHPUnit passing dan test build\n"
+        )
+        parsed = plans_manager.parse_plan_components(sample_plan_md)
+        self.assertTrue(parsed["is_fullstack"])
+        self.assertTrue(parsed["has_be"])
+        self.assertTrue(parsed["has_fe"])
+        self.assertIn("Migrasi tabel notifications", parsed["be_section"])
+        self.assertIn("NotificationBell.jsx", parsed["fe_section"])
+
+        # 2. Verifikasi API Endpoint POST /api/plans/{plan_id}/revise
+        with patch("plans_manager.revise_plan_ai") as mock_revise:
+            mock_revise.return_value = {
+                "success": True,
+                "id": "PLAN-20261103-01",
+                "title": "Sistem Notifikasi Realtime (Revised)",
+                "status": "Draft",
+                "content": sample_plan_md
+            }
+            revise_req = app.PlanReviseRequest(
+                feedback="Tolong gunakan SQLite memory untuk pengujian dan tambahkan icon lonceng Neubrutalism",
+                engine="agy",
+                model="gemini-3.8-flash-high"
+            )
+            res = asyncio.run(app.api_revise_plan("PLAN-20261103-01", revise_req, user=self.test_user))
+            self.assertTrue(res["success"])
+            self.assertEqual(res["id"], "PLAN-20261103-01")
+            mock_revise.assert_called_once_with(
+                plan_id="PLAN-20261103-01",
+                feedback="Tolong gunakan SQLite memory untuk pengujian dan tambahkan icon lonceng Neubrutalism",
+                engine="agy",
+                model="gemini-3.8-flash-high"
+            )
+
+        # 3. Verifikasi Pipa Estafet Sekuensial di dispatch_plan_to_kanban
+        mock_plan_data = {
+            "id": "PLAN-TEST-SEQ",
+            "title": "Fitur Otomatisasi Estafet",
+            "filename": "PLAN-TEST-SEQ.md",
+            "project": "infobay",
+            "content": sample_plan_md,
+            "engine": "agy",
+            "model": "gemini-3.8-flash-high"
+        }
+        with patch("plans_manager.get_plan", return_value=mock_plan_data), \
+             patch("plans_manager.save_plan") as mock_save, \
+             patch("subprocess.run") as mock_subproc, \
+             patch("subprocess.Popen") as mock_popen:
+
+            # Mock tmux has-session returncode 0
+            mock_subproc.return_value.returncode = 0
+
+            dispatch_res = service.dispatch_plan_to_kanban("PLAN-TEST-SEQ")
+            self.assertTrue(dispatch_res["success"])
+            self.assertTrue(dispatch_res.get("is_sequential", False))
+            self.assertEqual(len(dispatch_res["tasks"]), 2)
+            be_task_id, fe_task_id = dispatch_res["tasks"]
+            self.assertTrue(be_task_id.startswith("TASK-BE-"))
+            self.assertTrue(fe_task_id.startswith("TASK-FE-"))
+
+            # Verifikasi task tersimpan di kanban dengan relasi depends_on dan next_task
+            k_tasks = service.get_kanban_data().get("tasks", [])
+            be_task = next((t for t in k_tasks if t.get("id") == be_task_id), None)
+            fe_task = next((t for t in k_tasks if t.get("id") == fe_task_id), None)
+
+            self.assertIsNotNone(be_task)
+            self.assertEqual(be_task["assignee"], "JOKOWI")
+            self.assertEqual(be_task["status"], "In-Progress")
+            self.assertEqual(be_task["next_task"], fe_task_id)
+
+            self.assertIsNotNone(fe_task)
+            self.assertEqual(fe_task["assignee"], "PRABOWO")
+            self.assertEqual(fe_task["status"], "To-Do")
+            self.assertEqual(fe_task["depends_on"], be_task_id)
+
 
 if __name__ == "__main__":
     unittest.main()

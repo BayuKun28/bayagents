@@ -1488,10 +1488,175 @@ def get_agy_models() -> List[Dict[str, Any]]:
     ]
 
 def dispatch_plan_to_kanban(plan_id: str) -> Dict[str, Any]:
-    """Mendelegasikan implementation plan ke tim agen di Kanban."""
+    """Mendelegasikan implementation plan ke tim agen di Kanban dengan dukungan Sequential Estafet Pipeline."""
+    plan = plans_manager.get_plan(plan_id)
+    if not plan:
+        return {"success": False, "error": f"Plan dengan ID '{plan_id}' tidak ditemukan"}
+
+    project_id = plan.get("project", "bayoffice")
+    register_project_if_new(project_id)
+    projects_reg = get_projects_registry().get("projects", {})
+    project_root = projects_reg.get(project_id, {}).get("root_dir", str(WORKSPACE_DIR / project_id))
+    be_target_dir = os.path.join(project_root, "backend") if os.path.exists(os.path.join(project_root, "backend")) else project_root
+    fe_target_dir = os.path.join(project_root, "frontend") if os.path.exists(os.path.join(project_root, "frontend")) else project_root
+
+    filename = plan.get("filename", f"{plan_id}.md")
+    plan_file_path = plans_manager.PLANS_DIR / filename
+
+    # Analisis apakah plan ini bersifat Fullstack (memiliki Bab Backend dan Frontend)
+    parsed = plans_manager.parse_plan_components(plan.get("content", ""))
+
+    if parsed.get("is_fullstack"):
+        # ==========================================================
+        # PIPELINE SEKUENSIAL: 2 Task Berantai (JOKOWI -> PRABOWO)
+        # ==========================================================
+        try:
+            with locked_json_transaction(KANBAN_PATH, default={"tasks": []}) as k_data:
+                existing_be = []
+                existing_fe = []
+                for t in k_data.get("tasks", []):
+                    if isinstance(t, dict):
+                        tid = str(t.get("id", ""))
+                        if tid.startswith("TASK-BE-"):
+                            part = tid.replace("TASK-BE-", "")
+                            if part.isdigit():
+                                existing_be.append(int(part))
+                        elif tid.startswith("TASK-FE-"):
+                            part = tid.replace("TASK-FE-", "")
+                            if part.isdigit():
+                                existing_fe.append(int(part))
+
+                next_be_num = max(existing_be, default=0) + 1
+                next_fe_num = max(existing_fe, default=0) + 1
+                task_be_id = f"TASK-BE-{next_be_num:02d}"
+                task_fe_id = f"TASK-FE-{next_fe_num:02d}"
+                now_iso = datetime.now().astimezone().isoformat()
+                engine = plan.get("engine", "agy")
+                model = plan.get("model")
+
+                task_be_entry = {
+                    "id": task_be_id,
+                    "project": project_id,
+                    "assignee": "JOKOWI",
+                    "title": f"[Fase 1: Backend] {plan['title']}",
+                    "skills_required": ["Backend Engineering", "API & Database"],
+                    "description": (
+                        f"[Dari Plan {plan['id']}: {plan['title']}]\n\n"
+                        f"📌 DOKUMEN ARSITEKTUR UTUH: {plan_file_path}\n"
+                        f"🔗 NEXT HANDOVER TASK: {task_fe_id} (PRABOWO)\n\n"
+                        f"{parsed['be_section']}\n\n"
+                        f"ATURAN ESTAFET: Setelah backend & uji mandiri selesai, perbarui status menjadi Done, "
+                        f"ubah status {task_fe_id} menjadi In-Progress di kanban.json, dan kirim sinyal estafet ke PRABOWO via tmux!"
+                    ),
+                    "status": "In-Progress",
+                    "target_dir": be_target_dir,
+                    "engine": engine,
+                    "model": model if engine == "agy" else None,
+                    "plan_ref": str(plan_file_path),
+                    "next_task": task_fe_id,
+                    "depends_on": None,
+                    "created_at": now_iso,
+                    "notes": f"Fase 1: Backend & API sedang dikerjakan oleh JOKOWI. Menunggu penyelesaian sebelum integrasi frontend ({task_fe_id})."
+                }
+
+                task_fe_entry = {
+                    "id": task_fe_id,
+                    "project": project_id,
+                    "assignee": "PRABOWO",
+                    "title": f"[Fase 2: Frontend] {plan['title']}",
+                    "skills_required": ["Frontend Engineering", "UI/UX"],
+                    "description": (
+                        f"[Dari Plan {plan['id']}: {plan['title']}]\n\n"
+                        f"📌 DOKUMEN ARSITEKTUR UTUH: {plan_file_path}\n"
+                        f"⏳ DEPENDS ON: {task_be_id} (JOKOWI)\n\n"
+                        f"{parsed['fe_section']}\n\n"
+                        f"ATURAN ESTAFET: Tetap STANDBY PASIF hingga menerima sinyal handover dari JOKOWI via tmux. "
+                        f"Setelah integrasi UI & build lolos verifikasi, serahkan ke GIBRAN untuk QA Review!"
+                    ),
+                    "status": "To-Do",
+                    "target_dir": fe_target_dir,
+                    "engine": engine,
+                    "model": model if engine == "agy" else None,
+                    "plan_ref": str(plan_file_path),
+                    "next_task": None,
+                    "depends_on": task_be_id,
+                    "created_at": now_iso,
+                    "notes": f"Fase 2: Menunggu penyelesaian backend ({task_be_id}) sebelum PRABOWO mulai pengerjaan."
+                }
+
+                k_data.setdefault("tasks", []).append(task_be_entry)
+                k_data.setdefault("tasks", []).append(task_fe_entry)
+        except Exception as e:
+            return {"success": False, "error": f"Gagal mencatat tugas berantai ke kanban.json: {e}"}
+
+        # Update metadata plan menjadi Dispatched dengan referensi kedua subtask
+        combined_tasks = f"{task_be_id}, {task_fe_id}"
+        plans_manager.save_plan(
+            title=plan["title"],
+            content=plan["content"],
+            project=project_id,
+            author=plan.get("author", "HABIBIE"),
+            status="Dispatched",
+            plan_id=plan["id"],
+            dispatched_task_id=combined_tasks
+        )
+
+        plans_manager.log_habibie_activity(
+            f"DISPATCHED PLAN (ESTAFET): [{plan['id']}] '{plan['title']}' didelegasikan ke Kanban sebagai "
+            f"Fase 1: {task_be_id} (JOKOWI) ➡️ Fase 2: {task_fe_id} (PRABOWO)"
+        )
+
+        # Bangunkan Tmux: HANYA bangunkan JOKOWI (Fase 1 Backend), PRABOWO tetap pasif
+        res_tmux = subprocess.run(["tmux", "has-session", "-t", TMUX_SESSION_NAME], capture_output=True)
+        if res_tmux.returncode != 0:
+            task_summary = f"{task_be_id} [Proyek: {project_id}] (Fase 1 Backend): {plan['title'][:60]}"
+            launch_agents_daemon(task_summary, model=model or "")
+        else:
+            try:
+                prompt_to_jokowi = (
+                    f"JOKOWI: Tugas baru {task_be_id} [Proyek: {project_id}] (Fase 1: Backend) dari {plan['id']}. "
+                    f"Baca dokumen arsitektur di {plan_file_path}. "
+                    f"Implementasikan database, migration, models, controllers, dan API di {be_target_dir}. "
+                    f"Setelah uji mandiri lulus, ubah status {task_fe_id} menjadi In-Progress di kanban.json, "
+                    f"dan kirim sinyal estafet ke PRABOWO (agy_agents:0.3) via tmux!"
+                )
+                subprocess.run(
+                    ["tmux", "send-keys", "-t", f"{TMUX_SESSION_NAME}:0.2", prompt_to_jokowi, "Enter"],
+                    check=True
+                )
+            except Exception as e:
+                print(f"⚠️ Gagal mengirim sinyal tmux ke JOKOWI: {e}")
+
+        # Siarkan notifikasi ke Telegram
+        try:
+            model_tag = f" ({model})" if (engine == "agy" and model) else ""
+            msg = (
+                f"[BayOffice]: 🔀 Plan *[{plan['id']}]* didelegasikan sebagai Pipa Estafet Berurutan:\n"
+                f"1️⃣ *{task_be_id}* (Backend by `JOKOWI` - `In-Progress`)\n"
+                f"2️⃣ *{task_fe_id}* (Frontend by `PRABOWO` - `To-Do` Menunggu Backend)\n\n"
+                f"🚀 JOKOWI mulai mengeksekusi backend..."
+            )
+            subprocess.Popen([TELEBOT_PYTHON, TELEBOT_SCRIPT, msg])
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "plan_id": plan["id"],
+            "task_id": combined_tasks,
+            "is_sequential": True,
+            "tasks": [task_be_id, task_fe_id],
+            "message": f"Rencana '{plan['title']}' berhasil didelegasikan sebagai pipa estafet berurutan ({task_be_id} ➡️ {task_fe_id})."
+        }
+
+    # Jika bukan fullstack (misal murni backend atau murni frontend), gunakan dispatch standar
     return plans_manager.dispatch_plan_to_kanban(plan_id, dispatch_fn=dispatch_task_from_web)
 
 def delete_plan_by_id(plan_id: str) -> Dict[str, Any]:
     """Menghapus dokumen implementation plan."""
     return plans_manager.delete_plan(plan_id)
+
+def revise_plan_by_id(plan_id: str, feedback: str, engine: Optional[str] = "agy", model: Optional[str] = None) -> Dict[str, Any]:
+    """Meminta HABIBIE menyempurnakan dokumen plan berdasarkan feedback Mas Bay."""
+    return plans_manager.revise_plan_ai(plan_id=plan_id, feedback=feedback, engine=engine, model=model)
 
