@@ -975,10 +975,10 @@ window.OfficePlans = (function () {
           studioReviseModelSelect.value = currentSelectedStudioPlan.model;
         }
         if (studioReviseModal) {
-          studioReviseModal.style.display = 'flex';
+          studioReviseModal.classList.add('active');
           setTimeout(() => {
             if (studioReviseFeedbackInput) studioReviseFeedbackInput.focus();
-          }, 60);
+          }, 100);
         }
         if (window.soundFx) window.soundFx.playClick();
         if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
@@ -986,7 +986,7 @@ window.OfficePlans = (function () {
     }
 
     const closeReviseModal = () => {
-      if (studioReviseModal) studioReviseModal.style.display = 'none';
+      if (studioReviseModal) studioReviseModal.classList.remove('active');
     };
 
     if (closeStudioReviseModalBtn) {
@@ -998,6 +998,22 @@ window.OfficePlans = (function () {
     if (studioReviseModal) {
       studioReviseModal.addEventListener('click', (e) => {
         if (e.target === studioReviseModal) closeReviseModal();
+      });
+    }
+
+    // Escape key to close revise modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && studioReviseModal && studioReviseModal.classList.contains('active')) {
+        closeReviseModal();
+      }
+    });
+
+    // Toggle model dropdown when engine changes in revise modal
+    if (studioReviseEngineSelect && studioReviseModelSelect) {
+      studioReviseEngineSelect.addEventListener('change', () => {
+        const isAgy = (studioReviseEngineSelect.value === 'agy');
+        studioReviseModelSelect.disabled = !isAgy;
+        studioReviseModelSelect.style.opacity = isAgy ? '1' : '0.5';
       });
     }
 
