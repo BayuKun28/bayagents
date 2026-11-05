@@ -2732,6 +2732,26 @@
       "created_at": "2026-11-05T15:55:00.000000+07:00",
       "notes": "Implementasi selesai 100%: 1. Tombol pemilih durasi awal (⏱️ 1m, ⏱️ 3m ✅, ⏱️ 5m, ⏱️ 10m) & [⏹️ Batalkan] langsung tampil di pesan status pertama saat tugas AGY dimulai. 2. Callback agy_set_timeout aktif secara real-time mengubah deadline tanpa restart proses. 3. Integrasi 9Router Multimodal Vision (call_9router_image) via base64 image_url sukses teruji. 4. Integrasi 9Router Multimodal Audio (call_9router_audio) dengan auto-convert ffmpeg ke WAV 16kHz mono sukses teruji. 5. Manajemen file temporary cerdas cleanup_temp_media_files retensi 15 menit agar tombol switch engine (reask) antar 9Router & AGY tetap berfungsi. 6. Layanan agy-telebot.service aktif (PID: 636709, RAM: 41.8MB).",
       "qa_review": "PASSED - Kompilasi py_compile 100% lolos. Validasi endpoint 9Router image & audio terverifikasi 200 OK. Tombol durasi & timeout supervisor aktif di agy-telebot.service."
+    },
+    {
+      "id": "TASK-TELEBOT-04",
+      "project": "telebot",
+      "assignee": "HABIBIE",
+      "title": "Interactive Pre-Execution Launcher Shortcut Card & Instant Cancellation/Correction Supervisor",
+      "skills_required": [
+        "Python Asyncio",
+        "Telegram Inline Keyboards",
+        "Process Signal Management",
+        "Dual-Engine Routing"
+      ],
+      "description": "1. Tambahkan Interactive Launcher Card sebelum eksekusi pada setiap pesan masuk (teks, foto, audio) untuk memilih otak (⚡ 9Router) atau durasi AGY (1m, 3m default, 5m, 10m) serta opsi batal. 2. Perbaiki tombol pembatalan seketika dengan SIGKILL dan answer_once untuk mencegah query timeout/stalling serta mencegah overwrite output. 3. Berikan alert toast dan update pesan notifikasi saat waktu dikoreksi, diperpanjang, atau dibatalkan.",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/telebot",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "created_at": "2026-11-05T17:15:00.000000+07:00",
+      "notes": "Tuntas 100%: 1. build_launcher_keyboard ditambahkan pada handle_chat, handle_photo, dan handle_voice. 2. answer_once callback wrapper diterapkan untuk melenyapkan bug double-answer Query is too old dan menjamin toast notifikasi muncul seketika. 3. Tombol batalkan menggunakan SIGKILL langsung pada pgid dan proteksi cancelled flag mencegah partial output menimpa status batal. 4. Notifikasi koreksi waktu dan pertambahan waktu ditampilkan jelas via alert popup dan teks pesan. 5. agy-telebot.service restart aktif normal.",
+      "qa_review": "PASSED - py_compile lolos tanpa error, bot Telegram aktif running di agy-telebot.service, alur launcher, pembatalan instan SIGKILL, dan notifikasi koreksi waktu terverifikasi."
     }
   ]
 }

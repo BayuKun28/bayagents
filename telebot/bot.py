@@ -450,8 +450,23 @@ def run_agy(user_prompt: str, continue_session: bool = False) -> str:
     except Exception as e:
         return f"⚠️ Gagal menjalankan agy: {e}"
 
+def build_launcher_keyboard(q_id: str) -> InlineKeyboardMarkup:
+    """Membangun keyboard shortcut launcher pilihan otak (9Router / AGY) dan durasi batas waktu sebelum eksekusi."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("⚡ 9Router (Cepat & Hemat Kuota)", callback_data=f"launch:9router:{q_id}")],
+        [
+            InlineKeyboardButton("🧠 AGY 1 Menit", callback_data=f"launch:agy:{q_id}:60"),
+            InlineKeyboardButton("🧠 AGY 3 Menit (Default)", callback_data=f"launch:agy:{q_id}:180")
+        ],
+        [
+            InlineKeyboardButton("🧠 AGY 5 Menit", callback_data=f"launch:agy:{q_id}:300"),
+            InlineKeyboardButton("🧠 AGY 10 Menit", callback_data=f"launch:agy:{q_id}:600")
+        ],
+        [InlineKeyboardButton("⏹️ Batalkan", callback_data=f"launch:cancel:{q_id}")]
+    ])
+
 def build_timeout_keyboard(job_id: str, active_seconds: int = 180) -> InlineKeyboardMarkup:
-    """Membangun keyboard inline pemilihan batas waktu eksekusi awal (1m, 3m, 5m, 10m)."""
+    """Membangun keyboard inline pemilihan batas waktu eksekusi aktif."""
     options = [
         (60, "⏱️ 1m"),
         (180, "⏱️ 3m"),
@@ -465,7 +480,10 @@ def build_timeout_keyboard(job_id: str, active_seconds: int = 180) -> InlineKeyb
 
     return InlineKeyboardMarkup([
         buttons,
-        [InlineKeyboardButton("⏹️ Batalkan", callback_data=f"agy_cancel:{job_id}")]
+        [
+            InlineKeyboardButton("➕ Perpanjang +3m", callback_data=f"agy_extend:{job_id}"),
+            InlineKeyboardButton("⏹️ Batalkan", callback_data=f"agy_cancel:{job_id}")
+        ]
     ])
 
 async def run_agy_interactive(
@@ -530,8 +548,8 @@ async def run_agy_interactive(
     init_min = int(initial_timeout // 60)
     init_text = (
         f"⏳ *{status_prefix} Sedang Memproses Perintah...*\n\n"
-        f"⏱️ *Batas Waktu Eksekusi:* `{init_min} Menit (Default)`\n"
-        f"💡 _Pilih batas waktu awal jika perintah ini membutuhkan waktu lama:_"
+        f"⏱️ *Batas Waktu Eksekusi:* `{init_min} Menit`\n"
+        f"💡 _Anda dapat mengubah batas waktu, menambah +3m, atau membatalkan kapan saja:_"
     )
     try:
         await msg.edit_text(
@@ -583,14 +601,10 @@ async def run_agy_interactive(
             # Batas waktu habis (timeout)
             if current_time >= job_data["deadline"]:
                 try:
-                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                 except Exception:
-                    pass
-                try:
-                    await asyncio.wait_for(proc.wait(), timeout=3.0)
-                except asyncio.TimeoutError:
                     try:
-                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                        proc.kill()
                     except Exception:
                         pass
 
@@ -610,10 +624,20 @@ async def run_agy_interactive(
                     pass
                 return False, timeout_text
 
-        # Baca stdout / stderr
-        stdout_bytes, stderr_bytes = await proc.communicate()
-        stdout_str = stdout_bytes.decode("utf-8", errors="replace").strip()
-        stderr_str = stderr_bytes.decode("utf-8", errors="replace").strip()
+        if job_data.get("cancelled"):
+            return False, "🛑 *Eksekusi AGY dibatalkan oleh pengguna.*"
+
+        # Baca stdout / stderr dengan batas waktu pembacaan pipa
+        try:
+            stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=5.0)
+            stdout_str = stdout_bytes.decode("utf-8", errors="replace").strip()
+            stderr_str = stderr_bytes.decode("utf-8", errors="replace").strip()
+        except Exception:
+            stdout_str = ""
+            stderr_str = ""
+
+        if job_data.get("cancelled"):
+            return False, "🛑 *Eksekusi AGY dibatalkan oleh pengguna.*"
 
         # Jika gagal dengan --continue, ulangi sekali tanpa --continue jika belum dibatalkan
         if proc.returncode != 0 and continue_session and not job_data.get("cancelled"):
@@ -877,95 +901,86 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     data = query.data or ""
-    await query.answer()
+    has_answered = False
 
-    # 1. Ganti Engine Setting: engine_set:<engine>
-    if data.startswith("engine_set:"):
-        chosen = data.split(":", 1)[1]
-        set_current_engine(chosen)
+    async def answer_once(*args, **kwargs):
+        nonlocal has_answered
+        if not has_answered:
+            has_answered = True
+            try:
+                await query.answer(*args, **kwargs)
+            except Exception:
+                pass
 
-        txt_chosen = (
-            "⚡ 9Router (Cepat/Hemat)" if chosen == "9router"
-            else ("🧠 AGY (Server Tools)" if chosen == "agy" else "❓ Selalu Tanya Tiap Chat")
-        )
+    try:
+        # 1. Launcher: Batalkan dari Launcher Card: launch:cancel:<q_id>
+        if data.startswith("launch:cancel:"):
+            q_id = data.split(":", 2)[2]
+            q_data = PENDING_CHAT_QUERIES.pop(q_id, None)
+            if q_data and q_data.get("media_path"):
+                try:
+                    if os.path.exists(q_data["media_path"]):
+                        os.remove(q_data["media_path"])
+                except Exception:
+                    pass
 
-        keyboard = [
-            [
-                InlineKeyboardButton("⚡ 9Router (Cepat/Hemat)" + (" ✅" if chosen == "9router" else ""), callback_data="engine_set:9router"),
-                InlineKeyboardButton("🧠 AGY (Server Tools)" + (" ✅" if chosen == "agy" else ""), callback_data="engine_set:agy")
-            ],
-            [
-                InlineKeyboardButton("❓ Selalu Tanya Tiap Chat" + (" ✅" if chosen == "ask" else ""), callback_data="engine_set:ask")
-            ]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+            await answer_once("🛑 Permintaan dibatalkan.", show_alert=True)
+            cancel_text = (
+                "🛑 *Permintaan Dibatalkan*\n\n"
+                "_Pesan atau berkas Anda tidak diproses. Silakan kirim pesan baru kapan saja._"
+            )
+            try:
+                await query.edit_message_text(cancel_text, parse_mode="Markdown")
+            except Exception:
+                pass
+            return
 
-        msg_text = (
-            f"⚙️ *PENGATURAN OTAK CHAT DEFAULT*\n\n"
-            f"• Mode Aktif: *{txt_chosen}*\n\n"
-            f"Pilih mode yang diinginkan untuk memproses pesan teks biasa:\n"
-            f"1. ⚡ *9Router*: Respon instan, hemat kuota token, memori obrolan nyambung.\n"
-            f"2. 🧠 *AGY*: Eksekusi server, inspeksi bash, & skills terpasang.\n"
-            f"3. ❓ *Selalu Tanya*: Memunculkan tombol pilihan sebelum membalas.\n\n"
-            f"💡 *Jalan Pintas Cepat (Tanpa Ganti Mode):*\n"
-            f"• `/agy <pesan>` ➔ Langsung dijawab oleh AGY\n"
-            f"• `/9 <pesan>` ➔ Langsung dijawab oleh 9Router"
-        )
-        try:
-            await query.edit_message_text(msg_text, reply_markup=reply_markup, parse_mode="Markdown")
-        except Exception:
-            pass
-        return
-
-    # 1b. Ganti Model AGY: model_set:<model_id>
-    if data.startswith("model_set:"):
-        chosen = data.split(":", 1)[1]
-        set_current_model(chosen)
-        reply_markup = build_model_keyboard(chosen)
-        msg_text = (
-            f"🧠 *PENGATURAN MODEL ANTIGRAVITY (AGY)*\n\n"
-            f"• Model Aktif: `{chosen}` ✅\n\n"
-            f"Pilih reasoning model yang diinginkan untuk sesi tim agen & HABIBIE:\n"
-            f"1. ⚡ *Gemini 3.8 Flash (High)*: Rekomendasi utama, cepat & bernalar tinggi.\n"
-            f"2. 🧠 *Claude Sonnet 4.6 (Thinking)*: Khusus arsitektur mendalam & coding teliti.\n"
-            f"3. 🏛️ *Claude Opus 4.6 (Thinking)*: Problem arsitektur kompleks berskala besar.\n"
-            f"4. ⚖️ *Gemini 3.8 Flash (Medium/Low)*: Varian hemat & ringan.\n"
-            f"5. 🌐 *GPT-OSS 120B*: Alternatif open-weight model.\n\n"
-            f"💡 Klik tombol di bawah untuk langsung mengganti model:"
-        )
-        try:
-            await query.edit_message_text(msg_text, reply_markup=reply_markup, parse_mode="Markdown")
-        except Exception:
-            pass
-        return
-
-    # 2. Pilihan dari Mode Interactive: ask_engine:<engine>:<q_id>
-    if data.startswith("ask_engine:"):
-        parts = data.split(":")
-        if len(parts) >= 3:
-            target_engine = parts[1]
-            q_id = parts[2]
+        # 2. Launcher: Eksekusi via 9Router: launch:9router:<q_id>
+        if data.startswith("launch:9router:"):
+            q_id = data.split(":", 2)[2]
             q_data = PENDING_CHAT_QUERIES.get(q_id)
-            prompt = q_data.get("prompt", "") if q_data else ""
-            if not prompt:
-                await query.edit_message_text("⚠️ Sesi pertanyaan telah kadaluarsa. Silakan kirim ulang pesan Anda.")
+            if not q_data:
+                await answer_once("⚠️ Sesi permintaan telah kadaluarsa.", show_alert=True)
+                try:
+                    await query.edit_message_text("⚠️ Sesi permintaan telah kadaluarsa. Silakan kirim ulang pesan Anda.")
+                except Exception:
+                    pass
                 return
 
-            if target_engine == "agy":
-                await query.edit_message_text(f"📐 *[HABIBIE / AGY]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
-                success, reply = await run_agy_interactive(
-                    msg=query.message,
-                    user_prompt=prompt,
-                    continue_session=True,
-                    initial_timeout=180,
-                    status_prefix="📐 [HABIBIE / AGY]"
-                )
-                if success:
-                    keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
-                    await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+            await answer_once("⚡ Memproses via 9Router...", show_alert=False)
+            mtype = q_data.get("type", "text")
+            prompt = q_data.get("prompt", "")
+            media_path = q_data.get("media_path", "")
+
+            if mtype == "image":
+                try:
+                    await query.edit_message_text("⚡ [9Router] Sedang menganalisa gambar...")
+                except Exception:
+                    pass
+                reply = await asyncio.to_thread(call_9router_image, media_path, prompt)
+                new_q_id = str(int(time.time() * 1000))[-8:]
+                PENDING_CHAT_QUERIES[new_q_id] = q_data
+                keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{new_q_id}")]]
+                await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
                 return
+
+            elif mtype == "audio":
+                try:
+                    await query.edit_message_text("⚡ [9Router] Sedang mendengarkan & mentranskripsi suara...")
+                except Exception:
+                    pass
+                reply = await asyncio.to_thread(call_9router_audio, media_path, prompt)
+                new_q_id = str(int(time.time() * 1000))[-8:]
+                PENDING_CHAT_QUERIES[new_q_id] = q_data
+                keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{new_q_id}")]]
+                await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                return
+
             else:
-                await query.edit_message_text(f"📐 *[HABIBIE]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
+                try:
+                    await query.edit_message_text("📐 [HABIBIE] Mengetik...")
+                except Exception:
+                    pass
                 reply = await asyncio.to_thread(call_9router, prompt)
                 if reply.startswith("⚠️"):
                     success, reply = await run_agy_interactive(
@@ -977,195 +992,457 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
                     )
                     if not success:
                         return
-                keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{q_id}")]]
+
+                new_q_id = str(int(time.time() * 1000))[-8:]
+                PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time(), "type": "text"}
+                keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{new_q_id}")]]
                 await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
                 return
 
-    # 3. Tanya Ulang (Re-ask): reask:<engine>:<q_id>
-    if data.startswith("reask:"):
-        parts = data.split(":")
-        if len(parts) >= 3:
-            target_engine = parts[1]
-            q_id = parts[2]
-            q_data = PENDING_CHAT_QUERIES.get(q_id)
-            prompt = q_data.get("prompt", "") if q_data else ""
-            if not prompt:
-                await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="⚠️ Sesi pertanyaan telah kadaluarsa. Silakan kirim ulang pesan Anda.")
-                return
+        # 3. Launcher: Eksekusi via AGY dengan durasi pilihan: launch:agy:<q_id>:<sec>
+        if data.startswith("launch:agy:"):
+            parts = data.split(":")
+            if len(parts) >= 4:
+                q_id = parts[2]
+                sec = int(parts[3])
+                q_data = PENDING_CHAT_QUERIES.get(q_id)
+                if not q_data:
+                    await answer_once("⚠️ Sesi permintaan telah kadaluarsa.", show_alert=True)
+                    try:
+                        await query.edit_message_text("⚠️ Sesi permintaan telah kadaluarsa. Silakan kirim ulang pesan Anda.")
+                    except Exception:
+                        pass
+                    return
 
-            if target_engine == "agy":
-                wait_msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="🧠 [AGY CLI] Sedang menganalisa ulang...")
-                success, reply = await run_agy_interactive(
-                    msg=wait_msg,
-                    user_prompt=prompt,
-                    continue_session=True,
-                    initial_timeout=180,
-                    status_prefix="🧠 [AGY CLI]"
-                )
-                if success:
+                min_val = int(sec // 60)
+                await answer_once(f"🧠 Memulai AGY ({min_val}m)...", show_alert=False)
+
+                mtype = q_data.get("type", "text")
+                prompt = q_data.get("prompt", "")
+                media_path = q_data.get("media_path", "")
+
+                if mtype == "image":
+                    agy_prompt = (
+                        f"Pengguna mengirimkan file gambar yang disimpan di {media_path}.\n"
+                        f"Catatan/Permintaan Pengguna: {prompt}\n\n"
+                        f"Gunakan tool read_file untuk membaca dan menganalisa file gambar tersebut, "
+                        f"lalu berikan respons yang terstruktur, jelas, dan solutif."
+                    )
+                    success, reply = await run_agy_interactive(
+                        msg=query.message,
+                        user_prompt=agy_prompt,
+                        continue_session=True,
+                        initial_timeout=sec,
+                        status_prefix="🔍 [HABIBIE / AGY]"
+                    )
+                    if not success:
+                        return
+
                     new_q_id = str(int(time.time() * 1000))[-8:]
-                    PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time()}
-                    keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
-                    await send_or_edit_response(wait_msg, reply, InlineKeyboardMarkup(keyboard))
-                return
-            else:
-                wait_msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="⚡ [9Router] Mengetik ulang...")
-                reply = await asyncio.to_thread(call_9router, prompt)
-                new_q_id = str(int(time.time() * 1000))[-8:]
-                PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time()}
-                keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{new_q_id}")]]
-                await send_or_edit_response(wait_msg, reply, InlineKeyboardMarkup(keyboard))
-                return
+                    PENDING_CHAT_QUERIES[new_q_id] = q_data
+                    keyboard = [[InlineKeyboardButton("⚡ Coba Analisa via 9Router", callback_data=f"reask:9router_media:{new_q_id}")]]
+                    await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                    return
 
-    # 3b. Ganti Batas Waktu Awal AGY: agy_set_timeout:<job_id>:<seconds>
-    if data.startswith("agy_set_timeout:"):
-        parts = data.split(":")
-        if len(parts) >= 3:
-            job_id = parts[1]
-            sec = int(parts[2])
+                elif mtype == "audio":
+                    hint = f"\nCatatan tambahan pengguna: {prompt}" if prompt else ""
+                    agy_prompt = (
+                        f"Pengguna mengirimkan file rekaman audio/suara yang disimpan di {media_path}.{hint}\n\n"
+                        f"Gunakan tool read_file untuk mendengarkan/memeriksa isi audio tersebut. "
+                        f"Tuliskan transkripsi apa yang dikatakan pengguna secara ringkas, "
+                        f"kemudian jawab permintaan, pertanyaan, atau instruksi pengguna tersebut secara ramah, cerdas, dan solutif."
+                    )
+                    success, reply = await run_agy_interactive(
+                        msg=query.message,
+                        user_prompt=agy_prompt,
+                        continue_session=True,
+                        initial_timeout=sec,
+                        status_prefix="🎙️ [HABIBIE / AGY]"
+                    )
+                    if not success:
+                        return
+
+                    new_q_id = str(int(time.time() * 1000))[-8:]
+                    PENDING_CHAT_QUERIES[new_q_id] = q_data
+                    keyboard = [[InlineKeyboardButton("⚡ Coba Analisa via 9Router", callback_data=f"reask:9router_media:{new_q_id}")]]
+                    await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                    return
+
+                else:
+                    success, reply = await run_agy_interactive(
+                        msg=query.message,
+                        user_prompt=prompt,
+                        continue_session=True,
+                        initial_timeout=sec,
+                        status_prefix="📐 [HABIBIE / AGY]"
+                    )
+                    if not success:
+                        return
+
+                    # Kuota check fallback
+                    if any(err_word in reply.lower() for err_word in ["quota", "rate limit", "exceeded", "429"]):
+                        try:
+                            await query.message.edit_text(
+                                f"{reply}\n\n⚠️ *Kuota agy limit! Mencoba dialihkan ke 9Router Emergency Agent...*",
+                                parse_mode="Markdown"
+                            )
+                        except Exception:
+                            pass
+                        reply_emg = await asyncio.to_thread(
+                            emergency_agent.run_emergency_agent,
+                            task_instruction=prompt,
+                            target_dir=str(WORKSPACE_DIR),
+                            project_id="server"
+                        )
+                        try:
+                            await query.message.edit_text(reply_emg, parse_mode="Markdown")
+                        except Exception:
+                            pass
+                        return
+
+                    new_q_id = str(int(time.time() * 1000))[-8:]
+                    PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time(), "type": "text"}
+                    keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
+                    await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                    return
+
+        # 4. Ganti Batas Waktu AGY (Koreksi Waktu): agy_set_timeout:<job_id>:<seconds>
+        if data.startswith("agy_set_timeout:"):
+            parts = data.split(":")
+            if len(parts) >= 3:
+                job_id = parts[1]
+                sec = int(parts[2])
+                job_data = ACTIVE_AGY_JOBS.get(job_id)
+                if not job_data:
+                    await answer_once("⚠️ Tugas ini sudah selesai atau tidak lagi aktif.", show_alert=True)
+                    return
+
+                job_data["deadline"] = job_data["created_at"] + sec
+                job_data["current_timeout"] = sec
+                job_data["warning_sent"] = False
+
+                min_val = int(sec // 60)
+                elapsed = time.time() - job_data["created_at"]
+                el_min = int(elapsed // 60)
+                el_sec = int(elapsed % 60)
+
+                await answer_once(f"⏱️ Batas waktu diatur menjadi {min_val} Menit!", show_alert=False)
+
+                status_prefix = job_data.get("status_prefix", "🧠 [HABIBIE / AGY]")
+                updated_text = (
+                    f"⏳ *{status_prefix} Sedang Memproses Perintah...*\n\n"
+                    f"⏱️ *Batas Waktu Diperbarui:* `{min_val} Menit` (Berjalan: `{el_min}m {el_sec}s`)\n"
+                    f"🔔 _Notifikasi: Batas waktu eksekusi telah dikoreksi menjadi {min_val} Menit._\n\n"
+                    f"💡 _Pilih batas waktu lain atau perpanjang jika diperlukan:_"
+                )
+                try:
+                    await query.edit_message_text(
+                        updated_text,
+                        reply_markup=build_timeout_keyboard(job_id, sec),
+                        parse_mode="Markdown"
+                    )
+                except Exception:
+                    pass
+            return
+
+        # 5. Perpanjang Waktu Tunggu AGY (+3m): agy_extend:<job_id>
+        if data.startswith("agy_extend:"):
+            job_id = data.split(":", 1)[1]
             job_data = ACTIVE_AGY_JOBS.get(job_id)
             if not job_data:
-                await query.answer("⚠️ Tugas ini sudah selesai atau tidak lagi aktif.", show_alert=True)
+                await answer_once("⚠️ Tugas ini sudah selesai atau tidak lagi aktif.", show_alert=True)
                 return
 
-            job_data["deadline"] = job_data["created_at"] + sec
-            job_data["current_timeout"] = sec
-            job_data["warning_sent"] = False  # Reset flag peringatan agar muncul sebelum batas baru jika mepet
+            job_data["deadline"] += 180
+            job_data["extensions_count"] += 1
+            job_data["warning_sent"] = False
 
-            min_val = int(sec // 60)
+            total_min = int((job_data["deadline"] - job_data["created_at"]) // 60)
             elapsed = time.time() - job_data["created_at"]
             el_min = int(elapsed // 60)
             el_sec = int(elapsed % 60)
 
+            await answer_once(f"➕ Berhasil diperpanjang +3 Menit! (Total: {total_min}m)", show_alert=False)
+
             status_prefix = job_data.get("status_prefix", "🧠 [HABIBIE / AGY]")
-            updated_text = (
-                f"⏳ *{status_prefix} Sedang Memproses Perintah...*\n\n"
-                f"⏱️ *Batas Waktu Diatur:* `{min_val} Menit` (Berjalan: `{el_min}m {el_sec}s`)\n"
-                f"💡 _Batas waktu aktif telah diperbarui:_"
+            update_text = (
+                f"⏳ *{status_prefix} Waktu Berhasil Diperpanjang! (+3 Menit)*\n\n"
+                f"⏱️ *Total Batas Waktu:* `{total_min} Menit` (Berjalan: `{el_min}m {el_sec}s`)\n"
+                f"🔔 _Notifikasi: Eksekusi berlanjut tanpa terputus._\n\n"
+                f"Anda dapat menambah waktu lagi jika diperlukan:"
+            )
+            keyboard = [
+                [
+                    InlineKeyboardButton("➕ Tambah Waktu Lagi (+3m)", callback_data=f"agy_extend:{job_id}"),
+                    InlineKeyboardButton("⏹️ Batalkan", callback_data=f"agy_cancel:{job_id}")
+                ]
+            ]
+            try:
+                await query.edit_message_text(update_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+            except Exception:
+                pass
+            return
+
+        # 6. Batalkan Proses AGY Secara Instan: agy_cancel:<job_id>
+        if data.startswith("agy_cancel:"):
+            job_id = data.split(":", 1)[1]
+            job_data = ACTIVE_AGY_JOBS.get(job_id)
+            if not job_data:
+                await answer_once("⚠️ Tugas ini sudah selesai atau tidak aktif.", show_alert=True)
+                return
+
+            job_data["cancelled"] = True
+            proc = job_data.get("proc")
+            if proc:
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                except Exception:
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
+
+            await answer_once("🛑 Proses AGY berhasil dibatalkan seketika!", show_alert=True)
+
+            cancel_text = (
+                "🛑 *Eksekusi Tugas Berhasil Dibatalkan*\n\n"
+                "• *Status:* Proses dihentikan seketika (`SIGKILL`).\n"
+                "• *Resource:* CPU & RAM telah dibebaskan.\n"
+                "• _Seluruh sub-proses AGY telah dibersihkan dari server._"
             )
             try:
-                await query.edit_message_text(
-                    updated_text,
-                    reply_markup=build_timeout_keyboard(job_id, sec),
-                    parse_mode="Markdown"
-                )
+                await query.edit_message_text(cancel_text, parse_mode="Markdown")
             except Exception:
                 pass
-            await query.answer(f"✅ Batas waktu diatur menjadi {min_val} Menit!", show_alert=False)
-        return
-
-    # 4. Perpanjang Waktu Tunggu AGY: agy_extend:<job_id>
-    if data.startswith("agy_extend:"):
-        job_id = data.split(":", 1)[1]
-        job_data = ACTIVE_AGY_JOBS.get(job_id)
-        if not job_data:
-            await query.answer("⚠️ Tugas ini sudah selesai atau tidak lagi aktif.", show_alert=True)
             return
 
-        # Tambah batas waktu 180 detik (+3 menit)
-        job_data["deadline"] += 180
-        job_data["extensions_count"] += 1
-        job_data["warning_sent"] = False  # Izinkan peringatan baru saat mendekati batas berikutnya
+        # 7. Ganti Engine Setting: engine_set:<engine>
+        if data.startswith("engine_set:"):
+            await answer_once()
+            chosen = data.split(":", 1)[1]
+            set_current_engine(chosen)
 
-        total_min = int((job_data["deadline"] - job_data["created_at"]) // 60)
-        elapsed = time.time() - job_data["created_at"]
-        el_min = int(elapsed // 60)
-        el_sec = int(elapsed % 60)
+            txt_chosen = (
+                "⚡ 9Router (Cepat/Hemat)" if chosen == "9router"
+                else ("🧠 AGY (Server Tools)" if chosen == "agy" else "❓ Selalu Tanya Tiap Chat")
+            )
 
-        update_text = (
-            f"⏳ *{job_data.get('status_prefix', '🧠 [HABIBIE / AGY]')} Waktu Berhasil Diperpanjang! (+3 Menit)*\n\n"
-            f"⏱️ *Batas waktu total:* `{total_min} Menit` (Berjalan: `{el_min}m {el_sec}s`)\n\n"
-            f"Eksekusi tugas terus berjalan tanpa terputus. Anda dapat menambah waktu lagi jika dibutuhkan."
-        )
-        keyboard = [
-            [
-                InlineKeyboardButton("➕ Tambah Waktu Lagi (+3m)", callback_data=f"agy_extend:{job_id}"),
-                InlineKeyboardButton("⏹️ Batalkan", callback_data=f"agy_cancel:{job_id}")
+            keyboard = [
+                [
+                    InlineKeyboardButton("⚡ 9Router (Cepat/Hemat)" + (" ✅" if chosen == "9router" else ""), callback_data="engine_set:9router"),
+                    InlineKeyboardButton("🧠 AGY (Server Tools)" + (" ✅" if chosen == "agy" else ""), callback_data="engine_set:agy")
+                ],
+                [
+                    InlineKeyboardButton("❓ Selalu Tanya Tiap Chat" + (" ✅" if chosen == "ask" else ""), callback_data="engine_set:ask")
+                ]
             ]
-        ]
-        try:
-            await query.edit_message_text(update_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-        except Exception:
-            pass
-        await query.answer("✅ Batas waktu berhasil diperpanjang +3 menit!", show_alert=False)
-        return
+            reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # 5. Batalkan Proses AGY: agy_cancel:<job_id>
-    if data.startswith("agy_cancel:"):
-        job_id = data.split(":", 1)[1]
-        job_data = ACTIVE_AGY_JOBS.get(job_id)
-        if not job_data:
-            await query.answer("⚠️ Tugas ini sudah tidak aktif.", show_alert=True)
-            return
-
-        job_data["cancelled"] = True
-        proc = job_data.get("proc")
-        if proc:
+            msg_text = (
+                f"⚙️ *PENGATURAN OTAK CHAT DEFAULT*\n\n"
+                f"• Mode Aktif: *{txt_chosen}*\n\n"
+                f"Pilih mode yang diinginkan untuk memproses pesan teks biasa:\n"
+                f"1. ⚡ *9Router*: Respon instan, hemat kuota token, memori obrolan nyambung.\n"
+                f"2. 🧠 *AGY*: Eksekusi server, inspeksi bash, & skills terpasang.\n"
+                f"3. ❓ *Selalu Tanya*: Memunculkan tombol pilihan sebelum membalas.\n\n"
+                f"💡 *Jalan Pintas Cepat (Tanpa Ganti Mode):*\n"
+                f"• `/agy <pesan>` ➔ Langsung dijawab oleh AGY\n"
+                f"• `/9 <pesan>` ➔ Langsung dijawab oleh 9Router"
+            )
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                await query.edit_message_text(msg_text, reply_markup=reply_markup, parse_mode="Markdown")
             except Exception:
                 pass
-
-        cancel_text = "🛑 *Eksekusi tugas AGY berhasil dibatalkan oleh pengguna.*"
-        try:
-            await query.edit_message_text(cancel_text, parse_mode="Markdown")
-        except Exception:
-            pass
-        await query.answer("🛑 Proses dibatalkan.", show_alert=True)
-        return
-
-    # 6. Coba Lagi Setelah Timeout: agy_retry:<job_id>
-    if data.startswith("agy_retry:"):
-        job_id = data.split(":", 1)[1]
-        q_data = PENDING_CHAT_QUERIES.get(job_id)
-        prompt = q_data.get("prompt", "") if q_data else ""
-        if not prompt:
-            await query.answer("⚠️ Sesi tugas telah kadaluarsa. Silakan ketik ulang perintah Anda.", show_alert=True)
             return
 
-        await query.edit_message_text("🧠 [AGY CLI] Memulai ulang tugas dengan batas waktu 6 Menit...")
-        success, reply = await run_agy_interactive(
-            msg=query.message,
-            user_prompt=prompt,
-            continue_session=True,
-            initial_timeout=360,
-            status_prefix="🧠 [AGY CLI]"
-        )
-        if success:
-            new_q_id = str(int(time.time() * 1000))[-8:]
-            PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time()}
-            keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
-            await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
-        return
-
-    # 7. Tanya Ulang Media via 9Router: reask:9router_media:<q_id>
-    if data.startswith("reask:9router_media:"):
-        parts = data.split(":")
-        if len(parts) >= 3:
-            q_id = parts[2]
-            q_data = PENDING_CHAT_QUERIES.get(q_id)
-            if not q_data:
-                await query.answer("⚠️ Sesi media telah kadaluarsa.", show_alert=True)
-                return
-            media_path = q_data.get("media_path", "")
-            media_type = q_data.get("type", "image")
-            caption = q_data.get("prompt", "")
-
-            if not os.path.exists(media_path):
-                await query.answer("⚠️ Berkas media lokal telah dibersihkan.", show_alert=True)
-                return
-
-            msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text=f"⚡ [9Router] Menganalisa ulang berkas {media_type}...")
-            if media_type == "image":
-                reply = await asyncio.to_thread(call_9router_image, media_path, caption)
-            else:
-                reply = await asyncio.to_thread(call_9router_audio, media_path, caption)
-
-            new_q_id = str(int(time.time() * 1000))[-8:]
-            PENDING_CHAT_QUERIES[new_q_id] = q_data
-            keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{new_q_id}")]]
-            await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
+        # 8. Ganti Model AGY: model_set:<model_id>
+        if data.startswith("model_set:"):
+            await answer_once()
+            chosen = data.split(":", 1)[1]
+            set_current_model(chosen)
+            reply_markup = build_model_keyboard(chosen)
+            msg_text = (
+                f"🧠 *PENGATURAN MODEL ANTIGRAVITY (AGY)*\n\n"
+                f"• Model Aktif: `{chosen}` ✅\n\n"
+                f"Pilih reasoning model yang diinginkan untuk sesi tim agen & HABIBIE:\n"
+                f"1. ⚡ *Gemini 3.8 Flash (High)*: Rekomendasi utama, cepat & bernalar tinggi.\n"
+                f"2. 🧠 *Claude Sonnet 4.6 (Thinking)*: Khusus arsitektur mendalam & coding teliti.\n"
+                f"3. 🏛️ *Claude Opus 4.6 (Thinking)*: Problem arsitektur kompleks berskala besar.\n"
+                f"4. ⚖️ *Gemini 3.8 Flash (Medium/Low)*: Varian hemat & ringan.\n"
+                f"5. 🌐 *GPT-OSS 120B*: Alternatif open-weight model.\n\n"
+                f"💡 Klik tombol di bawah untuk langsung mengganti model:"
+            )
+            try:
+                await query.edit_message_text(msg_text, reply_markup=reply_markup, parse_mode="Markdown")
+            except Exception:
+                pass
             return
+
+        # 9. Pilihan dari Mode Interactive: ask_engine:<engine>:<q_id>
+        if data.startswith("ask_engine:"):
+            await answer_once()
+            parts = data.split(":")
+            if len(parts) >= 3:
+                target_engine = parts[1]
+                q_id = parts[2]
+                q_data = PENDING_CHAT_QUERIES.get(q_id)
+                prompt = q_data.get("prompt", "") if q_data else ""
+                if not prompt:
+                    await query.edit_message_text("⚠️ Sesi pertanyaan telah kadaluarsa. Silakan kirim ulang pesan Anda.")
+                    return
+
+                if target_engine == "agy":
+                    await query.edit_message_text(f"📐 *[HABIBIE / AGY]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
+                    success, reply = await run_agy_interactive(
+                        msg=query.message,
+                        user_prompt=prompt,
+                        continue_session=True,
+                        initial_timeout=180,
+                        status_prefix="📐 [HABIBIE / AGY]"
+                    )
+                    if success:
+                        keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
+                        await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                    return
+                else:
+                    await query.edit_message_text(f"📐 *[HABIBIE]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
+                    reply = await asyncio.to_thread(call_9router, prompt)
+                    if reply.startswith("⚠️"):
+                        success, reply = await run_agy_interactive(
+                            msg=query.message,
+                            user_prompt=prompt,
+                            continue_session=True,
+                            initial_timeout=180,
+                            status_prefix="📐 [HABIBIE / AGY]"
+                        )
+                        if not success:
+                            return
+                    keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{q_id}")]]
+                    await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                    return
+
+        # 10. Tanya Ulang (Re-ask): reask:<engine>:<q_id>
+        if data.startswith("reask:"):
+            await answer_once()
+            parts = data.split(":")
+            if len(parts) >= 3:
+                target_engine = parts[1]
+                q_id = parts[2]
+                q_data = PENDING_CHAT_QUERIES.get(q_id)
+                if not q_data:
+                    await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="⚠️ Sesi pertanyaan telah kadaluarsa. Silakan kirim ulang pesan Anda.")
+                    return
+
+                mtype = q_data.get("type", "text")
+                prompt = q_data.get("prompt", "")
+                media_path = q_data.get("media_path", "")
+
+                if target_engine == "agy":
+                    wait_msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="🧠 [AGY CLI] Sedang menganalisa ulang...")
+                    if mtype == "image":
+                        agy_prompt = (
+                            f"Pengguna mengirimkan file gambar yang disimpan di {media_path}.\n"
+                            f"Catatan/Permintaan Pengguna: {prompt}\n\n"
+                            f"Gunakan tool read_file untuk membaca dan menganalisa file gambar tersebut, "
+                            f"lalu berikan respons yang terstruktur, jelas, dan solutif."
+                        )
+                    elif mtype == "audio":
+                        hint = f"\nCatatan tambahan pengguna: {prompt}" if prompt else ""
+                        agy_prompt = (
+                            f"Pengguna mengirimkan file rekaman audio/suara yang disimpan di {media_path}.{hint}\n\n"
+                            f"Gunakan tool read_file untuk mendengarkan/memeriksa isi audio tersebut. "
+                            f"Tuliskan transkripsi apa yang dikatakan pengguna secara ringkas, "
+                            f"kemudian jawab permintaan, pertanyaan, atau instruksi pengguna tersebut secara ramah, cerdas, dan solutif."
+                        )
+                    else:
+                        agy_prompt = prompt
+
+                    success, reply = await run_agy_interactive(
+                        msg=wait_msg,
+                        user_prompt=agy_prompt,
+                        continue_session=True,
+                        initial_timeout=180,
+                        status_prefix="🧠 [AGY CLI]"
+                    )
+                    if success:
+                        new_q_id = str(int(time.time() * 1000))[-8:]
+                        PENDING_CHAT_QUERIES[new_q_id] = q_data
+                        keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
+                        await send_or_edit_response(wait_msg, reply, InlineKeyboardMarkup(keyboard))
+                    return
+                else:
+                    wait_msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="⚡ [9Router] Mengetik ulang...")
+                    if mtype == "image":
+                        reply = await asyncio.to_thread(call_9router_image, media_path, prompt)
+                    elif mtype == "audio":
+                        reply = await asyncio.to_thread(call_9router_audio, media_path, prompt)
+                    else:
+                        reply = await asyncio.to_thread(call_9router, prompt)
+
+                    new_q_id = str(int(time.time() * 1000))[-8:]
+                    PENDING_CHAT_QUERIES[new_q_id] = q_data
+                    keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{new_q_id}")]]
+                    await send_or_edit_response(wait_msg, reply, InlineKeyboardMarkup(keyboard))
+                    return
+
+        # 11. Coba Lagi Setelah Timeout: agy_retry:<job_id>
+        if data.startswith("agy_retry:"):
+            await answer_once()
+            job_id = data.split(":", 1)[1]
+            q_data = PENDING_CHAT_QUERIES.get(job_id)
+            prompt = q_data.get("prompt", "") if q_data else ""
+            if not prompt:
+                await answer_once("⚠️ Sesi tugas telah kadaluarsa. Silakan ketik ulang perintah Anda.", show_alert=True)
+                return
+
+            await query.edit_message_text("🧠 [AGY CLI] Memulai ulang tugas dengan batas waktu 6 Menit...")
+            success, reply = await run_agy_interactive(
+                msg=query.message,
+                user_prompt=prompt,
+                continue_session=True,
+                initial_timeout=360,
+                status_prefix="🧠 [AGY CLI]"
+            )
+            if success:
+                new_q_id = str(int(time.time() * 1000))[-8:]
+                PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time(), "type": "text"}
+                keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
+                await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+            return
+
+        # 12. Tanya Ulang Media via 9Router: reask:9router_media:<q_id>
+        if data.startswith("reask:9router_media:"):
+            await answer_once()
+            parts = data.split(":")
+            if len(parts) >= 3:
+                q_id = parts[2]
+                q_data = PENDING_CHAT_QUERIES.get(q_id)
+                if not q_data:
+                    await answer_once("⚠️ Sesi media telah kadaluarsa.", show_alert=True)
+                    return
+                media_path = q_data.get("media_path", "")
+                media_type = q_data.get("type", "image")
+                caption = q_data.get("prompt", "")
+
+                if not os.path.exists(media_path):
+                    await answer_once("⚠️ Berkas media lokal telah dibersihkan.", show_alert=True)
+                    return
+
+                msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text=f"⚡ [9Router] Menganalisa ulang berkas {media_type}...")
+                if media_type == "image":
+                    reply = await asyncio.to_thread(call_9router_image, media_path, caption)
+                else:
+                    reply = await asyncio.to_thread(call_9router_audio, media_path, caption)
+
+                new_q_id = str(int(time.time() * 1000))[-8:]
+                PENDING_CHAT_QUERIES[new_q_id] = q_data
+                keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{new_q_id}")]]
+                await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
+                return
+
+    finally:
+        if not has_answered:
+            await answer_once()
 
 # Perintah untuk mengecek sisa limit token & kuota AI
 async def limit_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1891,97 +2168,26 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     is_ops_action = any(k in text_clean for k in ops_keywords)
 
-    current_engine = get_current_engine()
+    cleanup_pending_queries()
+    q_id = str(int(time.time() * 1000))[-8:]
+    PENDING_CHAT_QUERIES[q_id] = {
+        "prompt": update.message.text,
+        "type": "text",
+        "time": time.time()
+    }
 
-    # Jika mode interaktif "Selalu Tanya" dan bukan aksi operasional server
-    if current_engine == "ask" and not is_ops_action:
-        cleanup_pending_queries()
-        q_id = str(int(time.time() * 1000))[-8:]
-        PENDING_CHAT_QUERIES[q_id] = {"prompt": update.message.text, "time": time.time()}
-
-        preview = update.message.text[:80] + ("..." if len(update.message.text) > 80 else "")
-        keyboard = [
-            [
-                InlineKeyboardButton("⚡ 9Router (Cepat/Hemat)", callback_data=f"ask_engine:9router:{q_id}"),
-                InlineKeyboardButton("🧠 AGY (Server/Deep)", callback_data=f"ask_engine:agy:{q_id}")
-            ]
-        ]
-        await update.message.reply_text(
-            f"💬 *Pertanyaan:*\n_{preview}_\n\nPilih otak AI untuk menjawab:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="Markdown"
-        )
-        return
-
-    if is_ops_action or current_engine == "agy":
-        msg = await update.message.reply_text("📐 [HABIBIE / AGY] Sedang memeriksa sistem server...")
-        success, reply = await run_agy_interactive(
-            msg=msg,
-            user_prompt=update.message.text,
-            continue_session=True,
-            initial_timeout=180,
-            status_prefix="📐 [HABIBIE / AGY]"
-        )
-        if not success:
-            return
-
-        # Jika agy mengalami kendala kuota atau limit, tawarkan atau fallback ke Emergency Agent
-        if any(err_word in reply.lower() for err_word in ["quota", "rate limit", "exceeded", "429"]):
-            try:
-                await msg.edit_text(
-                    f"{reply}\n\n⚠️ *Kuota agy limit! Mencoba dialihkan ke 9Router Emergency Agent...*",
-                    parse_mode="Markdown"
-                )
-            except Exception:
-                await msg.edit_text(f"{reply}\n\n⚠️ Kuota agy limit! Mencoba dialihkan ke 9Router Emergency Agent...")
-            reply_emg = await asyncio.to_thread(
-                emergency_agent.run_emergency_agent,
-                task_instruction=update.message.text,
-                target_dir=str(WORKSPACE_DIR),
-                project_id="server"
-            )
-            try:
-                await msg.edit_text(reply_emg, parse_mode="Markdown")
-            except Exception:
-                await msg.edit_text(reply_emg)
-            return
-
-        cleanup_pending_queries()
-        q_id = str(int(time.time() * 1000))[-8:]
-        PENDING_CHAT_QUERIES[q_id] = {"prompt": update.message.text, "time": time.time()}
-        keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        try:
-            await send_or_edit_response(msg, reply, reply_markup)
-        except Exception:
-            await msg.edit_text(reply, reply_markup=reply_markup)
-    else:
-        # Default: 9Router (cepat & hemat kuota)
-        msg = await update.message.reply_text("📐 [HABIBIE] Mengetik...")
-        reply = await asyncio.to_thread(call_9router, update.message.text)
-        # Jika 9Router gagal (misal koneksi jaringan putus), fallback ke agy
-        if reply.startswith("⚠️"):
-            success, reply = await run_agy_interactive(
-                msg=msg,
-                user_prompt=update.message.text,
-                continue_session=True,
-                initial_timeout=180,
-                status_prefix="📐 [HABIBIE / AGY]"
-            )
-            if not success:
-                return
-
-        cleanup_pending_queries()
-        q_id = str(int(time.time() * 1000))[-8:]
-        PENDING_CHAT_QUERIES[q_id] = {"prompt": update.message.text, "time": time.time()}
-        keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{q_id}")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        try:
-            await send_or_edit_response(msg, reply, reply_markup)
-        except Exception:
-            await msg.edit_text(reply, reply_markup=reply_markup)
+    preview = update.message.text[:80] + ("..." if len(update.message.text) > 80 else "")
+    launcher_text = (
+        f"💬 *Pesan Diterima:*\n_{preview}_\n\n"
+        f"⚙️ *Pilih Otak AI & Batas Waktu Eksekusi:*\n"
+        f"• ⚡ *9Router*: Respon cepat & hemat kuota token.\n"
+        f"• 🧠 *AGY*: Akses tools server, inspeksi sistem, & deep reasoning."
+    )
+    await update.message.reply_text(
+        launcher_text,
+        reply_markup=build_launcher_keyboard(q_id),
+        parse_mode="Markdown"
+    )
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Menangani foto atau berkas gambar dari pengguna via 9Router atau AGY CLI Multimodal."""
@@ -2019,61 +2225,29 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         caption = (update.message.caption or "").strip()
         user_query = caption if caption else "Tolong amati dan analisa gambar ini secara mendalam, jelaskan visual atau teks yang tampak, dan berikan evaluasi teknis atau solusi relevan."
 
-        current_engine = get_current_engine()
+        cleanup_pending_queries()
+        q_id = str(int(time.time() * 1000))[-8:]
+        PENDING_CHAT_QUERIES[q_id] = {
+            "prompt": user_query,
+            "media_path": str(tmp_path),
+            "type": "image",
+            "time": time.time()
+        }
 
-        if current_engine == "9router":
-            msg = await update.message.reply_text("⚡ [9Router] Sedang menganalisa gambar...")
-            reply = await asyncio.to_thread(call_9router_image, str(tmp_path), user_query)
-            if reply.startswith("⚠️"):
-                # Fallback ke AGY jika 9Router kendala
-                success, reply = await run_agy_interactive(
-                    msg=msg,
-                    user_prompt=f"Pengguna mengirimkan file gambar di {tmp_path}.\nCatatan: {user_query}\nGunakan tool read_file untuk menganalisa gambar tersebut.",
-                    continue_session=True,
-                    initial_timeout=180,
-                    status_prefix="🔍 [HABIBIE / AGY]"
-                )
-                if not success:
-                    return
-
-            q_id = str(int(time.time() * 1000))[-8:]
-            PENDING_CHAT_QUERIES[q_id] = {
-                "prompt": f"Pengguna mengirimkan file gambar di {tmp_path}.\nCatatan: {user_query}\nGunakan tool read_file untuk membaca dan menganalisa gambar tersebut.",
-                "media_path": str(tmp_path),
-                "type": "image",
-                "time": time.time()
-            }
-            keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{q_id}")]]
-            await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
-        else:
-            # Mode AGY (Default)
-            msg = await update.message.reply_text("🔍 [HABIBIE / AGY] Memulai analisa gambar...")
-            prompt = (
-                f"Pengguna mengirimkan file gambar yang disimpan di {tmp_path}.\n"
-                f"Catatan/Permintaan Pengguna: {user_query}\n\n"
-                f"Gunakan tool read_file untuk membaca dan menganalisa file gambar tersebut, "
-                f"lalu berikan respons yang terstruktur, jelas, dan solutif."
-            )
-
-            success, reply = await run_agy_interactive(
-                msg=msg,
-                user_prompt=prompt,
-                continue_session=True,
-                initial_timeout=180,
-                status_prefix="🔍 [HABIBIE / AGY]"
-            )
-            if success:
-                q_id = str(int(time.time() * 1000))[-8:]
-                PENDING_CHAT_QUERIES[q_id] = {
-                    "prompt": user_query,
-                    "media_path": str(tmp_path),
-                    "type": "image",
-                    "time": time.time()
-                }
-                keyboard = [[InlineKeyboardButton("⚡ Coba Analisa via 9Router", callback_data=f"reask:9router_media:{q_id}")]]
-                await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
+        preview_cap = caption[:80] + ("..." if len(caption) > 80 else "") if caption else "Analisa visual teknis & evaluasi gambar"
+        launcher_text = (
+            f"🖼️ *Gambar Diterima:*\n_{preview_cap}_\n\n"
+            f"⚙️ *Pilih Otak AI & Batas Waktu Analisa:*\n"
+            f"• ⚡ *9Router*: Vision multimodal via Google Gemini (Cepat & Hemat).\n"
+            f"• 🧠 *AGY*: Multimodal reasoning via tool sistem CLI."
+        )
+        await update.message.reply_text(
+            launcher_text,
+            reply_markup=build_launcher_keyboard(q_id),
+            parse_mode="Markdown"
+        )
     except Exception as e:
-        err_msg = f"⚠️ Terjadi kendala saat menganalisa gambar: {e}"
+        err_msg = f"⚠️ Terjadi kendala saat mengunduh gambar: {e}"
         await update.message.reply_text(err_msg)
 
 async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2125,61 +2299,27 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await tg_file.download_to_drive(custom_path=str(tmp_path))
 
         caption = (update.message.caption or "").strip()
-        extra_hint = f"\nCatatan tambahan pengguna: {caption}" if caption else ""
+        cleanup_pending_queries()
+        q_id = str(int(time.time() * 1000))[-8:]
+        PENDING_CHAT_QUERIES[q_id] = {
+            "prompt": caption,
+            "media_path": str(tmp_path),
+            "type": "audio",
+            "time": time.time()
+        }
 
-        current_engine = get_current_engine()
-
-        if current_engine == "9router":
-            msg = await update.message.reply_text("⚡ [9Router] Sedang mendengarkan & mentranskripsi suara...")
-            reply = await asyncio.to_thread(call_9router_audio, str(tmp_path), caption)
-            if reply.startswith("⚠️"):
-                # Fallback ke AGY
-                success, reply = await run_agy_interactive(
-                    msg=msg,
-                    user_prompt=f"Pengguna mengirimkan file rekaman audio di {tmp_path}.{extra_hint}\nGunakan tool read_file untuk mendengarkan audio tersebut.",
-                    continue_session=True,
-                    initial_timeout=180,
-                    status_prefix="🎙️ [HABIBIE / AGY]"
-                )
-                if not success:
-                    return
-
-            q_id = str(int(time.time() * 1000))[-8:]
-            PENDING_CHAT_QUERIES[q_id] = {
-                "prompt": f"Pengguna mengirimkan file rekaman audio di {tmp_path}.{extra_hint}\nGunakan tool read_file untuk mendengarkan dan merespons audio tersebut.",
-                "media_path": str(tmp_path),
-                "type": "audio",
-                "time": time.time()
-            }
-            keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{q_id}")]]
-            await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
-        else:
-            # Mode AGY (Default)
-            msg = await update.message.reply_text("🎙️ [HABIBIE / AGY] Memulai analisa suara...")
-            prompt = (
-                f"Pengguna mengirimkan file rekaman audio/suara yang disimpan di {tmp_path}.{extra_hint}\n\n"
-                f"Gunakan tool read_file untuk mendengarkan/memeriksa isi audio tersebut. "
-                f"Tuliskan transkripsi apa yang dikatakan pengguna secara ringkas, "
-                f"kemudian jawab permintaan, pertanyaan, atau instruksi pengguna tersebut secara ramah, cerdas, dan solutif."
-            )
-
-            success, reply = await run_agy_interactive(
-                msg=msg,
-                user_prompt=prompt,
-                continue_session=True,
-                initial_timeout=180,
-                status_prefix="🎙️ [HABIBIE / AGY]"
-            )
-            if success:
-                q_id = str(int(time.time() * 1000))[-8:]
-                PENDING_CHAT_QUERIES[q_id] = {
-                    "prompt": caption,
-                    "media_path": str(tmp_path),
-                    "type": "audio",
-                    "time": time.time()
-                }
-                keyboard = [[InlineKeyboardButton("⚡ Coba Analisa via 9Router", callback_data=f"reask:9router_media:{q_id}")]]
-                await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
+        preview_cap = caption[:80] + ("..." if len(caption) > 80 else "") if caption else "Transkripsi & respon suara"
+        launcher_text = (
+            f"🎙️ *Audio / Suara Diterima:*\n_{preview_cap}_\n\n"
+            f"⚙️ *Pilih Otak AI & Batas Waktu Analisa:*\n"
+            f"• ⚡ *9Router*: Audio multimodal 16kHz WAV transkripsi (Cepat & Hemat).\n"
+            f"• 🧠 *AGY*: Analisa audio mendalam via tool sistem CLI."
+        )
+        await update.message.reply_text(
+            launcher_text,
+            reply_markup=build_launcher_keyboard(q_id),
+            parse_mode="Markdown"
+        )
     except Exception as e:
         err_msg = f"⚠️ Terjadi kendala saat memproses audio: {e}"
         await update.message.reply_text(err_msg)
