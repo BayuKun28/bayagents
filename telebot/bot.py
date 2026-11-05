@@ -52,6 +52,7 @@ if len(sys.argv) > 1 and not any(arg in sys.argv for arg in ["--help", "-h"]):
             print(f"Gagal kirim notifikasi CLI: {e}")
     sys.exit(0)
 
+import base64
 import re
 import shutil
 import subprocess
@@ -141,6 +142,18 @@ try:
     MEDIA_TEMP_DIR.chmod(0o700)
 except Exception:
     pass
+
+def cleanup_temp_media_files(max_age_seconds: int = 900):
+    """Membersihkan file media di /tmp/agy_media yang lebih tua dari 15 menit."""
+    if not MEDIA_TEMP_DIR.exists():
+        return
+    now = time.time()
+    for item in MEDIA_TEMP_DIR.iterdir():
+        try:
+            if item.is_file() and (now - item.stat().st_mtime > max_age_seconds):
+                item.unlink()
+        except Exception:
+            pass
 PENDING_CHAT_QUERIES = {}  # Cache query untuk tombol switch/reask {q_id: {"prompt": str, "time": float}}
 ACTIVE_AGY_JOBS = {}  # Cache pelacak tugas aktif untuk dynamic timeout & perpanjangan {job_id: dict}
 
@@ -285,6 +298,124 @@ def call_9router(user_prompt: str, system_prompt: str = None) -> str:
     except Exception as e:
         return f"⚠️ Gagal menghubungi 9Router: {e}"
 
+def call_9router_image(image_path: str, user_prompt: str = "") -> str:
+    """Memanggil 9Router (gemini-free-smart) di host 146 untuk analisa gambar/vision."""
+    prompt = user_prompt.strip() or "Tolong amati dan analisa gambar ini secara mendalam, jelaskan visual atau teks yang tampak, dan berikan evaluasi solutif."
+
+    try:
+        with open(image_path, "rb") as f:
+            b64_img = base64.b64encode(f.read()).decode("utf-8")
+    except Exception as e:
+        return f"⚠️ Gagal membaca berkas gambar: {e}"
+
+    ext = Path(image_path).suffix.lower()
+    mime = "image/png" if ext == ".png" else ("image/webp" if ext == ".webp" else "image/jpeg")
+
+    headers = {
+        "Authorization": f"Bearer {ROUTER9_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": ROUTER9_MODEL,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64_img}"}}
+                ]
+            }
+        ]
+    }
+    try:
+        with httpx.Client(timeout=60.0) as client:
+            resp = client.post(f"{ROUTER9_BASE_URL}/chat/completions", headers=headers, json=payload)
+            if resp.status_code == 200:
+                text = ""
+                for line in resp.text.splitlines():
+                    if line.startswith("data: ") and line.strip() != "data: [DONE]":
+                        try:
+                            j = json.loads(line[6:])
+                            text += j.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                        except Exception:
+                            pass
+                if not text:
+                    try:
+                        text = resp.json()["choices"][0]["message"]["content"]
+                    except Exception:
+                        pass
+                return text.strip() if text else "Analisa gambar selesai tanpa output teks."
+            else:
+                return f"⚠️ 9Router Error HTTP {resp.status_code}: {resp.text[:200]}"
+    except Exception as e:
+        return f"⚠️ Gagal menghubungi 9Router Vision: {e}"
+
+def call_9router_audio(audio_path: str, user_prompt: str = "") -> str:
+    """Memanggil 9Router (gemini-free-smart) di host 146 untuk analisa dan transkripsi suara."""
+    prompt = user_prompt.strip() or "Dengarkan audio ini, transkripsikan apa yang dikatakan pengguna secara ringkas, dan jawab pertanyaan atau instruksinya secara komprehensif."
+
+    src_path = Path(audio_path)
+    wav_target = src_path.with_suffix(".conv.wav")
+
+    # Konversi menggunakan ffmpeg ke WAV 16kHz mono (standard OpenAI input_audio)
+    try:
+        conv_cmd = ["ffmpeg", "-y", "-i", str(src_path), "-ar", "16000", "-ac", "1", str(wav_target)]
+        c_res = subprocess.run(conv_cmd, capture_output=True, timeout=15)
+        use_path = wav_target if (c_res.returncode == 0 and wav_target.exists()) else src_path
+    except Exception:
+        use_path = src_path
+
+    try:
+        with open(use_path, "rb") as f:
+            b64_audio = base64.b64encode(f.read()).decode("utf-8")
+    except Exception as e:
+        return f"⚠️ Gagal membaca berkas audio: {e}"
+    finally:
+        if wav_target.exists() and wav_target != src_path:
+            try:
+                wav_target.unlink()
+            except Exception:
+                pass
+
+    headers = {
+        "Authorization": f"Bearer {ROUTER9_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": ROUTER9_MODEL,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "input_audio", "input_audio": {"data": b64_audio, "format": "wav"}}
+                ]
+            }
+        ]
+    }
+    try:
+        with httpx.Client(timeout=60.0) as client:
+            resp = client.post(f"{ROUTER9_BASE_URL}/chat/completions", headers=headers, json=payload)
+            if resp.status_code == 200:
+                text = ""
+                for line in resp.text.splitlines():
+                    if line.startswith("data: ") and line.strip() != "data: [DONE]":
+                        try:
+                            j = json.loads(line[6:])
+                            text += j.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                        except Exception:
+                            pass
+                if not text:
+                    try:
+                        text = resp.json()["choices"][0]["message"]["content"]
+                    except Exception:
+                        pass
+                return text.strip() if text else "Analisa audio selesai tanpa output teks."
+            else:
+                return f"⚠️ 9Router Error HTTP {resp.status_code}: {resp.text[:200]}"
+    except Exception as e:
+        return f"⚠️ Gagal menghubungi 9Router Audio: {e}"
+
 # Interval laporan otomatis dalam detik (21600 detik = 6 jam)
 AUDIT_INTERVAL_SECONDS = 21600
 
@@ -319,6 +450,24 @@ def run_agy(user_prompt: str, continue_session: bool = False) -> str:
     except Exception as e:
         return f"⚠️ Gagal menjalankan agy: {e}"
 
+def build_timeout_keyboard(job_id: str, active_seconds: int = 180) -> InlineKeyboardMarkup:
+    """Membangun keyboard inline pemilihan batas waktu eksekusi awal (1m, 3m, 5m, 10m)."""
+    options = [
+        (60, "⏱️ 1m"),
+        (180, "⏱️ 3m"),
+        (300, "⏱️ 5m"),
+        (600, "⏱️ 10m")
+    ]
+    buttons = []
+    for sec, label in options:
+        btn_text = f"{label} ✅" if sec == active_seconds else label
+        buttons.append(InlineKeyboardButton(btn_text, callback_data=f"agy_set_timeout:{job_id}:{sec}"))
+
+    return InlineKeyboardMarkup([
+        buttons,
+        [InlineKeyboardButton("⏹️ Batalkan", callback_data=f"agy_cancel:{job_id}")]
+    ])
+
 async def run_agy_interactive(
     msg,
     user_prompt: str,
@@ -328,6 +477,7 @@ async def run_agy_interactive(
 ) -> tuple[bool, str]:
     """
     Menjalankan agy CLI secara asynchronous dengan pengawasan timeout dinamis:
+    - Menampilkan tombol inline pemilihan batas waktu awal (1m, 3m, 5m, 10m).
     - Memberikan peringatan saat mendekati batas waktu (sisa waktu <= 35 detik).
     - Menampilkan tombol inline [➕ Perpanjang +3 Menit] dan [⏹️ Batalkan].
     - Jika diperpanjang, batas waktu bertambah 180 detik tanpa menghentikan proses yang sedang berjalan.
@@ -366,6 +516,7 @@ async def run_agy_interactive(
         "msg": msg,
         "created_at": now,
         "deadline": now + initial_timeout,
+        "current_timeout": initial_timeout,
         "prompt": user_prompt,
         "continue_session": continue_session,
         "status_prefix": status_prefix,
@@ -374,6 +525,22 @@ async def run_agy_interactive(
         "cancelled": False
     }
     ACTIVE_AGY_JOBS[job_id] = job_data
+
+    # Tampilkan status awal beserta tombol opsi durasi langsung
+    init_min = int(initial_timeout // 60)
+    init_text = (
+        f"⏳ *{status_prefix} Sedang Memproses Perintah...*\n\n"
+        f"⏱️ *Batas Waktu Eksekusi:* `{init_min} Menit (Default)`\n"
+        f"💡 _Pilih batas waktu awal jika perintah ini membutuhkan waktu lama:_"
+    )
+    try:
+        await msg.edit_text(
+            init_text,
+            reply_markup=build_timeout_keyboard(job_id, initial_timeout),
+            parse_mode="Markdown"
+        )
+    except Exception:
+        pass
 
     try:
         while proc.returncode is None:
@@ -850,6 +1017,43 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
                 await send_or_edit_response(wait_msg, reply, InlineKeyboardMarkup(keyboard))
                 return
 
+    # 3b. Ganti Batas Waktu Awal AGY: agy_set_timeout:<job_id>:<seconds>
+    if data.startswith("agy_set_timeout:"):
+        parts = data.split(":")
+        if len(parts) >= 3:
+            job_id = parts[1]
+            sec = int(parts[2])
+            job_data = ACTIVE_AGY_JOBS.get(job_id)
+            if not job_data:
+                await query.answer("⚠️ Tugas ini sudah selesai atau tidak lagi aktif.", show_alert=True)
+                return
+
+            job_data["deadline"] = job_data["created_at"] + sec
+            job_data["current_timeout"] = sec
+            job_data["warning_sent"] = False  # Reset flag peringatan agar muncul sebelum batas baru jika mepet
+
+            min_val = int(sec // 60)
+            elapsed = time.time() - job_data["created_at"]
+            el_min = int(elapsed // 60)
+            el_sec = int(elapsed % 60)
+
+            status_prefix = job_data.get("status_prefix", "🧠 [HABIBIE / AGY]")
+            updated_text = (
+                f"⏳ *{status_prefix} Sedang Memproses Perintah...*\n\n"
+                f"⏱️ *Batas Waktu Diatur:* `{min_val} Menit` (Berjalan: `{el_min}m {el_sec}s`)\n"
+                f"💡 _Batas waktu aktif telah diperbarui:_"
+            )
+            try:
+                await query.edit_message_text(
+                    updated_text,
+                    reply_markup=build_timeout_keyboard(job_id, sec),
+                    parse_mode="Markdown"
+                )
+            except Exception:
+                pass
+            await query.answer(f"✅ Batas waktu diatur menjadi {min_val} Menit!", show_alert=False)
+        return
+
     # 4. Perpanjang Waktu Tunggu AGY: agy_extend:<job_id>
     if data.startswith("agy_extend:"):
         job_id = data.split(":", 1)[1]
@@ -933,6 +1137,35 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
             keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
             await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
         return
+
+    # 7. Tanya Ulang Media via 9Router: reask:9router_media:<q_id>
+    if data.startswith("reask:9router_media:"):
+        parts = data.split(":")
+        if len(parts) >= 3:
+            q_id = parts[2]
+            q_data = PENDING_CHAT_QUERIES.get(q_id)
+            if not q_data:
+                await query.answer("⚠️ Sesi media telah kadaluarsa.", show_alert=True)
+                return
+            media_path = q_data.get("media_path", "")
+            media_type = q_data.get("type", "image")
+            caption = q_data.get("prompt", "")
+
+            if not os.path.exists(media_path):
+                await query.answer("⚠️ Berkas media lokal telah dibersihkan.", show_alert=True)
+                return
+
+            msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text=f"⚡ [9Router] Menganalisa ulang berkas {media_type}...")
+            if media_type == "image":
+                reply = await asyncio.to_thread(call_9router_image, media_path, caption)
+            else:
+                reply = await asyncio.to_thread(call_9router_audio, media_path, caption)
+
+            new_q_id = str(int(time.time() * 1000))[-8:]
+            PENDING_CHAT_QUERIES[new_q_id] = q_data
+            keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{new_q_id}")]]
+            await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
+            return
 
 # Perintah untuk mengecek sisa limit token & kuota AI
 async def limit_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1751,12 +1984,11 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.edit_text(reply, reply_markup=reply_markup)
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Menangani foto atau berkas gambar dari pengguna menggunakan AGY CLI Multimodal (read_file)."""
+    """Menangani foto atau berkas gambar dari pengguna via 9Router atau AGY CLI Multimodal."""
     if update.effective_user.id != ALLOWED_USER_ID:
         return
 
-    msg = await update.message.reply_text("🔍 [HABIBIE / AGY] Sedang mengamati dan menganalisa gambar...")
-
+    cleanup_temp_media_files()
     MEDIA_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
     file_id = None
@@ -1775,7 +2007,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ext = Path(doc.file_name).suffix.lower() if doc.file_name else ".jpg"
 
     if not file_id:
-        await msg.edit_text("⚠️ Format gambar tidak dikenali.")
+        await update.message.reply_text("⚠️ Format gambar tidak dikenali.")
         return
 
     tmp_path = MEDIA_TEMP_DIR / f"img_{int(time.time())}_{file_unique_id}{ext}"
@@ -1787,42 +2019,69 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         caption = (update.message.caption or "").strip()
         user_query = caption if caption else "Tolong amati dan analisa gambar ini secara mendalam, jelaskan visual atau teks yang tampak, dan berikan evaluasi teknis atau solusi relevan."
 
-        prompt = (
-            f"Pengguna mengirimkan file gambar yang disimpan di {tmp_path}.\n"
-            f"Catatan/Permintaan Pengguna: {user_query}\n\n"
-            f"Gunakan tool read_file untuk membaca dan menganalisa file gambar tersebut, "
-            f"lalu berikan respons yang terstruktur, jelas, dan solutif."
-        )
+        current_engine = get_current_engine()
 
-        success, reply = await run_agy_interactive(
-            msg=msg,
-            user_prompt=prompt,
-            continue_session=True,
-            initial_timeout=180,
-            status_prefix="🔍 [HABIBIE / AGY]"
-        )
-        if success:
-            await send_or_edit_response(msg, reply)
+        if current_engine == "9router":
+            msg = await update.message.reply_text("⚡ [9Router] Sedang menganalisa gambar...")
+            reply = await asyncio.to_thread(call_9router_image, str(tmp_path), user_query)
+            if reply.startswith("⚠️"):
+                # Fallback ke AGY jika 9Router kendala
+                success, reply = await run_agy_interactive(
+                    msg=msg,
+                    user_prompt=f"Pengguna mengirimkan file gambar di {tmp_path}.\nCatatan: {user_query}\nGunakan tool read_file untuk menganalisa gambar tersebut.",
+                    continue_session=True,
+                    initial_timeout=180,
+                    status_prefix="🔍 [HABIBIE / AGY]"
+                )
+                if not success:
+                    return
+
+            q_id = str(int(time.time() * 1000))[-8:]
+            PENDING_CHAT_QUERIES[q_id] = {
+                "prompt": f"Pengguna mengirimkan file gambar di {tmp_path}.\nCatatan: {user_query}\nGunakan tool read_file untuk membaca dan menganalisa gambar tersebut.",
+                "media_path": str(tmp_path),
+                "type": "image",
+                "time": time.time()
+            }
+            keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{q_id}")]]
+            await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
+        else:
+            # Mode AGY (Default)
+            msg = await update.message.reply_text("🔍 [HABIBIE / AGY] Memulai analisa gambar...")
+            prompt = (
+                f"Pengguna mengirimkan file gambar yang disimpan di {tmp_path}.\n"
+                f"Catatan/Permintaan Pengguna: {user_query}\n\n"
+                f"Gunakan tool read_file untuk membaca dan menganalisa file gambar tersebut, "
+                f"lalu berikan respons yang terstruktur, jelas, dan solutif."
+            )
+
+            success, reply = await run_agy_interactive(
+                msg=msg,
+                user_prompt=prompt,
+                continue_session=True,
+                initial_timeout=180,
+                status_prefix="🔍 [HABIBIE / AGY]"
+            )
+            if success:
+                q_id = str(int(time.time() * 1000))[-8:]
+                PENDING_CHAT_QUERIES[q_id] = {
+                    "prompt": user_query,
+                    "media_path": str(tmp_path),
+                    "type": "image",
+                    "time": time.time()
+                }
+                keyboard = [[InlineKeyboardButton("⚡ Coba Analisa via 9Router", callback_data=f"reask:9router_media:{q_id}")]]
+                await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
     except Exception as e:
         err_msg = f"⚠️ Terjadi kendala saat menganalisa gambar: {e}"
-        try:
-            await msg.edit_text(err_msg)
-        except Exception:
-            await update.message.reply_text(err_msg)
-    finally:
-        if tmp_path.exists():
-            try:
-                tmp_path.unlink()
-            except Exception:
-                pass
+        await update.message.reply_text(err_msg)
 
 async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Menangani pesan suara (voice note) atau audio dari pengguna menggunakan AGY CLI Multimodal (read_file)."""
+    """Menangani pesan suara (voice note) atau audio dari pengguna via 9Router atau AGY CLI Multimodal."""
     if update.effective_user.id != ALLOWED_USER_ID:
         return
 
-    msg = await update.message.reply_text("🎙️ [HABIBIE / AGY] Sedang mendengarkan pesan suara...")
-
+    cleanup_temp_media_files()
     MEDIA_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
     file_id = None
@@ -1851,12 +2110,12 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ext = Path(doc.file_name).suffix.lower() if doc.file_name else ".ogg"
 
     if not file_id:
-        await msg.edit_text("⚠️ Format audio tidak dikenali.")
+        await update.message.reply_text("⚠️ Format audio tidak dikenali.")
         return
 
     # Batasi ukuran audio (maksimal 20 MB)
     if file_size > 20 * 1024 * 1024:
-        await msg.edit_text("⚠️ Ukuran berkas audio terlalu besar (maksimal 20 MB).")
+        await update.message.reply_text("⚠️ Ukuran berkas audio terlalu besar (maksimal 20 MB).")
         return
 
     tmp_path = MEDIA_TEMP_DIR / f"audio_{int(time.time())}_{file_unique_id}{ext}"
@@ -1868,34 +2127,62 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         caption = (update.message.caption or "").strip()
         extra_hint = f"\nCatatan tambahan pengguna: {caption}" if caption else ""
 
-        prompt = (
-            f"Pengguna mengirimkan file rekaman audio/suara yang disimpan di {tmp_path}.{extra_hint}\n\n"
-            f"Gunakan tool read_file untuk mendengarkan/memeriksa isi audio tersebut. "
-            f"Tuliskan transkripsi apa yang dikatakan pengguna secara ringkas, "
-            f"kemudian jawab permintaan, pertanyaan, atau instruksi pengguna tersebut secara ramah, cerdas, dan solutif."
-        )
+        current_engine = get_current_engine()
 
-        success, reply = await run_agy_interactive(
-            msg=msg,
-            user_prompt=prompt,
-            continue_session=True,
-            initial_timeout=180,
-            status_prefix="🎙️ [HABIBIE / AGY]"
-        )
-        if success:
-            await send_or_edit_response(msg, reply)
+        if current_engine == "9router":
+            msg = await update.message.reply_text("⚡ [9Router] Sedang mendengarkan & mentranskripsi suara...")
+            reply = await asyncio.to_thread(call_9router_audio, str(tmp_path), caption)
+            if reply.startswith("⚠️"):
+                # Fallback ke AGY
+                success, reply = await run_agy_interactive(
+                    msg=msg,
+                    user_prompt=f"Pengguna mengirimkan file rekaman audio di {tmp_path}.{extra_hint}\nGunakan tool read_file untuk mendengarkan audio tersebut.",
+                    continue_session=True,
+                    initial_timeout=180,
+                    status_prefix="🎙️ [HABIBIE / AGY]"
+                )
+                if not success:
+                    return
+
+            q_id = str(int(time.time() * 1000))[-8:]
+            PENDING_CHAT_QUERIES[q_id] = {
+                "prompt": f"Pengguna mengirimkan file rekaman audio di {tmp_path}.{extra_hint}\nGunakan tool read_file untuk mendengarkan dan merespons audio tersebut.",
+                "media_path": str(tmp_path),
+                "type": "audio",
+                "time": time.time()
+            }
+            keyboard = [[InlineKeyboardButton("🧠 Coba Analisa via AGY", callback_data=f"reask:agy:{q_id}")]]
+            await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
+        else:
+            # Mode AGY (Default)
+            msg = await update.message.reply_text("🎙️ [HABIBIE / AGY] Memulai analisa suara...")
+            prompt = (
+                f"Pengguna mengirimkan file rekaman audio/suara yang disimpan di {tmp_path}.{extra_hint}\n\n"
+                f"Gunakan tool read_file untuk mendengarkan/memeriksa isi audio tersebut. "
+                f"Tuliskan transkripsi apa yang dikatakan pengguna secara ringkas, "
+                f"kemudian jawab permintaan, pertanyaan, atau instruksi pengguna tersebut secara ramah, cerdas, dan solutif."
+            )
+
+            success, reply = await run_agy_interactive(
+                msg=msg,
+                user_prompt=prompt,
+                continue_session=True,
+                initial_timeout=180,
+                status_prefix="🎙️ [HABIBIE / AGY]"
+            )
+            if success:
+                q_id = str(int(time.time() * 1000))[-8:]
+                PENDING_CHAT_QUERIES[q_id] = {
+                    "prompt": caption,
+                    "media_path": str(tmp_path),
+                    "type": "audio",
+                    "time": time.time()
+                }
+                keyboard = [[InlineKeyboardButton("⚡ Coba Analisa via 9Router", callback_data=f"reask:9router_media:{q_id}")]]
+                await send_or_edit_response(msg, reply, InlineKeyboardMarkup(keyboard))
     except Exception as e:
         err_msg = f"⚠️ Terjadi kendala saat memproses audio: {e}"
-        try:
-            await msg.edit_text(err_msg)
-        except Exception:
-            await update.message.reply_text(err_msg)
-    finally:
-        if tmp_path.exists():
-            try:
-                tmp_path.unlink()
-            except Exception:
-                pass
+        await update.message.reply_text(err_msg)
 
 async def scheduled_audit(context: ContextTypes.DEFAULT_TYPE):
     prompt = (

@@ -2712,6 +2712,26 @@
       "created_at": "2026-11-05T11:35:00.000000+07:00",
       "notes": "Implementasi dynamic timeout supervisor dan interactive extend button berhasil tuntas: 1. ACTIVE_AGY_JOBS dict ditambahkan untuk melacak job aktif secara real-time. 2. Fungsi async supervisor run_agy_interactive dibuat dengan monitoring loop interval 2.5s. 3. Tombol [➕ Perpanjang +3 Menit] dan [⏹️ Batalkan] otomatis muncul pada sisa waktu <= 35 detik. 4. Callback handler agy_extend (tambah 180s secara real-time), agy_cancel (SIGTERM process group), dan agy_retry (re-run 6 menit) aktif. 5. Seluruh pemanggil interaktif (handle_photo, handle_voice, handle_chat, direct_agy_cmd, plan_cmd) dialihkan ke run_agy_interactive. 6. Restart layanan agy-telebot.service sukses berjalan normal (PID: 613520, RAM: 42.2MB).",
       "qa_review": "PASSED - Kompilasi py_compile 100% lolos. Validasi unit test subprocess supervisor & SIGTERM clean termination terverifikasi. Layanan agy-telebot aktif running."
+    },
+    {
+      "id": "TASK-TELEBOT-03",
+      "project": "telebot",
+      "assignee": "HABIBIE",
+      "title": "Implementasi Tombol Pemilih Durasi Awal & Integrasi 9Router Multimodal Media (Gambar & Suara)",
+      "skills_required": [
+        "Python Asyncio",
+        "Telegram Inline Keyboards",
+        "9Router Multimodal API",
+        "FFmpeg Audio Pipeline"
+      ],
+      "description": "1. Tambahkan tombol pemilih durasi batas waktu awal (1m, 3m default, 5m, 10m) langsung di pesan status pertama bot Telegram. 2. Integrasikan pemrosesan gambar dan suara via 9Router (gemini-free-smart di server 146) dengan auto-convert ffmpeg untuk OGG voice note ke WAV.",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/telebot",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "created_at": "2026-11-05T15:55:00.000000+07:00",
+      "notes": "Implementasi selesai 100%: 1. Tombol pemilih durasi awal (⏱️ 1m, ⏱️ 3m ✅, ⏱️ 5m, ⏱️ 10m) & [⏹️ Batalkan] langsung tampil di pesan status pertama saat tugas AGY dimulai. 2. Callback agy_set_timeout aktif secara real-time mengubah deadline tanpa restart proses. 3. Integrasi 9Router Multimodal Vision (call_9router_image) via base64 image_url sukses teruji. 4. Integrasi 9Router Multimodal Audio (call_9router_audio) dengan auto-convert ffmpeg ke WAV 16kHz mono sukses teruji. 5. Manajemen file temporary cerdas cleanup_temp_media_files retensi 15 menit agar tombol switch engine (reask) antar 9Router & AGY tetap berfungsi. 6. Layanan agy-telebot.service aktif (PID: 636709, RAM: 41.8MB).",
+      "qa_review": "PASSED - Kompilasi py_compile 100% lolos. Validasi endpoint 9Router image & audio terverifikasi 200 OK. Tombol durasi & timeout supervisor aktif di agy-telebot.service."
     }
   ]
 }
