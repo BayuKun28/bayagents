@@ -2691,6 +2691,27 @@
       "created_at": "2026-11-05T09:15:00.000000+07:00",
       "notes": "Implementasi fitur multimodal di telebot/bot.py berhasil tuntas: 1. Inisialisasi direktori aman /tmp/agy_media (0700). 2. Implementasi fungsi send_or_edit_response anti-crash Message_too_long dengan pembagian teks bertahap. 3. Penambahan handle_photo (filters.PHOTO | filters.Document.IMAGE) memanfaatkan engine AGY read_file. 4. Penambahan handle_voice (filters.VOICE | filters.AUDIO | audio docs) untuk transkripsi dan respon langsung. 5. Proteksi disk lokal dengan auto-cleanup file sementara di blok try...finally. 6. Restart layanan agy-telebot.service sukses dan berjalan aktif (PID 601395, RAM 38MB).",
       "qa_review": "PASSED - Validasi py_compile bot.py 100% lolos. Service agy-telebot aktif running, registrasi handler PHOTO dan VOICE terverifikasi."
+    },
+    {
+      "id": "TASK-TELEBOT-02",
+      "project": "telebot",
+      "assignee": "HABIBIE",
+      "title": "Implementasi Dynamic Timeout Supervisor & Interactive Extension Button di bot.py",
+      "skills_required": [
+        "Python Asyncio",
+        "Telegram Bot API",
+        "Process Management",
+        "Antigravity CLI"
+      ],
+      "description": "Mengubah eksekusi run_agy di bot.py menjadi async subprocess supervisor dengan pemantauan real-time dan tombol inline interaktif Telegram: [➕ Perpanjang +3 Menit] dan [⏹️ Batalkan] untuk mengatasi batas waktu 3 menit tanpa kehilangan proses yang sedang berjalan.",
+      "status": "Done",
+      "target_dir": "/home/bay/bayagents/telebot",
+      "engine": "agy",
+      "model": "gemini-3.8-flash-high",
+      "plan_ref": "/home/bay/bayagents/data/plans/PLAN-20261105-02-interactive-timeout-extension-bot.md",
+      "created_at": "2026-11-05T11:35:00.000000+07:00",
+      "notes": "Implementasi dynamic timeout supervisor dan interactive extend button berhasil tuntas: 1. ACTIVE_AGY_JOBS dict ditambahkan untuk melacak job aktif secara real-time. 2. Fungsi async supervisor run_agy_interactive dibuat dengan monitoring loop interval 2.5s. 3. Tombol [➕ Perpanjang +3 Menit] dan [⏹️ Batalkan] otomatis muncul pada sisa waktu <= 35 detik. 4. Callback handler agy_extend (tambah 180s secara real-time), agy_cancel (SIGTERM process group), dan agy_retry (re-run 6 menit) aktif. 5. Seluruh pemanggil interaktif (handle_photo, handle_voice, handle_chat, direct_agy_cmd, plan_cmd) dialihkan ke run_agy_interactive. 6. Restart layanan agy-telebot.service sukses berjalan normal (PID: 613520, RAM: 42.2MB).",
+      "qa_review": "PASSED - Kompilasi py_compile 100% lolos. Validasi unit test subprocess supervisor & SIGTERM clean termination terverifikasi. Layanan agy-telebot aktif running."
     }
   ]
 }

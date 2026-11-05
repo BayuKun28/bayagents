@@ -55,6 +55,7 @@ if len(sys.argv) > 1 and not any(arg in sys.argv for arg in ["--help", "-h"]):
 import re
 import shutil
 import subprocess
+import signal
 import asyncio
 import json
 import yaml
@@ -141,6 +142,7 @@ try:
 except Exception:
     pass
 PENDING_CHAT_QUERIES = {}  # Cache query untuk tombol switch/reask {q_id: {"prompt": str, "time": float}}
+ACTIVE_AGY_JOBS = {}  # Cache pelacak tugas aktif untuk dynamic timeout & perpanjangan {job_id: dict}
 
 SUPPORTED_AGY_MODELS = [
     ("gemini-3.8-flash-high", "Gemini 3.8 Flash (High)", "⚡ Rekomendasi / Cepat"),
@@ -316,6 +318,163 @@ def run_agy(user_prompt: str, continue_session: bool = False) -> str:
         return "⚠️ Waktu eksekusi habis (timeout 3 menit)."
     except Exception as e:
         return f"⚠️ Gagal menjalankan agy: {e}"
+
+async def run_agy_interactive(
+    msg,
+    user_prompt: str,
+    continue_session: bool = True,
+    initial_timeout: int = 180,
+    status_prefix: str = "🧠 [HABIBIE / AGY]"
+) -> tuple[bool, str]:
+    """
+    Menjalankan agy CLI secara asynchronous dengan pengawasan timeout dinamis:
+    - Memberikan peringatan saat mendekati batas waktu (sisa waktu <= 35 detik).
+    - Menampilkan tombol inline [➕ Perpanjang +3 Menit] dan [⏹️ Batalkan].
+    - Jika diperpanjang, batas waktu bertambah 180 detik tanpa menghentikan proses yang sedang berjalan.
+    - Menghentikan proses group secara bersih via SIGTERM jika dibatalkan atau benar-benar timeout.
+    Mengembalikan (success: bool, output_or_status: str).
+    """
+    full_prompt = f"{load_habibie_system_prompt()}Permintaan User: {user_prompt}"
+    env = os.environ.copy()
+    env["HOME"] = str(WORKSPACE_DIR)
+    env["PATH"] = f"{WORKSPACE_DIR}/.gemini/antigravity-cli/bin:{WORKSPACE_DIR}/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
+
+    cmd = [
+        AGY_BIN, "-p", full_prompt,
+        "--dangerously-skip-permissions",
+        "--model", CURRENT_MODEL
+    ]
+    if continue_session:
+        cmd.append("--continue")
+
+    job_id = str(int(time.time() * 1000))[-8:]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+            start_new_session=True
+        )
+    except Exception as e:
+        return False, f"⚠️ Gagal memulai proses AGY: {e}"
+
+    now = time.time()
+    job_data = {
+        "proc": proc,
+        "msg": msg,
+        "created_at": now,
+        "deadline": now + initial_timeout,
+        "prompt": user_prompt,
+        "continue_session": continue_session,
+        "status_prefix": status_prefix,
+        "warning_sent": False,
+        "extensions_count": 0,
+        "cancelled": False
+    }
+    ACTIVE_AGY_JOBS[job_id] = job_data
+
+    try:
+        while proc.returncode is None:
+            try:
+                await asyncio.wait_for(asyncio.shield(proc.wait()), timeout=2.5)
+                break  # Proses selesai
+            except asyncio.TimeoutError:
+                pass  # Masih berjalan
+
+            if job_data.get("cancelled"):
+                return False, "🛑 *Eksekusi AGY dibatalkan oleh pengguna.*"
+
+            current_time = time.time()
+            remaining = job_data["deadline"] - current_time
+            elapsed = current_time - job_data["created_at"]
+
+            # Munculkan tombol perpanjangan jika sisa waktu <= 35 detik dan belum dikirim
+            if remaining <= 35 and not job_data["warning_sent"]:
+                job_data["warning_sent"] = True
+                elapsed_min = int(elapsed // 60)
+                elapsed_sec = int(elapsed % 60)
+                total_limit_min = int((job_data["deadline"] - job_data["created_at"]) // 60)
+
+                warn_text = (
+                    f"⏳ *{status_prefix} Masih Berpikir / Bekerja...*\n\n"
+                    f"⏱️ *Waktu berjalan:* `{elapsed_min}m {elapsed_sec}s` (Batas: `{total_limit_min}m`)\n\n"
+                    f"Tugas ini memerlukan penalaran mendalam. Ingin memperpanjang waktu tunggu agar tidak terputus?"
+                )
+                keyboard = [
+                    [
+                        InlineKeyboardButton("➕ Perpanjang +3 Menit", callback_data=f"agy_extend:{job_id}"),
+                        InlineKeyboardButton("⏹️ Batalkan", callback_data=f"agy_cancel:{job_id}")
+                    ]
+                ]
+                try:
+                    await msg.edit_text(warn_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+                except Exception:
+                    pass
+
+            # Batas waktu habis (timeout)
+            if current_time >= job_data["deadline"]:
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                except Exception:
+                    pass
+                try:
+                    await asyncio.wait_for(proc.wait(), timeout=3.0)
+                except asyncio.TimeoutError:
+                    try:
+                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                    except Exception:
+                        pass
+
+                total_limit_min = int((job_data["deadline"] - job_data["created_at"]) // 60)
+                timeout_text = (
+                    f"⚠️ *Batas Waktu Eksekusi Habis (Timeout {total_limit_min} Menit)*\n\n"
+                    f"Proses otomatis dihentikan demi efisiensi CPU & RAM server.\n"
+                    f"Anda dapat mencoba lagi dengan batas waktu awal yang lebih longgar."
+                )
+                PENDING_CHAT_QUERIES[job_id] = {"prompt": user_prompt, "time": time.time()}
+                keyboard = [
+                    [InlineKeyboardButton("🔄 Coba Lagi (+6 Menit)", callback_data=f"agy_retry:{job_id}")]
+                ]
+                try:
+                    await msg.edit_text(timeout_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+                except Exception:
+                    pass
+                return False, timeout_text
+
+        # Baca stdout / stderr
+        stdout_bytes, stderr_bytes = await proc.communicate()
+        stdout_str = stdout_bytes.decode("utf-8", errors="replace").strip()
+        stderr_str = stderr_bytes.decode("utf-8", errors="replace").strip()
+
+        # Jika gagal dengan --continue, ulangi sekali tanpa --continue jika belum dibatalkan
+        if proc.returncode != 0 and continue_session and not job_data.get("cancelled"):
+            cmd_retry = [
+                AGY_BIN, "-p", full_prompt,
+                "--dangerously-skip-permissions",
+                "--model", CURRENT_MODEL
+            ]
+            proc_retry = await asyncio.create_subprocess_exec(
+                *cmd_retry,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+                start_new_session=True
+            )
+            job_data["proc"] = proc_retry
+            stdout_b, stderr_b = await proc_retry.communicate()
+            stdout_str = stdout_b.decode("utf-8", errors="replace").strip()
+            stderr_str = stderr_b.decode("utf-8", errors="replace").strip()
+
+        output = stdout_str or stderr_str
+        output = output if output else "Perintah selesai tanpa output teks."
+        return True, output
+
+    except Exception as e:
+        return False, f"⚠️ Terjadi kesalahan pada eksekusi AGY: {e}"
+    finally:
+        ACTIVE_AGY_JOBS.pop(job_id, None)
 
 def check_token_limit() -> str:
     """Mengecek sisa kuota dan limit token AI menggunakan perintah agy /usage."""
@@ -505,17 +664,20 @@ async def direct_agy_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     cleanup_pending_queries()
     msg = await update.message.reply_text("🧠 [AGY CLI] Sedang menganalisa & memproses...")
-    reply = await asyncio.to_thread(run_agy, prompt, True)
+    success, reply = await run_agy_interactive(
+        msg=msg,
+        user_prompt=prompt,
+        continue_session=True,
+        initial_timeout=180,
+        status_prefix="🧠 [AGY CLI]"
+    )
 
-    q_id = str(int(time.time() * 1000))[-8:]
-    PENDING_CHAT_QUERIES[q_id] = {"prompt": prompt, "time": time.time()}
-    keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    try:
-        await msg.edit_text(reply, reply_markup=reply_markup, parse_mode="Markdown")
-    except Exception:
-        await msg.edit_text(reply, reply_markup=reply_markup)
+    if success:
+        q_id = str(int(time.time() * 1000))[-8:]
+        PENDING_CHAT_QUERIES[q_id] = {"prompt": prompt, "time": time.time()}
+        keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await send_or_edit_response(msg, reply, reply_markup)
 
 # Perintah cepat langsung ke 9Router: /9 <pesan> atau /r9 <pesan>
 async def direct_9router_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -624,20 +786,33 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
 
             if target_engine == "agy":
                 await query.edit_message_text(f"📐 *[HABIBIE / AGY]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
-                reply = await asyncio.to_thread(run_agy, prompt, True)
-                keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
+                success, reply = await run_agy_interactive(
+                    msg=query.message,
+                    user_prompt=prompt,
+                    continue_session=True,
+                    initial_timeout=180,
+                    status_prefix="📐 [HABIBIE / AGY]"
+                )
+                if success:
+                    keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{q_id}")]]
+                    await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                return
             else:
                 await query.edit_message_text(f"📐 *[HABIBIE]* Sedang memproses:\n_{prompt[:60]}..._", parse_mode="Markdown")
                 reply = await asyncio.to_thread(call_9router, prompt)
                 if reply.startswith("⚠️"):
-                    reply = await asyncio.to_thread(run_agy, prompt, True)
+                    success, reply = await run_agy_interactive(
+                        msg=query.message,
+                        user_prompt=prompt,
+                        continue_session=True,
+                        initial_timeout=180,
+                        status_prefix="📐 [HABIBIE / AGY]"
+                    )
+                    if not success:
+                        return
                 keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{q_id}")]]
-
-            try:
-                await query.edit_message_text(reply, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-            except Exception:
-                await query.edit_message_text(reply, reply_markup=InlineKeyboardMarkup(keyboard))
-        return
+                await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
+                return
 
     # 3. Tanya Ulang (Re-ask): reask:<engine>:<q_id>
     if data.startswith("reask:"):
@@ -653,21 +828,110 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
 
             if target_engine == "agy":
                 wait_msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="🧠 [AGY CLI] Sedang menganalisa ulang...")
-                reply = await asyncio.to_thread(run_agy, prompt, True)
-                new_q_id = str(int(time.time() * 1000))[-8:]
-                PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time()}
-                keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
+                success, reply = await run_agy_interactive(
+                    msg=wait_msg,
+                    user_prompt=prompt,
+                    continue_session=True,
+                    initial_timeout=180,
+                    status_prefix="🧠 [AGY CLI]"
+                )
+                if success:
+                    new_q_id = str(int(time.time() * 1000))[-8:]
+                    PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time()}
+                    keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
+                    await send_or_edit_response(wait_msg, reply, InlineKeyboardMarkup(keyboard))
+                return
             else:
                 wait_msg = await context.bot.send_message(chat_id=ALLOWED_USER_ID, text="⚡ [9Router] Mengetik ulang...")
                 reply = await asyncio.to_thread(call_9router, prompt)
                 new_q_id = str(int(time.time() * 1000))[-8:]
                 PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time()}
                 keyboard = [[InlineKeyboardButton("🧠 Coba Tanya via AGY", callback_data=f"reask:agy:{new_q_id}")]]
+                await send_or_edit_response(wait_msg, reply, InlineKeyboardMarkup(keyboard))
+                return
 
+    # 4. Perpanjang Waktu Tunggu AGY: agy_extend:<job_id>
+    if data.startswith("agy_extend:"):
+        job_id = data.split(":", 1)[1]
+        job_data = ACTIVE_AGY_JOBS.get(job_id)
+        if not job_data:
+            await query.answer("⚠️ Tugas ini sudah selesai atau tidak lagi aktif.", show_alert=True)
+            return
+
+        # Tambah batas waktu 180 detik (+3 menit)
+        job_data["deadline"] += 180
+        job_data["extensions_count"] += 1
+        job_data["warning_sent"] = False  # Izinkan peringatan baru saat mendekati batas berikutnya
+
+        total_min = int((job_data["deadline"] - job_data["created_at"]) // 60)
+        elapsed = time.time() - job_data["created_at"]
+        el_min = int(elapsed // 60)
+        el_sec = int(elapsed % 60)
+
+        update_text = (
+            f"⏳ *{job_data.get('status_prefix', '🧠 [HABIBIE / AGY]')} Waktu Berhasil Diperpanjang! (+3 Menit)*\n\n"
+            f"⏱️ *Batas waktu total:* `{total_min} Menit` (Berjalan: `{el_min}m {el_sec}s`)\n\n"
+            f"Eksekusi tugas terus berjalan tanpa terputus. Anda dapat menambah waktu lagi jika dibutuhkan."
+        )
+        keyboard = [
+            [
+                InlineKeyboardButton("➕ Tambah Waktu Lagi (+3m)", callback_data=f"agy_extend:{job_id}"),
+                InlineKeyboardButton("⏹️ Batalkan", callback_data=f"agy_cancel:{job_id}")
+            ]
+        ]
+        try:
+            await query.edit_message_text(update_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        except Exception:
+            pass
+        await query.answer("✅ Batas waktu berhasil diperpanjang +3 menit!", show_alert=False)
+        return
+
+    # 5. Batalkan Proses AGY: agy_cancel:<job_id>
+    if data.startswith("agy_cancel:"):
+        job_id = data.split(":", 1)[1]
+        job_data = ACTIVE_AGY_JOBS.get(job_id)
+        if not job_data:
+            await query.answer("⚠️ Tugas ini sudah tidak aktif.", show_alert=True)
+            return
+
+        job_data["cancelled"] = True
+        proc = job_data.get("proc")
+        if proc:
             try:
-                await wait_msg.edit_text(reply, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             except Exception:
-                await wait_msg.edit_text(reply, reply_markup=InlineKeyboardMarkup(keyboard))
+                pass
+
+        cancel_text = "🛑 *Eksekusi tugas AGY berhasil dibatalkan oleh pengguna.*"
+        try:
+            await query.edit_message_text(cancel_text, parse_mode="Markdown")
+        except Exception:
+            pass
+        await query.answer("🛑 Proses dibatalkan.", show_alert=True)
+        return
+
+    # 6. Coba Lagi Setelah Timeout: agy_retry:<job_id>
+    if data.startswith("agy_retry:"):
+        job_id = data.split(":", 1)[1]
+        q_data = PENDING_CHAT_QUERIES.get(job_id)
+        prompt = q_data.get("prompt", "") if q_data else ""
+        if not prompt:
+            await query.answer("⚠️ Sesi tugas telah kadaluarsa. Silakan ketik ulang perintah Anda.", show_alert=True)
+            return
+
+        await query.edit_message_text("🧠 [AGY CLI] Memulai ulang tugas dengan batas waktu 6 Menit...")
+        success, reply = await run_agy_interactive(
+            msg=query.message,
+            user_prompt=prompt,
+            continue_session=True,
+            initial_timeout=360,
+            status_prefix="🧠 [AGY CLI]"
+        )
+        if success:
+            new_q_id = str(int(time.time() * 1000))[-8:]
+            PENDING_CHAT_QUERIES[new_q_id] = {"prompt": prompt, "time": time.time()}
+            keyboard = [[InlineKeyboardButton("⚡ Coba Tanya via 9Router", callback_data=f"reask:9router:{new_q_id}")]]
+            await send_or_edit_response(query.message, reply, InlineKeyboardMarkup(keyboard))
         return
 
 # Perintah untuk mengecek sisa limit token & kuota AI
@@ -1235,11 +1499,27 @@ async def plan_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     current_engine = get_current_engine()
     if current_engine == "agy":
-        reply = await asyncio.to_thread(run_agy, plan_prompt, False)
+        success, reply = await run_agy_interactive(
+            msg=msg,
+            user_prompt=plan_prompt,
+            continue_session=False,
+            initial_timeout=240,
+            status_prefix="📐 [HABIBIE / ARSITEK]"
+        )
+        if not success:
+            return
     else:
         reply = await asyncio.to_thread(call_9router, plan_prompt)
         if reply.startswith("⚠️"):
-            reply = await asyncio.to_thread(run_agy, plan_prompt, False)
+            success, reply = await run_agy_interactive(
+                msg=msg,
+                user_prompt=plan_prompt,
+                continue_session=False,
+                initial_timeout=240,
+                status_prefix="📐 [HABIBIE / ARSITEK]"
+            )
+            if not success:
+                return
 
     # Simpan plan ke file lokal data/plans/ agar bisa dibaca di BayOffice
     saved_info = ""
@@ -1271,11 +1551,7 @@ async def plan_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"`/task <proyek> {ide[:60]}`"
     )
     full_reply = f"📐 *[IMPLEMENTATION PLAN - HABIBIE]*\n\n{reply}{reply_footer}"
-
-    try:
-        await msg.edit_text(full_reply, parse_mode="Markdown")
-    except Exception:
-        await msg.edit_text(full_reply)
+    await send_or_edit_response(msg, full_reply)
 
 async def manual_audit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ALLOWED_USER_ID:
@@ -1406,7 +1682,16 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if is_ops_action or current_engine == "agy":
         msg = await update.message.reply_text("📐 [HABIBIE / AGY] Sedang memeriksa sistem server...")
-        reply = await asyncio.to_thread(run_agy, update.message.text, True)
+        success, reply = await run_agy_interactive(
+            msg=msg,
+            user_prompt=update.message.text,
+            continue_session=True,
+            initial_timeout=180,
+            status_prefix="📐 [HABIBIE / AGY]"
+        )
+        if not success:
+            return
+
         # Jika agy mengalami kendala kuota atau limit, tawarkan atau fallback ke Emergency Agent
         if any(err_word in reply.lower() for err_word in ["quota", "rate limit", "exceeded", "429"]):
             try:
@@ -1444,7 +1729,15 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply = await asyncio.to_thread(call_9router, update.message.text)
         # Jika 9Router gagal (misal koneksi jaringan putus), fallback ke agy
         if reply.startswith("⚠️"):
-            reply = await asyncio.to_thread(run_agy, update.message.text, True)
+            success, reply = await run_agy_interactive(
+                msg=msg,
+                user_prompt=update.message.text,
+                continue_session=True,
+                initial_timeout=180,
+                status_prefix="📐 [HABIBIE / AGY]"
+            )
+            if not success:
+                return
 
         cleanup_pending_queries()
         q_id = str(int(time.time() * 1000))[-8:]
@@ -1501,8 +1794,15 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"lalu berikan respons yang terstruktur, jelas, dan solutif."
         )
 
-        reply = await asyncio.to_thread(run_agy, prompt, True)
-        await send_or_edit_response(msg, reply)
+        success, reply = await run_agy_interactive(
+            msg=msg,
+            user_prompt=prompt,
+            continue_session=True,
+            initial_timeout=180,
+            status_prefix="🔍 [HABIBIE / AGY]"
+        )
+        if success:
+            await send_or_edit_response(msg, reply)
     except Exception as e:
         err_msg = f"⚠️ Terjadi kendala saat menganalisa gambar: {e}"
         try:
@@ -1575,8 +1875,15 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"kemudian jawab permintaan, pertanyaan, atau instruksi pengguna tersebut secara ramah, cerdas, dan solutif."
         )
 
-        reply = await asyncio.to_thread(run_agy, prompt, True)
-        await send_or_edit_response(msg, reply)
+        success, reply = await run_agy_interactive(
+            msg=msg,
+            user_prompt=prompt,
+            continue_session=True,
+            initial_timeout=180,
+            status_prefix="🎙️ [HABIBIE / AGY]"
+        )
+        if success:
+            await send_or_edit_response(msg, reply)
     except Exception as e:
         err_msg = f"⚠️ Terjadi kendala saat memproses audio: {e}"
         try:
