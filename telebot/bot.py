@@ -134,6 +134,12 @@ KANBAN_FILE = str(Path(os.getenv("KANBAN_PATH", str(DATA_DIR / "kanban.json"))))
 PROJECTS_FILE = str(Path(os.getenv("PROJECTS_PATH", str(DATA_DIR / "projects.json"))))
 START_AGENTS_SCRIPT = str(SCRIPTS_DIR / "start_agents.sh")
 BOT_SCRIPT = str(TELEBOT_DIR / "bot.py")
+MEDIA_TEMP_DIR = Path("/tmp/agy_media")
+try:
+    MEDIA_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    MEDIA_TEMP_DIR.chmod(0o700)
+except Exception:
+    pass
 PENDING_CHAT_QUERIES = {}  # Cache query untuk tombol switch/reask {q_id: {"prompt": str, "time": float}}
 
 SUPPORTED_AGY_MODELS = [
@@ -305,7 +311,7 @@ def run_agy(user_prompt: str, continue_session: bool = False) -> str:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
 
         output = result.stdout.strip() or result.stderr.strip()
-        return output[:4000] if output else "Perintah selesai tanpa output teks."
+        return output if output else "Perintah selesai tanpa output teks."
     except subprocess.TimeoutExpired:
         return "⚠️ Waktu eksekusi habis (timeout 3 menit)."
     except Exception as e:
@@ -1291,6 +1297,50 @@ async def reset_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply = await asyncio.to_thread(run_agy, "Mulai sesi baru dan sapa saya singkat.", False)
     await update.message.reply_text(f"🔄 Sesi percakapan direset (agy & 9Router).\n\n{reply}")
 
+async def send_or_edit_response(msg, text: str, reply_markup=None):
+    """Mengirim atau mengedit pesan Telegram dengan aman, otomatis memecah jika teks > 4000 karakter."""
+    if not text:
+        text = "Perintah selesai tanpa output teks."
+
+    # Jika muat dalam satu pesan (batas Telegram 4096 karakter)
+    if len(text) <= 4000:
+        try:
+            await msg.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        except Exception:
+            try:
+                await msg.edit_text(text, reply_markup=reply_markup)
+            except Exception:
+                await msg.reply_text(text, reply_markup=reply_markup)
+        return
+
+    # Pecah pesan secara aman per batas paragraf/baris
+    parts = []
+    remaining = text
+    while remaining:
+        if len(remaining) <= 3800:
+            parts.append(remaining)
+            break
+        split_idx = remaining.rfind("\n", 0, 3800)
+        if split_idx == -1 or split_idx < 1500:
+            split_idx = 3800
+        parts.append(remaining[:split_idx].strip())
+        remaining = remaining[split_idx:].strip()
+
+    # Edit pesan status pertama
+    try:
+        await msg.edit_text(parts[0], parse_mode="Markdown")
+    except Exception:
+        await msg.edit_text(parts[0])
+
+    # Kirim potongan berikutnya
+    for i, part in enumerate(parts[1:]):
+        is_last = (i == len(parts) - 2)
+        rm = reply_markup if is_last else None
+        try:
+            await msg.reply_text(part, reply_markup=rm, parse_mode="Markdown")
+        except Exception:
+            await msg.reply_text(part, reply_markup=rm)
+
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ALLOWED_USER_ID:
         return
@@ -1385,7 +1435,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         try:
-            await msg.edit_text(reply, reply_markup=reply_markup, parse_mode="Markdown")
+            await send_or_edit_response(msg, reply, reply_markup)
         except Exception:
             await msg.edit_text(reply, reply_markup=reply_markup)
     else:
@@ -1403,9 +1453,142 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         try:
-            await msg.edit_text(reply, reply_markup=reply_markup, parse_mode="Markdown")
+            await send_or_edit_response(msg, reply, reply_markup)
         except Exception:
             await msg.edit_text(reply, reply_markup=reply_markup)
+
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Menangani foto atau berkas gambar dari pengguna menggunakan AGY CLI Multimodal (read_file)."""
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+
+    msg = await update.message.reply_text("🔍 [HABIBIE / AGY] Sedang mengamati dan menganalisa gambar...")
+
+    MEDIA_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+    file_id = None
+    file_unique_id = None
+    ext = ".jpg"
+
+    if update.message.photo:
+        photo = update.message.photo[-1]
+        file_id = photo.file_id
+        file_unique_id = photo.file_unique_id
+        ext = ".jpg"
+    elif update.message.document and update.message.document.mime_type and update.message.document.mime_type.startswith("image/"):
+        doc = update.message.document
+        file_id = doc.file_id
+        file_unique_id = doc.file_unique_id
+        ext = Path(doc.file_name).suffix.lower() if doc.file_name else ".jpg"
+
+    if not file_id:
+        await msg.edit_text("⚠️ Format gambar tidak dikenali.")
+        return
+
+    tmp_path = MEDIA_TEMP_DIR / f"img_{int(time.time())}_{file_unique_id}{ext}"
+
+    try:
+        tg_file = await context.bot.get_file(file_id)
+        await tg_file.download_to_drive(custom_path=str(tmp_path))
+
+        caption = (update.message.caption or "").strip()
+        user_query = caption if caption else "Tolong amati dan analisa gambar ini secara mendalam, jelaskan visual atau teks yang tampak, dan berikan evaluasi teknis atau solusi relevan."
+
+        prompt = (
+            f"Pengguna mengirimkan file gambar yang disimpan di {tmp_path}.\n"
+            f"Catatan/Permintaan Pengguna: {user_query}\n\n"
+            f"Gunakan tool read_file untuk membaca dan menganalisa file gambar tersebut, "
+            f"lalu berikan respons yang terstruktur, jelas, dan solutif."
+        )
+
+        reply = await asyncio.to_thread(run_agy, prompt, True)
+        await send_or_edit_response(msg, reply)
+    except Exception as e:
+        err_msg = f"⚠️ Terjadi kendala saat menganalisa gambar: {e}"
+        try:
+            await msg.edit_text(err_msg)
+        except Exception:
+            await update.message.reply_text(err_msg)
+    finally:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except Exception:
+                pass
+
+async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Menangani pesan suara (voice note) atau audio dari pengguna menggunakan AGY CLI Multimodal (read_file)."""
+    if update.effective_user.id != ALLOWED_USER_ID:
+        return
+
+    msg = await update.message.reply_text("🎙️ [HABIBIE / AGY] Sedang mendengarkan pesan suara...")
+
+    MEDIA_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+    file_id = None
+    file_unique_id = None
+    file_size = 0
+    ext = ".ogg"
+
+    if update.message.voice:
+        voice = update.message.voice
+        file_id = voice.file_id
+        file_unique_id = voice.file_unique_id
+        file_size = getattr(voice, "file_size", 0)
+        ext = ".ogg"
+    elif update.message.audio:
+        audio = update.message.audio
+        file_id = audio.file_id
+        file_unique_id = audio.file_unique_id
+        file_size = getattr(audio, "file_size", 0)
+        orig_ext = Path(audio.file_name).suffix.lower() if audio.file_name else ".mp3"
+        ext = orig_ext if orig_ext in [".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac"] else ".mp3"
+    elif update.message.document and update.message.document.mime_type and update.message.document.mime_type.startswith("audio/"):
+        doc = update.message.document
+        file_id = doc.file_id
+        file_unique_id = doc.file_unique_id
+        file_size = getattr(doc, "file_size", 0)
+        ext = Path(doc.file_name).suffix.lower() if doc.file_name else ".ogg"
+
+    if not file_id:
+        await msg.edit_text("⚠️ Format audio tidak dikenali.")
+        return
+
+    # Batasi ukuran audio (maksimal 20 MB)
+    if file_size > 20 * 1024 * 1024:
+        await msg.edit_text("⚠️ Ukuran berkas audio terlalu besar (maksimal 20 MB).")
+        return
+
+    tmp_path = MEDIA_TEMP_DIR / f"audio_{int(time.time())}_{file_unique_id}{ext}"
+
+    try:
+        tg_file = await context.bot.get_file(file_id)
+        await tg_file.download_to_drive(custom_path=str(tmp_path))
+
+        caption = (update.message.caption or "").strip()
+        extra_hint = f"\nCatatan tambahan pengguna: {caption}" if caption else ""
+
+        prompt = (
+            f"Pengguna mengirimkan file rekaman audio/suara yang disimpan di {tmp_path}.{extra_hint}\n\n"
+            f"Gunakan tool read_file untuk mendengarkan/memeriksa isi audio tersebut. "
+            f"Tuliskan transkripsi apa yang dikatakan pengguna secara ringkas, "
+            f"kemudian jawab permintaan, pertanyaan, atau instruksi pengguna tersebut secara ramah, cerdas, dan solutif."
+        )
+
+        reply = await asyncio.to_thread(run_agy, prompt, True)
+        await send_or_edit_response(msg, reply)
+    except Exception as e:
+        err_msg = f"⚠️ Terjadi kendala saat memproses audio: {e}"
+        try:
+            await msg.edit_text(err_msg)
+        except Exception:
+            await update.message.reply_text(err_msg)
+    finally:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except Exception:
+                pass
 
 async def scheduled_audit(context: ContextTypes.DEFAULT_TYPE):
     prompt = (
@@ -2107,6 +2290,10 @@ def main():
     app.add_handler(CommandHandler("model", set_model_cmd))
     app.add_handler(CallbackQueryHandler(callback_query_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_chat))
+
+    # Handler Multimodal Media (Gambar & Pesan Suara via AGY CLI)
+    app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_photo))
+    app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO | filters.Document.Category("audio/"), handle_voice))
 
     # 1. Morning Briefing: Setiap hari pukul 07:00 WIB
     app.job_queue.run_daily(
